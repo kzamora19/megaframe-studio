@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MegaFrame Studio v2.0 | Photo Filters & Editing</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input[type=file]{display:none}input[type=range]{accent-color:#265dff;width:100%}input[type=text],select{background:#fff;border:1px solid #dce2f2;border-radius:10px;outline:0;color:#172343;padding:10px 11px;width:100%;min-width:0}input[type=text]:focus,select:focus{border-color:#4167ff;box-shadow:0 0 0 3px #c5d3ff80}
+.appbar{height:74px;padding:0 28px;background:#fff;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e3e8f2;gap:16px}.brand{display:flex;gap:12px;align-items:center}.logo{height:41px;width:41px;background:#1d44ea;color:white;border-radius:13px;display:grid;place-items:center;font-size:23px;font-weight:900;box-shadow:0 4px 12px #3158ef30}.brandname{font-size:18px;font-weight:850;letter-spacing:-.5px}.brandtag{font-size:12px;color:#818ca6;margin-top:3px}.pill{border-radius:100px;padding:6px 11px;background:#eef7f1;color:#27855a;font-size:12px;font-weight:700}.appbody{display:grid;grid-template-columns:345px minmax(350px,1fr);gap:0;min-height:calc(100vh - 74px)}.sidebar{border-right:1px solid #e1e7f2;background:#fff;padding:21px 18px 42px;max-height:calc(100vh - 74px);overflow-y:auto}.workspace{padding:23px clamp(18px,3.3vw,52px) 40px;min-width:0}.section{margin-bottom:24px}.sectionHead{display:flex;align-items:center;gap:9px;margin:0 0 14px}.step{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#eaf0ff;color:#2857eb;font-weight:850;font-size:12px}.sectionHead h2{font-size:14px;margin:0;letter-spacing:.05px}.help{font-size:12px;line-height:1.5;color:#7c879f;margin:5px 0 12px}.field{margin-top:12px}.field label{font-size:12px;font-weight:750;display:block;margin-bottom:7px;color:#43506a}.inline{display:flex;align-items:center;gap:8px}.inline>*{min-width:0}.btn{border:1px solid #dbe2f1;border-radius:11px;padding:10px 12px;background:#fff;color:#344461;font-weight:750;font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;line-height:1.2;transition:background .15s,border .15s}.btn:hover:not(:disabled){background:#f1f5ff;border-color:#aebfff}.btn.primary{background:#264dec;border:1px solid #264dec;color:#fff}.btn.primary:hover:not(:disabled){background:#163edc}.btn.dark{background:#17234e;border-color:#17234e;color:#fff}.btn.small{padding:7px 9px;font-size:11px;border-radius:8px}.btn.wide{width:100%}.btn.ghost{background:#eef3ff;color:#2750d3;border-color:#e5ebff}.btn.danger{color:#bd3b4a}.btn svg{width:15px;height:15px;stroke-width:2}.sep{height:1px;background:#edf0f7;margin:22px -18px}.tag{display:inline-flex;align-items:center;font-size:10px;letter-spacing:.05em;font-weight:800;text-transform:uppercase;color:#4770df;background:#eaf0ff;padding:4px 7px;border-radius:6px}.dropzone{border:1.5px dashed #b2c5ff;background:#f7f9ff;border-radius:14px;padding:21px 12px;text-align:center;cursor:pointer;transition:.2s}.dropzone:hover,.dropzone.dragging{background:#e9f0ff;border-color:#4173ff}.dropzone .circle{width:42px;height:42px;border-radius:13px;background:#e3eaff;color:#3f61d9;display:grid;place-items:center;margin:0 auto 10px}.dropzone strong{display:block;font-size:13px}.dropzone span{display:block;margin:5px 0 0;font-size:11px;color:#8390a9}.hintBox{padding:11px 12px;border-radius:10px;background:#f1f4ff;color:#67769a;font-size:11px;line-height:1.55}.radioLine{display:flex;gap:7px;margin-bottom:10px}.radioLine>button{flex:1}.modeBtn.active{background:#e8efff;border-color:#4266f9;color:#284ee5}.rangerow{display:flex;justify-content:space-between;gap:10px}.value{font-size:12px;font-weight:800;color:#2c54dc}.check{display:flex;align-items:center;gap:8px;font-size:12px;color:#4d5a72}.check input{accent-color:#265dff}.workspaceHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.workspaceHeader h1{font-size:24px;margin:0 0 6px;letter-spacing:-1px;font-weight:850}.workspaceHeader p{font-size:13px;color:#8a94ac;margin:0}.previewCard{background:#fff;border:1px solid #e4e9f3;border-radius:17px;box-shadow:0 8px 30px #21376d0a;overflow:hidden}.previewTop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 17px;border-bottom:1px solid #edf0f6;flex-wrap:wrap}.previewTop strong{font-size:13px}.previewTop small{font-size:11px;color:#92a0b4}.previewBody{background:#e9edf6;background-image:radial-gradient(#c8d0e2 1px,transparent 1px);background-size:16px 16px;min-height:420px;display:flex;align-items:center;justify-content:center;padding:22px;position:relative}.canvasShell{position:relative;width:min(100%,550px);box-shadow:0 12px 30px #1f2c5b30;line-height:0;touch-action:none;background:white;border-radius:3px;overflow:hidden}#previewCanvas{width:100%;height:auto;display:block;cursor:crosshair;touch-action:none}.canvasShell.adjust #previewCanvas{cursor:grab}.canvasShell.adjust.grabbing #previewCanvas{cursor:grabbing}.previewFoot{display:flex;justify-content:space-between;align-items:center;padding:12px 17px;gap:10px;flex-wrap:wrap}.previewFoot span{font-size:12px;color:#78869f}.shortcuts{font-size:11px;color:#9ca6b7}.galleryWrap{margin-top:22px}.galleryTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.galleryTop h2{font-size:16px;margin:0}.counter{font-size:12px;color:#667898}.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:12px}.thumb{border:2px solid transparent;background:#fff;border-radius:13px;padding:7px;cursor:pointer;min-width:0;box-shadow:0 2px 10px #1f376013;position:relative}.thumb.active{border-color:#2a54ec;box-shadow:0 0 0 3px #ccdaff}.thumb img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:7px;background:#f2f5fa;display:block}.thumb .name{font-size:10px;margin:8px 2px 1px;color:#50617d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}.thumb .num{position:absolute;top:11px;left:11px;border-radius:6px;background:#182a55cc;color:#fff;font-size:10px;padding:3px 5px}.thumb .remove{position:absolute;top:8px;right:8px;color:white;background:#ba3543;border:0;border-radius:50%;height:22px;width:22px;display:none}.thumb:hover .remove{display:block}.emptyGallery{border:1px dashed #d4dce9;background:#f9faff;padding:24px;border-radius:13px;color:#92a0b5;font-size:13px;text-align:center}.metrics{display:flex;gap:10px;flex-wrap:wrap}.metric{display:flex;align-items:center;gap:8px;font-size:12px;color:#7a859b}.dot{width:7px;height:7px;background:#52b889;border-radius:50%}.progress{height:7px;background:#e9edfa;border-radius:20px;overflow:hidden;margin-top:10px;display:none}.progress>div{height:100%;width:0;background:#2857ff;transition:width .2s}.toast{position:fixed;right:22px;bottom:18px;background:#17254d;color:white;border-radius:11px;padding:13px 18px;box-shadow:0 9px 30px #1a2a5650;font-size:12px;z-index:5;max-width:350px;opacity:0;pointer-events:none;transform:translateY(10px);transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.status{font-size:11px;color:#7f8da6;min-height:17px;margin-top:7px}.chip{background:#f0f3fb;border-radius:6px;font-size:11px;padding:3px 6px;font-weight:700;color:#647391}.footer{font-size:11px;color:#9aa6bd;margin-top:20px;line-height:1.4}.hidden{display:none!important}
+@media(max-width:980px){.appbody{grid-template-columns:300px minmax(320px,1fr)}.sidebar{padding:16px 13px}.sep{margin-left:-13px;margin-right:-13px}.workspace{padding:20px}.previewBody{padding:16px;min-height:300px}}
+@media(max-width:720px){.appbar{height:auto;min-height:66px;padding:12px 15px}.brandname{font-size:16px}.brandtag{font-size:10px}.appbody{display:flex;flex-direction:column}.sidebar{max-height:none;overflow:visible;border-right:0;border-bottom:1px solid #e2e9f5}.workspaceHeader h1{font-size:20px}.workspace{padding:15px}.previewBody{min-height:250px;padding:12px}.canvasShell{width:min(100%,460px)}.sidebar .section{margin-bottom:14px}.pill{display:none}}
+
+/* Version 1.1: shape-aware mapping controls */
+.shapeChoices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:11px 0}
+.shapeChoices .btn{padding:10px 5px;font-size:11px}
+.shapeChoices .btn.active{border-color:#416bff;background:#e7edff;color:#2348d4}
+.shapeInfo{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:9px 0}
+.shapeActions{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:11px 0}
+.shapeActions .btn{min-height:36px}
+#drawPolygon.active{background:#153dda;color:#fff;border-color:#153dda}
+#finishPolygon{background:#e0f7e9;color:#1a8658;border-color:#b9e6c7}
+#finishPolygon:disabled{background:#f2f3f5;color:#adb5c3;border-color:#eceef3}
+.cornerSettings{padding:10px 11px;border-radius:10px;background:#f7f9ff;border:1px solid #e9efff;margin:10px 0}
+.bannerTip{padding:12px;border-radius:11px;background:#eef5ff;color:#3e588b;font-size:11px;line-height:1.6}
+.bannerTip b{color:#2549ae}
+@media(max-width:720px){.shapeChoices .btn{font-size:11px}}
+
+/* v1.2 - pinned controls, shape selection, scaling and collage */
+.sidebar{position:sticky;top:0;align-self:start;height:100vh;max-height:100vh;overscroll-behavior:contain;scrollbar-gutter:stable;z-index:4;box-shadow:2px 0 8px #1e35600a}
+.shapePicker{display:grid;grid-template-columns:1fr;gap:7px;padding:11px;background:#f8faff;border:1px solid #e7edfb;border-radius:12px;margin-top:12px}
+.shapePicker label{font-size:12px;font-weight:780;color:#43506a}
+.actionsToolbar{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+.scaleControls{padding:10px 11px;margin:10px 0 0;background:#f5f8ff;border:1px solid #e4edff;border-radius:12px}
+.panelPin{font-size:10px;background:#eaf7f0;color:#267650;border-radius:7px;padding:4px 7px;margin-left:auto;font-weight:800;white-space:nowrap}
+.collageOpt{margin-top:12px}
+.collageOpt label{display:block;font-size:12px;font-weight:750;color:#43506a;margin-bottom:6px}
+.section.isCollage{background:#f6f9ff;border:1px solid #dfe9ff;border-radius:14px;padding:13px 12px 14px;margin-left:-4px;margin-right:-4px}
+.section.isCollage .sectionHead{margin-bottom:9px}
+.collageHint{font-size:11px;line-height:1.5;color:#7483a3;margin-top:8px}
+.zoomNote{font-size:11px;color:#526ba8;margin-top:9px}
+.thumb .orderButtons{position:absolute;bottom:10px;right:8px;display:flex;gap:3px}
+.thumb .orderButtons button{border:0;color:#253c73;background:#ffffffed;border-radius:5px;padding:1px 6px;font-size:14px;box-shadow:0 1px 4px #3334;cursor:pointer}
+.thumb .slotBadge{position:absolute;left:6px;top:6px;padding:3px 6px;color:white;background:#1839bad9;font-size:10px;font-weight:800;border-radius:4px}
+.thumb{cursor:grab}.thumb.dragOver{outline:2px dashed #2f67ff;outline-offset:3px}.thumb .dragBadge{position:absolute;right:6px;top:6px;padding:3px 6px;color:#214192;background:#ffffffef;font-size:10px;font-weight:800;border-radius:4px;box-shadow:0 1px 4px #3333}.borderControls input[type=color]{width:52px;height:34px;border:1px solid #d9e2ff;border-radius:10px;background:#fff;padding:2px}.borderRow{display:flex;gap:10px;align-items:center}.borderRow input[type=range]{flex:1}
+@media(max-width:720px){.sidebar{position:relative;top:auto;height:auto;max-height:none;overflow:visible}.panelPin{display:none}}
+
+/* v1.4 - accessible sidebar accordions and optional old-photo cleanup */
+.sidebar>.section>.sectionHead{position:relative;margin-bottom:11px;padding:9px 8px;min-height:43px;border-radius:10px;cursor:pointer;user-select:none;transition:background .15s}
+.sidebar>.section>.sectionHead:hover{background:#f0f4ff}
+.sidebar>.section>.sectionHead:focus-visible{outline:3px solid #819fff;outline-offset:1px}
+.sidebar>.section>.sectionHead h2{flex:1}
+.sidebar>.section>.sectionHead .panelPin{margin-left:0}
+.sidebar>.section>.sectionHead .panelChevron{font-size:17px;color:#607399;font-weight:900;margin-left:auto;width:20px;text-align:center;flex-shrink:0;line-height:1;transition:transform .2s}
+.sidebar>.section.is-collapsed>.sectionHead .panelChevron{transform:rotate(-90deg)}
+.sidebar>.section.is-collapsed{margin-bottom:9px}
+.sidebar>.section.is-collapsed>.sectionHead{margin-bottom:0}
+.sidebar>.section.is-collapsed>.sectionBody{display:none}
+.sidebar>.section>.sectionBody{padding:0 1px 3px}
+.cleanupOption{border:1px solid #e5edff;background:#f8faff;padding:11px;border-radius:11px;margin-top:10px}
+.cleanupOption input[type=checkbox]{width:16px;height:16px;flex-shrink:0}
+.cleanupOption .check{line-height:1.3;font-weight:700}
+
+/* v1.5: always-visible sidebar section navigation and browsable frame library */
+.pinNav{position:sticky;top:-21px;z-index:18;background:#fff;border:1px solid #dfe7f8;border-radius:13px;padding:8px 8px 9px;box-shadow:0 5px 18px #233e7520;margin:-7px -5px 17px;}
+.pinNavTitle{display:flex;align-items:center;justify-content:space-between;color:#56688c;font-weight:850;font-size:11px;letter-spacing:.04em;margin:0 3px 6px}
+.pinNavGrid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.pinNav button{width:100%;background:#f4f7ff;border:1px solid #e3eaff;border-radius:8px;min-height:31px;line-height:1.15;font-size:11px;font-weight:780;color:#415779;cursor:pointer;text-align:left;padding:6px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pinNav button:hover,.pinNav button.active{background:#e9f0ff;border-color:#9bb4ff;color:#244ee0}
+.sidebar>.section>.sectionHead{position:sticky;top:150px;z-index:12;background:#fff;box-shadow:0 1px 0 #e9eff8}
+.sidebar>.section.isCollage>.sectionHead{background:#f6f9ff}
+.libraryOpen{margin-top:9px;width:100%;font-size:12px}
+.libraryOpen:focus-visible{outline:3px solid #7595ff}
+.noShapeHint{padding:10px 11px;margin-top:8px;background:#f0f6ff;border:1px dashed #b3c9ff;border-radius:10px;color:#41619b;font-size:11px;line-height:1.5}
+.frameLibrary{width:min(920px,94vw);max-height:88vh;border:1px solid #d9e5f6;border-radius:18px;padding:0;box-shadow:0 25px 75px #12244c55;color:#1d2948;background:white}
+.frameLibrary::backdrop{background:#0a1738b3}
+.frameLibHead{position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid #e5eaf5;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.frameLibHead h2{font-size:18px;margin:0 0 4px}.frameLibHead p{font-size:12px;color:#7a87a1;margin:0}
+.frameLibBody{padding:16px 22px 22px}
+.frameLibSearch{margin:0 0 14px}
+.frameLibGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px}
+.frameLibCard{border:1px solid #dfe6f4;border-radius:13px;padding:9px;background:#fff;box-shadow:0 3px 12px #19254a0d;min-width:0;display:flex;flex-direction:column;gap:8px}
+.frameLibCard>img{display:block;object-fit:contain;background:#f1f4fb;border-radius:8px;width:100%;height:142px}
+.frameLibCard strong{font-size:12px;line-height:1.25;overflow-wrap:anywhere;min-height:30px}
+.frameLibCard small{font-size:11px;color:#7a87a1}
+.frameLibActions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:auto}
+.frameLibActions button{font-size:11px;padding:8px 5px}
+.frameLibInfo{margin:16px 0 0;color:#667590;font-size:11px;line-height:1.5}
+@media(max-width:980px){.pinNav{top:-16px}}
+@media(max-width:720px){.pinNav{position:sticky;top:0;margin:0 0 12px}.sidebar>.section>.sectionHead{position:relative;top:auto}.frameLibrary{max-height:94vh}}
+
+/* v1.6: focused section tabs, ordinary collapsible headings (not floating) */
+.sidebar>.section>.sectionHead, .sidebar>.section.isCollage>.sectionHead{
+ position:relative!important;top:auto!important;z-index:auto!important;
+ box-shadow:none!important;background:transparent;
+}
+.sidebar>.section:not(.activePanel){display:none!important}
+.sidebar>.sep{display:none!important}
+.sidebar>.section.activePanel{display:block;margin-bottom:12px}
+.sidebar>.section.activePanel>.sectionHead{margin-bottom:12px}
+.sidebar>.section.activePanel.is-collapsed>.sectionHead{margin-bottom:0}
+.pinNav{position:sticky;top:-21px;z-index:18}
+.frameLibActions{display:flex;flex-wrap:wrap;gap:6px}
+.frameLibActions .btn{flex:1 1 calc(50% - 6px);min-width:0}
+.frameLibActions .btn.libraryDelete{flex:1 1 100%;background:#fff3f4;border-color:#f3cfd5;color:#aa2b41}
+.frameLibActions .btn.libraryDelete:hover{background:#ffe8ec;border-color:#df9ba7}
+@media(max-width:980px){.pinNav{top:-16px}}
+@media(max-width:720px){.pinNav{top:0}.sidebar>.section>.sectionHead{position:relative!important}}
+
+/* v1.7 - removable built-ins and online frame discovery */
+[hidden]{display:none!important}
+.frameLibTabs{display:flex;gap:8px;padding:3px;background:#f1f4fc;border-radius:11px;margin:0 0 16px}
+.frameLibTabs button{flex:1;padding:11px 9px;border:0;border-radius:9px;background:transparent;color:#526180;font-size:12px;font-weight:800;cursor:pointer}
+.frameLibTabs button.active{background:white;color:#244bcc;box-shadow:0 1px 6px #253b6320}
+.restoreSamples{margin-top:14px;color:#2e54cb}
+.onlineIntro{font-size:12px;color:#526180;line-height:1.6;margin:0 0 10px}
+.onlineSearchForm{display:flex;gap:8px;align-items:stretch;margin:0 0 12px}
+.onlineSearchForm input{flex:1;min-width:0;margin:0}
+.onlineSearchForm button{white-space:nowrap}
+.onlineExternal{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:10px 0 15px}
+.onlineExternal span{font-size:11px;color:#63738d;font-weight:700}
+.onlineSearchStatus{font-size:12px;color:#52617c;padding:9px 10px;background:#f6f8ff;border:1px solid #e9edfb;border-radius:8px;margin:10px 0}
+.frameLibCard .onlineLicense{min-height:30px;line-height:1.35}
+.frameLibCard a.onlineAttribution{display:block;font-size:11px;color:#244bd2;text-decoration:underline}
+@media(max-width:560px){.onlineSearchForm{flex-wrap:wrap}.onlineSearchForm button{width:100%}}
+
+/* Version 1.9: dedicated per-photo controls, filter studio and in-app dialogs */
+.photoActionRow{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px}
+.photoActionRow .btn{white-space:normal;min-height:40px;font-size:11px}
+button.danger{background:#fff4f5;color:#a52941;border:1px solid #efcbd2}
+button.danger:hover{background:#ffe9ec}
+.filterEditor{border:1px solid #dbe6fa;background:#f7f9fe;padding:13px;margin-top:15px;border-radius:13px}
+.filterEditorTitle{margin-bottom:12px;display:flex;gap:3px;flex-direction:column}
+.filterEditorTitle strong{font-size:12px;color:#173061}
+.filterEditorTitle span{font-size:10px;color:#6c7d9e}
+.filterEditor .field{margin-bottom:12px}
+.previewActions{flex-wrap:wrap;justify-content:flex-end}
+.previewActions .btn{font-size:11px;white-space:nowrap}
+.actionModal{width:min(435px,92vw);max-width:92vw;border:1px solid #dae3f3;border-radius:18px;padding:0;background:white;color:#203050;box-shadow:0 22px 80px #0b183a88}
+.actionModal::backdrop{background:#081630b0}
+.actionModalHeader{padding:20px 22px 10px}
+.actionModalHeader h2{font-size:18px;margin:0}
+.actionModalBody{padding:0 22px 18px}
+.actionModalBody p{font-size:13px;line-height:1.6;color:#55617c;white-space:pre-wrap;overflow-wrap:anywhere}
+.actionModalBody input{width:100%;border:1px solid #d0def5;border-radius:10px;font-size:14px;padding:11px;box-sizing:border-box}
+.actionModalBody p.actionModalError{color:#b83350;margin:8px 0 0}
+.actionModalFooter{padding:14px 22px 20px;display:flex;justify-content:flex-end;gap:9px;border-top:1px solid #eef1f7}
+.actionModalFooter .btn{min-width:98px}
+.actionModalFooter .dangerConfirm{background:#bd304e;border-color:#bd304e;color:white}
+@media(max-width:1000px){.previewFoot{flex-wrap:wrap;gap:8px}.previewActions{justify-content:flex-start}}
+
+/* v2.0 — always-visible per-thumbnail actions */
+.thumb{padding-top:7px}
+.thumb .thumbTopActions{display:flex;justify-content:space-between;align-items:center;gap:4px;min-height:28px;margin:0 0 5px}
+.thumb .thumbReplace{font:inherit;font-size:11px;font-weight:800;cursor:pointer;background:#eef3ff;color:#244de1;border:1px solid #bfcfff;padding:4px 8px;border-radius:7px;white-space:nowrap}
+.thumb .thumbReplace:hover,.thumb .thumbReplace:focus-visible{background:#dce9ff;border-color:#749dff}
+.thumb .thumbDelete{font-size:16px;font-weight:900;cursor:pointer;background:#ffe9ec;color:#a82742;border:1px solid #efb8c2;border-radius:7px;width:27px;height:27px;line-height:1;display:grid;place-items:center;flex-shrink:0;transition:background .15s}
+.thumb .thumbDelete:hover,.thumb .thumbDelete:focus-visible{background:#ffcdd5;color:#7f1631}
+.thumb .slotBadge{top:45px;left:11px;z-index:1}
+.thumb .dragBadge{top:45px;right:11px;z-index:1}
+.thumb .remove{display:none !important}
+.exportBatchActions{flex-wrap:wrap;margin:4px 0 16px}.exportGalleryItems{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}.exportFileCard{min-width:0;border:1px solid #e0e7f6;border-radius:12px;padding:9px;display:flex;flex-direction:column;gap:8px}.exportFileCard img{width:100%;aspect-ratio:1;object-fit:contain;background:#f2f6fd;border-radius:8px}.exportFileCard strong{font-size:11px;overflow-wrap:anywhere}.exportFileCard .btn{width:100%}.exportGalleryItems .help{margin:0}@media(max-width:720px){.exportBatchActions{flex-direction:column;align-items:stretch}.exportBatchActions>.btn{width:100%}}
+.liveExportHint{background:#eef4ff;border:1px solid #c8d9ff;color:#274477;border-radius:11px;padding:10px 12px;margin-top:12px;display:grid;gap:4px;font-size:12px;line-height:1.35}.liveExportHint strong{color:#1d43c6;font-weight:850}.liveExportHint small{color:#6077a0;line-height:1.4}.exportPreviewMeta{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.exportPreviewMeta small{white-space:nowrap}.exportPreviewMeta .btn{padding:7px 9px;font-size:11px}.canvasShell #exportPreviewCanvas{width:100%;height:auto;display:block;max-width:100%;border-radius:5px}.canvasShell #exportPreviewCanvas[hidden]{display:none!important}.canvasShell.liveExport{touch-action:pan-y}.canvasShell.liveExport #previewCanvas{display:none}.canvasShell.liveExport #exportPreviewCanvas{display:block;touch-action:pan-y}.exportInspectScroll{overflow:auto;max-height:68vh;padding:16px;background:#e9edf6;text-align:center}.exportInspectScroll canvas{display:block;margin:0 auto;width:auto;height:auto;max-width:none;background:#fff;box-shadow:0 2px 8px #1b336055}.exportInspectNote{padding:10px 20px 16px;font-size:11px;color:#6b7c9b}@media(max-width:720px){.exportPreviewMeta{justify-content:flex-start}.previewTop{align-items:flex-start;flex-wrap:wrap}.exportInspectScroll{max-height:65vh}}
+</style>
+</head>
+<body>
+<header class="appbar">
+ <div class="brand"><div class="logo">M</div><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.0</span></div>
+</header>
+<main class="appbody">
+<aside class="sidebar">
+<nav id="pinNav" class="pinNav" aria-label="Section navigation">
+ <div class="pinNavTitle"><span>SECTIONS</span><span>Select one panel</span></div>
+ <div class="pinNavGrid">
+ <button type="button" data-panel="0">1 · Frame template</button>
+ <button type="button" data-panel="1">2 · Photo area</button>
+ <button type="button" data-panel="2">3 · Import photos</button>
+ <button type="button" data-panel="3">4 · Collage layout</button>
+ <button type="button" data-panel="4">5 · Photo adjustments</button>
+ <button type="button" data-panel="5">6 · Export images</button>
+ </div>
+</nav>
+
+  <section class="section">
+   <div class="sectionHead"><span class="step">1</span><h2>Frame template</h2></div>
+   <div class="field"><label for="templateSelect">Choose saved campaign</label><select id="templateSelect"><option value="sample">7-Day Big Savings Sale · Blue border</option><option value="gold">7-Day Big Savings Sale · Gold corners</option></select></div>
+   <button class="btn ghost libraryOpen" id="openFrameLibrary" type="button">▦ Browse frame library &amp; saved templates</button>
+   <button class="btn ghost libraryOpen" id="openOnlineTemplates" type="button">⌕ Search online for frames</button>
+   <div class="inline" style="margin-top:9px"><button id="changeTemplate" class="btn wide">＋ Upload frame</button><button id="saveTemplate" class="btn wide primary">Save template</button></div>
+   <input type="file" id="templateInput" accept="image/png,image/jpeg,image/webp" />
+   <div class="inline" style="margin-top:9px"><button id="renameTemplate" class="btn small">Rename</button><button id="duplicateTemplate" class="btn small">Duplicate</button></div>
+   <div class="inline" style="margin-top:9px"><button id="backupTemplate" class="btn small">↓ Backup template</button><button id="restoreTemplate" class="btn small">↑ Restore backup</button></div>
+   <input type="file" id="backupInput" accept=".json,application/json" />
+   <p class="help">The uploaded artwork stays intact outside your chosen shape. For templates with an existing customer photo, enable old-photo removal below.</p>
+  </section>
+  <div class="sep"></div>
+  <section class="section" id="photoAreaPanel">
+   <div class="sectionHead"><span class="step">2</span><h2>Photo area</h2></div>
+   <div class="radioLine"><button id="mapBtn" class="btn modeBtn active" type="button">▣ Map photo area</button><button id="adjustBtn" class="btn modeBtn" type="button">✥ Adjust photo</button></div>
+   <div class="hintBox" id="modeHint">Drag outline points to match the inside edge of the frame. Move the whole opening by dragging within it.</div>
+   <div class="shapePicker"><label for="shapePreset">Photo opening shape</label>
+    <select id="shapePreset" aria-label="Choose photo opening shape">
+     <option value="none">— No shape selected —</option>
+     <option value="rect">▣ Rectangle</option>
+     <option value="bevel">⬡ Cut corners</option>
+     <option value="roundrect">▢ Rounded rectangle</option>
+     <option value="circle">◯ Circle</option>
+     <option value="ellipse">⬭ Oval / Ellipse</option>
+     <option value="triangle-up">△ Triangle (up)</option>
+     <option value="triangle-down">▽ Triangle (down)</option>
+     <option value="triangle-left">◁ Triangle (left)</option>
+     <option value="triangle-right">▷ Triangle (right)</option>
+     <option value="diamond">◇ Diamond</option>
+     <option value="pentagon">⬠ Pentagon</option>
+     <option value="hexagon">⬡ Hexagon</option>
+     <option value="octagon">⯃ Octagon</option>
+     <option value="star">☆ Star</option>
+     <option value="heart">♡ Heart</option>
+     <option value="polygon">✦ Custom / Free shape</option>
+    </select>
+   </div>
+   <div class="noShapeHint hidden" id="noShapeHint">No photo opening yet. Select a shape above, draw your own free shape, or use a saved opening from Frame Library.</div>
+   <div class="actionsToolbar"><button class="btn small" id="undo" type="button">↶ Undo</button><button class="btn small" id="redo" type="button">↷ Redo</button></div>
+   <div class="scaleControls"><div class="rangerow"><label for="shapeScale">Proportional shape size</label><span class="value" id="shapeScaleValue">100%</span></div><input id="shapeScale" type="range" min="30" max="180" step="1" value="100"/><p class="help" style="margin-bottom:0">Resize without distorting the outline. You can also drag the square handles at its corners.</p></div>
+   <div class="shapeInfo"><span class="tag" id="shapeType">Custom polygon</span><span class="counter" id="pointCount">8 points</span></div>
+   <div class="scaleControls borderControls"><div class="rangerow"><label for="borderWidth">Opening border</label><span class="value" id="borderWidthValue">8 px</span></div><div class="borderRow"><input id="borderColor" type="color" value="#d7b34a" aria-label="Choose border color" /><input id="borderWidth" type="range" min="0" max="30" step="1" value="8" /></div><p class="help" style="margin-bottom:0">This border follows the current shape. Set width to 0 to hide it.</p></div>
+   <div class="cleanupOption"><label class="check" for="replaceOpening"><input type="checkbox" id="replaceOpening" /> Erase previous photo/opening in template</label><p class="help" style="margin:7px 0 0">Off for new clean backgrounds. Turn on only when your uploaded artwork already contains an old customer photo. This fills the old area with a sampled color.</p></div>
+   <div class="cornerSettings"><div class="rangerow"><label for="cornerCut">Corner cut (preset)</label><span class="value" id="cornerValue">6%</span></div><input id="cornerCut" type="range" min="2" max="20" value="6" step="1" /><p class="help" style="margin-bottom:0">Adjust cut-corner size, then fine-tune individual points.</p></div>
+   <div class="shapeActions">
+     <button id="drawPolygon" class="btn" type="button">＋ Draw new shape</button>
+     <button id="finishPolygon" class="btn" type="button" disabled>✓ Finish outline</button>
+     <button id="addPoint" class="btn" type="button">＋ Add point</button>
+     <button id="deletePoint" class="btn" type="button">− Delete point</button>
+   </div>
+   <div class="inline"><button id="resetArea" class="btn small">Restore this frame's opening</button><button id="fullArea" class="btn small">Entire frame</button></div>
+   <div class="bannerTip" style="margin-top:11px"><b>Frame always on top.</b> Your current shape masks each photo, and the chosen border follows that shape. Clean uploaded backgrounds are never painted over with the old rectangle.</div>
+  </section>
+  <div class="sep"></div>
+  <section class="section">
+   <div class="sectionHead"><span class="step">3</span><h2>Import customer photos</h2></div>
+   <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload multiple photos">
+     <div class="circle"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V3m-5 5 5-5 5 5M3 16v4h18v-4"/></svg></div>
+     <strong>Choose photos or drop them here</strong><span>Multiple JPG, PNG & WebP files</span>
+   </div>
+   <input type="file" id="photosInput" accept="image/png,image/jpeg,image/webp" multiple />
+   <div class="inline" style="margin-top:9px"><button id="clearPhotos" class="btn small">Clear all photos</button><span class="counter" id="photoCount">0 photos uploaded</span></div>
+  </section>
+  <div class="sep"></div>
+  <section class="section isCollage" id="collagePanel">
+   <div class="sectionHead"><span class="step">4</span><h2>Collage layout</h2></div>
+   <div class="collageOpt"><label for="collageCount">Photos per finished frame</label><select id="collageCount">
+     <option value="1">1 photo — Single image (default)</option><option value="2">2 photos</option><option value="3">3 photos</option><option value="4">4 photos</option><option value="5">5 photos</option><option value="6">6 photos</option><option value="7">7 photos</option><option value="8">8 photos</option><option value="9">9 photos</option>
+   </select></div>
+   <div class="collageOpt"><label for="collageLayout">Arrangement</label><select id="collageLayout">
+     <option value="grid">Balanced grid</option><option value="horizontal">Side-by-side / Horizontal strip</option><option value="vertical">Top-to-bottom / Vertical strip</option><option value="main-left">Large left + stacked right</option><option value="main-right">Large right + stacked left</option><option value="main-top">Large top + row below</option><option value="main-bottom">Large bottom + row above</option><option value="magazine">Magazine mosaic</option>
+   </select></div>
+   <div class="collageOpt"><div class="rangerow"><label for="collageGap">Photo spacing</label><span class="value" id="collageGapValue">1%</span></div><input id="collageGap" type="range" min="0" max="5" value="1" step="0.5" /></div>
+   <div class="collageHint" id="collageSummary">One finished frame per photo or collage. Select more to create collages.</div>
+   <p class="collageHint">Choose a thumbnail to edit its collage slot. Drag one thumbnail onto another to swap their positions instantly, or use the arrows for step-by-step moves.</p>
+  </section>
+  <div class="sep"></div>
+  <section class="section">
+   <div class="sectionHead"><span class="step">5</span><h2>Fine-tune selected photo</h2></div>
+   <div class="field"><div class="rangerow"><label for="zoom">Zoom</label><span class="value" id="zoomValue">100%</span></div><input id="zoom" type="range" min="10" max="300" step="1" value="100" /></div>
+   <div class="field"><div class="rangerow"><label for="rotate">Rotation</label><span class="value" id="rotateValue">0°</span></div><input id="rotate" type="range" min="-180" max="180" value="0" /></div>
+   <div class="field"><label for="fitMode">Photo fitting</label><select id="fitMode"><option value="cover">Fill frame (crop edges)</option><option value="contain">Fit full photo (may leave space)</option></select></div>
+   <p class="help">In <b>Adjust photo</b> mode, click a collage cell, then drag to position its photo. Each image retains its own zoom and rotation settings.</p>
+   <div class="inline"><button id="resetPhoto" class="btn small">Reset this photo</button><button id="applyAll" class="btn small">Apply fitting to all photos</button></div>
+   <div class="photoActionRow"><button id="replaceSelectedPhoto" class="btn small" type="button">↻ Replace selected photo</button><button id="deleteSelectedPhoto" class="btn small danger" type="button">✕ Delete selected photo</button></div>
+   <input id="replacePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+   <div class="filterEditor">
+    <div class="filterEditorTitle"><strong>Filters for this photo only</strong><span>Frame artwork is never filtered</span></div>
+    <div class="field"><label for="filterPreset">Filter preset</label><select id="filterPreset">
+     <option value="none">Original · No filter</option><option value="vivid">Vivid</option><option value="warm">Warm</option><option value="cool">Cool</option><option value="bw">Black & white</option><option value="vintage">Vintage</option><option value="dramatic">Dramatic</option><option value="soft">Soft</option><option value="custom">Custom adjustment</option>
+    </select></div>
+    <div class="field"><div class="rangerow"><label for="filterBrightness">Brightness</label><span class="value" id="filterBrightnessValue">100%</span></div><input id="filterBrightness" type="range" min="30" max="180" value="100" step="1" /></div>
+    <div class="field"><div class="rangerow"><label for="filterContrast">Contrast</label><span class="value" id="filterContrastValue">100%</span></div><input id="filterContrast" type="range" min="30" max="200" value="100" step="1" /></div>
+    <div class="field"><div class="rangerow"><label for="filterSaturation">Saturation</label><span class="value" id="filterSaturationValue">100%</span></div><input id="filterSaturation" type="range" min="0" max="200" value="100" step="1" /></div>
+    <div class="field"><div class="rangerow"><label for="filterGrayscale">Black & white</label><span class="value" id="filterGrayscaleValue">0%</span></div><input id="filterGrayscale" type="range" min="0" max="100" value="0" step="1" /></div>
+    <div class="field"><div class="rangerow"><label for="filterSepia">Sepia</label><span class="value" id="filterSepiaValue">0%</span></div><input id="filterSepia" type="range" min="0" max="100" value="0" step="1" /></div>
+    <button id="resetPhotoFilters" class="btn small" type="button">↺ Reset this photo's filters</button>
+   </div>
+   <div class="filterEditor" id="enhanceEditor">
+    <div class="filterEditorTitle"><strong>Photo enhancement</strong><span>Only the selected photo is processed. Original uploads remain unchanged.</span></div>
+    <div class="field"><div class="rangerow"><label for="enhanceSharpness">Sharpness</label><span class="value" id="enhanceSharpnessValue">0%</span></div><input id="enhanceSharpness" type="range" min="0" max="100" step="5" value="0" /></div>
+    <div class="field"><div class="rangerow"><label for="enhanceDenoise">Noise reduction / pixel smoothing</label><span class="value" id="enhanceDenoiseValue">0%</span></div><input id="enhanceDenoise" type="range" min="0" max="100" step="5" value="0" /></div>
+    <button id="resetEnhancement" class="btn small" type="button">↺ Reset photo enhancement</button>
+    <p class="help">Moderate adjustments work best. These controls improve appearance but cannot recover details missing in the source photo.</p>
+   </div>
+  </section>
+  <div class="sep"></div>
+  <section class="section">
+   <div class="sectionHead"><span class="step">6</span><h2>Export images</h2></div>
+   <div class="field"><label for="prefix">Filename prefix</label><input id="prefix" type="text" value="7DBSS" maxlength="50" /></div>
+   <div class="inline" style="margin-top:12px"><div class="field" style="flex:1;margin-top:0"><label for="exportType">Format</label><select id="exportType"><option value="image/jpeg">JPG (recommended)</option><option value="image/png">PNG (large, lossless)</option></select></div><div class="field" style="flex:1;margin-top:0"><label for="exportSize">Size</label><select id="exportSize"><option value="original">Original resolution</option><option value="2x">2× original resolution</option><option value="1080">1080 px wide</option><option value="1350">1350 px wide</option></select></div></div>
+   <div class="liveExportHint" id="liveExportHint" role="status" aria-live="polite">
+     <strong>Live export preview</strong><span id="liveExportSize">Choose a size to see the finished image instantly.</span>
+     <small>Switching resolution updates the preview on the right. It does not change the editable frame. JPG compression may differ slightly after saving.</small>
+    </div>
+    <button id="downloadOne" class="btn wide" style="margin-top:12px">↓ Download selected image</button>
+   <button id="prepareAll" class="btn primary wide" style="margin-top:8px;font-size:13px;padding:13px">↓ Save all photos (no ZIP)</button>
+   <p class="help">Prepare each framed photo as a separate image. Save them one by one, share them together on supported phones, or request multiple downloads on desktop.</p>
+   <button id="downloadZip" class="btn wide" style="margin-top:3px">↓ Download ZIP (optional)</button>
+   <div id="exportProgress" class="progress"><div id="exportBar"></div></div>
+   <div class="status" id="status" aria-live="polite"></div>
+  </section>
+  <div class="footer">Photos are processed locally in your browser. No account, internet connection, or server upload is required. Templates can be backed up as JSON, including the shape, appearance and collage settings.</div>
+</aside>
+<section class="workspace">
+ <div class="workspaceHeader"><div><h1>Photo Framing, Borders & Collage Studio</h1><p>Individual photo filters, easy replace/delete, and reusable custom openings.</p></div><div class="metrics"><div class="metric"><span class="dot"></span><span>Local processing</span></div></div></div>
+ <div class="previewCard">
+  <div class="previewTop"><div><strong id="previewTitle">7-Day Big Savings Sale</strong> <span class="tag" style="margin-left:7px" id="modeTag">Shape editing</span></div><div class="exportPreviewMeta"><small id="previewInfo">1254 × 1254 px</small><button type="button" id="exportInspect" class="btn small" hidden>Inspect 100%</button><button type="button" id="returnEditor" class="btn small" hidden>Back to editing</button></div></div>
+  <div class="previewBody"><div class="canvasShell" id="canvasShell"><canvas id="previewCanvas" width="2018" height="2048" aria-label="Photo frame preview and editor"></canvas><canvas id="exportPreviewCanvas" hidden aria-label="Live preview at selected export resolution"></canvas></div></div>
+  <div class="previewFoot"><span id="previewLabel">Sample frame · upload photos to get started</span><div class="inline previewActions"><button id="quickReplacePhoto" class="btn small" type="button">↻ Replace photo</button><button id="quickDeletePhoto" class="btn small danger" type="button">✕ Delete photo</button><button id="previous" class="btn small">‹ Previous</button><button id="next" class="btn small">Next ›</button></div></div>
+ </div>
+ <div class="galleryWrap"><div class="galleryTop"><h2>Batch photo queue</h2><span class="counter" id="queueSummary">No photos yet</span></div><div class="gallery" id="gallery"><div class="emptyGallery" style="grid-column:1/-1">Your imported photos will appear here. Select any to edit its image or collage slot.</div></div></div>
+</section>
+</main>
+<dialog id="frameLibrary" class="frameLibrary" aria-labelledby="frameLibTitle">
+ <div class="frameLibHead"><div><h2 id="frameLibTitle">Frame Library</h2><p>Open a saved frame or reuse its photo-opening shape</p></div><button id="closeFrameLibrary" class="btn small" type="button">✕ Close</button></div>
+ <div class="frameLibBody">
+  <div class="frameLibTabs" role="tablist" aria-label="Frame source"><button id="libTabSaved" type="button" role="tab" aria-selected="true" aria-controls="savedFramesPanel" class="active">My saved frames</button><button id="libTabOnline" type="button" role="tab" aria-selected="false" aria-controls="onlineFramesPanel">Search online</button></div>
+  <section id="savedFramesPanel" role="tabpanel" aria-labelledby="libTabSaved"><input id="frameLibSearch" class="frameLibSearch" type="text" placeholder="Search saved frames or campaigns…" aria-label="Search frame library" />
+   <div id="frameLibGrid" class="frameLibGrid"></div>
+   <button id="restoreBuiltins" class="btn small restoreSamples" type="button" hidden>↻ Restore original sample frames</button>
+   <p class="frameLibInfo">Built-in sample frames can be removed from this library and restored later. Your own saved templates can be permanently deleted from this browser. Back up custom templates before clearing browser data.</p>
+  </section>
+  <section id="onlineFramesPanel" role="tabpanel" aria-labelledby="libTabOnline" hidden>
+   <p class="onlineIntro">Find openly licensed artwork from Wikimedia Commons, or search larger template collections. Online search requires internet access.</p>
+   <form id="onlineSearchForm" class="onlineSearchForm"><input id="onlineTemplateQuery" type="search" value="decorative photo frame" placeholder="Try holiday photo frame, gold border, sale poster…" aria-label="Search online templates" required/><button id="runOnlineSearch" type="submit" class="btn primary">⌕ Search</button></form>
+   <div class="onlineExternal"><span>More template sources:</span><button type="button" id="googleImageSearch" class="btn small">Google Images</button><button type="button" id="bingImageSearch" class="btn small">Bing Images</button><button type="button" id="canvaTemplateSearch" class="btn small">Canva templates</button></div>
+   <div id="onlineSearchStatus" class="onlineSearchStatus" role="status" aria-live="polite">Search Wikimedia Commons for reusable images, or open an external template source.</div>
+   <div id="onlineResults" class="frameLibGrid"></div>
+   <p class="frameLibInfo">Check each image's license, attribution requirements, and suitability for promotional use. For other sites, download a permitted PNG/JPG/WebP image and choose <b>Upload frame</b>. Templates downloaded from third-party sites are not automatically licensed for commercial advertising.</p>
+  </section>
+ </div>
+</dialog>
+<div role="status" class="toast" id="toast"></div>
+<dialog id="exportGallery" class="frameLibrary" aria-labelledby="exportGalleryTitle">
+ <div class="frameLibHead"><div><h2 id="exportGalleryTitle">Save your framed photos</h2><p id="exportGalleryCount">Your images are ready as separate files.</p></div><button id="closeExportGallery" type="button" class="btn small">✕ Close</button></div>
+ <div class="frameLibBody">
+  <p class="help">No ZIP extractor needed. On a phone, use <strong>Share all photos</strong> if supported, or tap <strong>Save image</strong> on each photo. On desktop, separate downloads may require browser permission.</p>
+  <div class="inline exportBatchActions">
+   <button type="button" id="shareBatch" class="btn primary">Share all photos</button>
+   <button type="button" id="downloadBatch" class="btn">↓ Download separate files</button>
+  </div>
+  <div id="exportGalleryItems" class="exportGalleryItems" aria-live="polite"></div>
+  <p id="exportGalleryMessage" class="help" role="status"></p>
+ </div>
+</dialog>
+<dialog id="exportInspectDialog" class="frameLibrary" aria-labelledby="exportInspectTitle">
+   <div class="frameLibHead"><div><h2 id="exportInspectTitle">Export preview at 100%</h2><p id="exportInspectDimensions">Full-resolution pixel inspection</p></div><button id="closeExportInspect" type="button" class="btn small">Close</button></div>
+   <div class="exportInspectScroll"><canvas id="exportInspectCanvas" aria-label="Rendered export at its actual pixel dimensions"></canvas></div>
+   <p class="exportInspectNote">Scroll to examine the actual output pixels. The fit-to-screen preview may look the same size at different resolutions.</p>
+  </dialog>
+  <dialog id="actionModal" class="actionModal" aria-labelledby="actionModalTitle" aria-describedby="actionModalMessage">
+ <div class="actionModalHeader"><h2 id="actionModalTitle">Confirm action</h2></div>
+ <div class="actionModalBody"><p id="actionModalMessage"></p><input type="text" id="actionModalInput" maxlength="140" hidden aria-label="Enter name" /><p id="actionModalError" class="actionModalError" hidden>Please enter a name.</p></div>
+ <div class="actionModalFooter"><button id="actionModalCancel" class="btn" type="button">Cancel</button><button id="actionModalConfirm" class="btn primary" type="button">Confirm</button></div>
+</dialog>
+<style>
+#mf-dialog [hidden]{display:none!important}
+#mf-dialog .mf-body{padding:16px 20px}
+#mf-dialog .mf-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:12px 0}
+#mf-dialog .mf-form{max-width:380px;display:grid;gap:8px}
+#mf-dialog .mf-form label{font-size:13px;font-weight:700}
+#mf-dialog .mf-form input{padding:10px;border:1px solid #dce2f2;border-radius:10px;width:100%}
+#mf-dialog .mf-form button{justify-self:start}
+#mf-message{min-height:1.4em;font-size:13px;color:#354a73}
+#mf-list .frameLibCard strong{white-space:normal;overflow-wrap:anywhere}
+</style>
+<dialog id="mf-dialog" class="frameLibrary" aria-labelledby="mf-title">
+  <div class="frameLibHead">
+    <div><h2 id="mf-title">Shared templates</h2><p>Open published frames on any device. No account needed.</p></div>
+    <button id="mf-close" class="btn small" type="button" autofocus>Close</button>
+  </div>
+  <div class="mf-body">
+    <p class="help">Only frame artwork and layout settings are shared. Customer photos, edits, and exports stay on this device.</p>
+    <button id="mf-admin-toggle" class="btn small ghost" type="button">Administrator sign-in</button>
+    <form id="mf-form" class="mf-form" hidden>
+      <label for="mf-email">Work email</label>
+      <input type="email" id="mf-email" autocomplete="username" required maxlength="254">
+      <label for="mf-password">Password</label>
+      <input type="password" id="mf-password" autocomplete="current-password" required>
+      <button id="mf-signin" class="btn primary" type="submit">Sign in</button>
+    </form>
+    <div class="mf-row">
+      <strong id="mf-identity"></strong>
+      <button id="mf-signout" class="btn small" type="button" hidden>Sign out</button>
+    </div>
+    <p id="mf-message" role="status" aria-live="polite"></p>
+    <section id="mf-tools" aria-label="Shared template actions" hidden>
+      <div class="mf-row">
+        <button id="mf-publish" class="btn primary" type="button" hidden>Publish current frame</button>
+        <button id="mf-refresh" class="btn" type="button">Refresh library</button>
+      </div>
+      <div id="mf-list" class="frameLibGrid"></div>
+      <div class="mf-row">
+        <button id="mf-previous" class="btn small" type="button">Previous page</button>
+        <span id="mf-page"></span>
+        <button id="mf-next" class="btn small" type="button">Next page</button>
+      </div>
+    </section>
+  </div>
+</dialog>
+
+<script src="./sample_image-0.js" defer></script>
+<script src="./sample_image-1.js" defer></script>
+<script src="./sample_image-2.js" defer></script>
+<script src="./sample_image-3.js" defer></script>
+<script src="./sample_image-4.js" defer></script>
+<script src="./sample_image-5.js" defer></script>
+<script src="./gold_image-0.js" defer></script>
+<script src="./gold_image-1.js" defer></script>
+<script src="./gold_image-2.js" defer></script>
+<script src="./gold_image-3.js" defer></script>
+<script src="./editor.js" defer></script>
+<script src="./cloud-config.js" defer></script>
+<script src="./shared.js" defer></script>
+</body></html>
