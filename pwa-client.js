@@ -43,7 +43,8 @@
   window.addEventListener('offline', refreshStatus);
   refreshStatus();
 
-  if (!('serviceWorker' in navigator) || location.protocol !== 'https:') return;
+  const secureOrigin = location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname);
+  if (!('serviceWorker' in navigator) || !secureOrigin) return;
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js', { scope: './' })
       .then(reg => {
