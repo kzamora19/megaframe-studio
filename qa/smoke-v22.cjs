@@ -18,7 +18,13 @@ const assert = require('node:assert/strict');
   await page.locator('#mf-show-shared').click();
   assert.equal(await page.locator('#mf-title').textContent(),'Shared templates');
   assert.equal(await page.locator('#mf-tools').isVisible(),true);
+  await page.locator('#mf-close').click();
+  await page.locator('#openFrameLibrary').click();
+  await page.locator('#frameLibGrid .favoriteBtn').first().click();
+  await page.locator('#frameFavoritesOnly').check();
+  assert.equal(await page.locator('#frameLibGrid .frameLibCard').count(),1);
+  assert.equal(await page.locator('#frameLibGrid .favoriteBtn').first().getAttribute('aria-pressed'),'true');
   assert.deepEqual(errors,[],'Browser runtime errors: '+errors.join('; '));
-  console.log('PASS: private and shared libraries are separated; private requires authenticated sign-in.');
+  console.log('PASS: public/private libraries stay separated; frame favorites filter works.');
  } finally {await browser.close();}
 })().catch(err=>{console.error(err);process.exitCode=1;});
