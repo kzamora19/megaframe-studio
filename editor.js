@@ -377,6 +377,7 @@ async function initializeDraftRecovery() {
  }else draftStatus('Auto-save ready. Edits and imported photos stay on this device.');
  draftEnabled = true;
  $('saveDraftNow').onclick = () => { clearTimeout(draftTimer);saveCurrentDraft(); };
+ $('prefix').addEventListener('input', scheduleDraftSave);
  $('clearSavedDraft').onclick = async() => {
   if (!await confirmAction('Clear local recovery copy?',
    'Delete the locally saved recovery copy? Photos currently open in the editor will stay, but they will not be recoverable until a new save.','Clear recovery copy')) return;
