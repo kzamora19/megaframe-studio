@@ -251,6 +251,39 @@
       'Public library · no sign-in needed';
     el('list').replaceChildren();
     el('private-list').replaceChildren();
+    el('members-list').replaceChildren();
+    if (isAdmin() && activeTab==='members') {
+      if(!memberEntries.length){
+        const empty=document.createElement('p');
+        empty.className='help';empty.textContent='No approved accounts loaded. Select Refresh accounts.';
+        el('members-list').append(empty);
+      }
+      for(const person of memberEntries){
+        const card=document.createElement('article');
+        card.className='mfMemberCard';card.setAttribute('role','listitem');
+        const description=document.createElement('div');
+        const name=document.createElement('strong');
+        name.textContent=person.email||'Account';
+        const roleLabel=document.createElement('small');
+        roleLabel.textContent=' · '+String(person.role||'viewer').toUpperCase();
+        description.append(name,roleLabel);
+        const actions=document.createElement('div');
+        actions.className='mf-row';
+        if(person.user_id!==session?.uid){
+          actions.append(btn('Edit role',()=>{
+            el('member-email').value=person.email||'';
+            el('member-role').value=['admin','editor','viewer'].includes(person.role)?person.role:'viewer';
+            el('member-email').focus();
+          }));
+          actions.append(btn('Remove access',()=>run(()=>removeMember(person)),true));
+        }else{
+          const note=document.createElement('small');note.textContent='Your administrator account · protected';
+          actions.append(note);
+        }
+        card.append(description,actions);
+        el('members-list').append(card);
+      }
+    }
     if (activeTab === 'private') {
       if (!session) {
         const tip = document.createElement('p');
@@ -482,6 +515,50 @@
     message('Private template deleted.');
   }
 
+
+  // Administrator-only membership directory, read on demand and never cached on disk.
+  async function memberRpc(functionName,body) {
+    if(!isAdmin() || !session) throw Error('Administrator sign-in is required to manage accounts.');
+    const g=generation,token=await access();
+    if(g!==generation)throw Error('Your sign-in session changed.');
+    return request('/rest/v1/rpc/'+functionName,{method:'POST',body,token});
+  }
+  async function loadMembers() {
+    const users=await memberRpc('megaframe_list_members',{});
+    memberEntries=Array.isArray(users)?users:[];
+    paint();
+    message('Approved users refreshed.');
+  }
+  async function assignMember(email,newRole) {
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length>254)
+      throw Error('Enter a valid email address for an existing Supabase Auth account.');
+    if(!['admin','editor','viewer'].includes(newRole))
+      throw Error('Choose Administrator, Editor, or Viewer.');
+    if(newRole==='admin' && !await confirmAction(
+      'Grant administrator access?',
+      'An administrator can manage all approved members and published templates. Give this access only to a trusted person.',
+      'Grant administrator'))return;
+    try {
+      await memberRpc('megaframe_manage_member',{target_email:email,desired_role:newRole});
+    }catch(err){
+      if(err.status===400) throw Error('Could not assign role. Check that this user has already been created in Supabase Authentication.');
+      if(err.status===401||err.status===403) throw Error('You are not authorized to manage these accounts.');
+      throw err;
+    }
+    el('member-email').value='';
+    await loadMembers();
+    message('Account role updated. The user can sign in or refresh their library.');
+  }
+  async function removeMember(person) {
+    if(person.user_id===session?.uid)throw Error('You cannot remove your own administrator access.');
+    if(!await confirmAction('Remove MegaFrame access?',
+      'Remove '+person.email+' from approved application accounts? Their Supabase Authentication login is not deleted.',
+      'Remove access'))return;
+    await memberRpc('megaframe_manage_member',{target_email:person.email,desired_role:'remove'});
+    await loadMembers();
+    message('User access removed. Their authentication account was not deleted.');
+  }
+
   el('open').onclick = () => {
     el('dialog').showModal();
     adminFormOpen = false;
@@ -491,6 +568,16 @@
   };
   el('close').onclick = () => el('dialog').close();
   el('show-shared').onclick = () => { activeTab='shared';paint();run(sync); };
+  el('show-members').onclick = () => {
+    if(!isAdmin())return;
+    activeTab='members';paint();run(loadMembers);
+  };
+  el('members-refresh').onclick = () => run(loadMembers);
+  el('member-form').onsubmit=event=>{
+    event.preventDefault();
+    const email=el('member-email').value.trim(),newRole=el('member-role').value;
+    run(()=>assignMember(email,newRole));
+  };
   el('show-private').onclick = () => {
     activeTab='private'; paint();
     if (session) run(loadPrivate);
