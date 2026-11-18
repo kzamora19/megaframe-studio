@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MegaFrame Studio">
+<rect width="512" height="512" rx="100" fill="#07143c"/>
+<path d="M68 187v-58q0-30 30-30h86M328 99h86q30 0 30 30v58M68 325v58q0 30 30 30h86" fill="none" stroke="#00c4fb" stroke-width="29" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M328 413h86q30 0 30-30v-58" fill="none" stroke="#ffc128" stroke-width="29" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="130" y="160" width="252" height="218" rx="28" fill="none" stroke="white" stroke-width="25"/>
+<circle cx="307" cy="232" r="32" fill="#ffc128"/>
+<path d="M149 331l79-110 69 87 33-38 38 61z" fill="white"/>
+</svg>
