@@ -5,6 +5,7 @@
   const configured = /^https:\/\/[a-z0-9]+\.supabase\.co$/.test(cfg?.url || '') &&
     /^sb_publishable_[A-Za-z0-9_-]+$/.test(cfg?.key || '');
   let session = null, role = '', generation = 0, refreshing, checking, entries = [], busy = false, offset = 0, loaded = false, adminFormOpen = false;
+  let activeTab = 'shared', privateEntries = [], privateLoaded = false;
   const pageSize = 30;
   const metadata = 'id,name,revision,updated_at';
   // Store only publicly readable published template data; never cache tokens,
@@ -107,7 +108,7 @@
   const signedOut = () => {
     generation++;
     session = null; role = ''; refreshing = null; checking = null;
-    adminFormOpen = false;
+    adminFormOpen = false; privateEntries = []; privateLoaded = false; activeTab = 'shared';
     // Shared artwork is public. Signing out of administrator mode must not
     // remove a frame a customer already opened or erase local photo edits.
     paint();
@@ -153,7 +154,7 @@
   }
   async function api(table, params, options = {}) {
     const isPublicRead = table === 'templates' && (options.method || 'GET') === 'GET';
-    if (!session && !isPublicRead) throw Error('Administrator sign-in is required for this action.');
+    if (!session && !isPublicRead) throw Error('Sign in to use private cloud templates or manage published templates.');
     const g = generation, token = isPublicRead ? undefined : (session ? await access() : undefined);
     if (g !== generation) throw Error('The session changed. Try again.');
     try {
@@ -221,7 +222,14 @@
   function paint() {
     el('form').hidden = !configured || !!session || !adminFormOpen;
     el('admin-toggle').hidden = !configured || !!session;
-    el('tools').hidden = !configured;
+    el('title').textContent = activeTab==='private'?'My private cloud templates':'Shared templates';
+    el('tools').hidden = !configured || activeTab !== 'shared';
+    el('private-section').hidden = !configured || activeTab !== 'private';
+    el('show-shared').classList.toggle('primary',activeTab==='shared');
+    el('show-private').classList.toggle('primary',activeTab==='private');
+    el('private-save').disabled = busy;
+    el('private-refresh').disabled = busy;
+    el('private-save').hidden = !session || !['admin','staff'].includes(role);
     el('publish').hidden = !isAdmin();
     el('signout').hidden = !session;
     el('signin').disabled = busy;
@@ -230,8 +238,37 @@
     el('previous').disabled = busy || offset === 0;
     el('next').disabled = busy || entries.length <= pageSize;
     el('page').textContent = 'Page ' + (Math.floor(offset / pageSize) + 1);
-    el('identity').textContent = role === 'admin' ? 'Administrator' : role === 'staff' ? 'Staff · read only' : 'Public library · no sign-in needed';
+    el('identity').textContent = role === 'admin' ? 'Administrator' : role === 'staff' ? 'Staff · private cloud enabled' : 'Public library · no sign-in needed';
     el('list').replaceChildren();
+    el('private-list').replaceChildren();
+    if (activeTab === 'private') {
+      if (!session) {
+        const tip = document.createElement('p');
+        tip.textContent = 'Sign in with an approved MegaFrame account to access your private cloud templates.';
+        el('private-list').append(tip);
+      } else if (!privateEntries.length) {
+        const tip = document.createElement('p');
+        tip.textContent = privateLoaded ? 'No private templates saved yet.' : 'Select Refresh my templates to load your private cloud library.';
+        el('private-list').append(tip);
+      } else for (const row of privateEntries) {
+        const card = document.createElement('article');
+        card.className = 'frameLibCard';
+        const heading = document.createElement('strong');
+        heading.textContent = row.name;
+        const timestamp = document.createElement('small');
+        timestamp.textContent = 'Updated ' + new Date(row.updated_at).toLocaleString();
+        const actions = document.createElement('div');
+        actions.className = 'frameLibActions';
+        actions.append(
+          btn('Open private frame',()=>run(()=>openPrivate(row))),
+          btn('Rename',()=>run(()=>renamePrivate(row))),
+          btn('Replace with current frame',()=>run(()=>savePrivate(row))),
+          btn('Delete',()=>run(()=>removePrivate(row)),true)
+        );
+        card.append(heading,timestamp,actions);
+        el('private-list').append(card);
+      }
+    }
     if (!configured) return;
     if (!entries.length) {
       const empty = document.createElement('p');
@@ -364,6 +401,76 @@
     await mutate(row, 'DELETE');
     message('Shared template deleted.');
   }
+
+  // v2.2: Private cloud frame library uses authenticated owner-only RLS.
+  // Never add this data to the public service worker/IndexedDB cache.
+  function requirePersonalCloud() {
+    if (!session || !['admin','staff'].includes(role) || !navigator.onLine)
+      throw Error('Sign in with an approved account and connect to the internet to use private cloud templates.');
+  }
+  async function loadPrivate() {
+    requirePersonalCloud();
+    const rows = await api('private_templates', {
+      select:metadata,order:'updated_at.desc,id.asc',limit:'100'
+    });
+    privateEntries=rows;
+    privateLoaded=true;
+    paint();
+  }
+  async function openPrivate(row) {
+    requirePersonalCloud();
+    const rows=await api('private_templates',{id:'eq.'+row.id,select:metadata+',settings,artwork'});
+    if (rows.length!==1) throw Error('This private template has been removed or access has changed.');
+    const t=rows[0];
+    const data=checkArtwork(t.artwork),settings=cleanSettings(t.settings);
+    const frame=await decodedImage(data);
+    applyTemplate({id:'new',name:t.name,data,...settings,privateSource:true},data,frame);
+    setMode('map');
+    el('dialog').close();
+    notify('Private cloud frame opened. Save a local template copy if you need offline access.');
+  }
+  async function mutatePrivate(row,method,body) {
+    requirePersonalCloud();
+    const rows=await api('private_templates',row
+      ? {id:'eq.'+row.id,revision:'eq.'+row.revision,select:metadata}
+      : {select:metadata}, {method,body,returning:true});
+    await loadPrivate();
+    if (rows?.length!==1) throw Error('This private template was changed on another device. Review your refreshed library and try again.');
+  }
+  async function savePrivate(row) {
+    requirePersonalCloud();
+    if (!app.template || !app.frame) throw Error('Select or import a frame first.');
+    const name=await popupAction({
+      title:row?'Replace private cloud template':'Save private cloud template',
+      message:'Only approved frame artwork and layout settings will be uploaded to your private account. Imported customer photos stay on this device.',
+      value:row?.name||app.template.name.slice(0,140),
+      confirmLabel:row?'Replace private template':'Save privately'
+    });
+    if (name===null) return;
+    const settings=cleanSettings(app),artwork=checkArtwork(app.template.data);
+    await mutatePrivate(row,row?'PATCH':'POST',
+      row?{name,settings,artwork}:{owner_id:session.uid,name,settings,artwork});
+    message(row?'Private template replaced.':'Private template saved to your account.');
+  }
+  async function renamePrivate(row) {
+    requirePersonalCloud();
+    const name=await popupAction({
+      title:'Rename private cloud template',message:'Rename this template in your personal cloud library.',
+      value:row.name,confirmLabel:'Rename'
+    });
+    if(name===null||name===row.name)return;
+    await mutatePrivate(row,'PATCH',{name});
+    message('Private template renamed.');
+  }
+  async function removePrivate(row) {
+    requirePersonalCloud();
+    if (!await confirmAction('Delete private cloud template?',
+      'Permanently delete “'+row.name+'” from your private account? Local copies will not be deleted.',
+      'Delete private template')) return;
+    await mutatePrivate(row,'DELETE');
+    message('Private template deleted.');
+  }
+
   el('open').onclick = () => {
     el('dialog').showModal();
     adminFormOpen = false;
@@ -372,6 +479,14 @@
     if (configured) run(sync);
   };
   el('close').onclick = () => el('dialog').close();
+  el('show-shared').onclick = () => { activeTab='shared';paint();run(sync); };
+  el('show-private').onclick = () => {
+    activeTab='private'; paint();
+    if (session) run(loadPrivate);
+    else message('Sign in with an approved account to view your private cloud templates.');
+  };
+  el('private-save').onclick = () => run(()=>savePrivate(null));
+  el('private-refresh').onclick = () => run(loadPrivate);
   el('admin-toggle').onclick = () => { adminFormOpen = !adminFormOpen; paint(); };
   el('form').onsubmit = event => {
     event.preventDefault();
@@ -386,14 +501,15 @@
       }
       adminFormOpen = false;
       await sync();
-      message(session ? 'Administrator signed in. Shared library synchronized.' : 'Account not authorized for administration. Public templates remain available.');
+      message(session ? 'Signed in. Shared and private cloud libraries are available.' : 'This account is not approved. Public templates remain available.');
+      if (session && activeTab==='private') await loadPrivate();
     });
   };
   el('signout').onclick = async () => {
     const token = session?.access;
     signedOut();
     el('password').value = '';
-    message('Administrator signed out. Public templates are still available.');
+    message('Signed out. Private cloud information has been cleared from this session. Public templates remain available.');
     if (token) await request('/auth/v1/logout?scope=local', { method: 'POST', token }).catch(() => {});
   };
   el('refresh').onclick = () => run(async () => { offset = 0; await sync(); message(lastFetchOnline ? 'Shared library synchronized.' : 'Showing cached shared templates (offline).'); });

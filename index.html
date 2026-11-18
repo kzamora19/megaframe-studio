@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=blue-m-20261118" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=blue-m-20261118" />
-<title>MegaFrame Studio v2.1 | Photo Filters & Editing</title>
+<title>MegaFrame Studio v2.2 | Photo Filters & Editing</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input[type=file]{display:none}input[type=range]{accent-color:#265dff;width:100%}input[type=text],select{background:#fff;border:1px solid #dce2f2;border-radius:10px;outline:0;color:#172343;padding:10px 11px;width:100%;min-width:0}input[type=text]:focus,select:focus{border-color:#4167ff;box-shadow:0 0 0 3px #c5d3ff80}
@@ -184,7 +184,7 @@ button.danger:hover{background:#ffe9ec}
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="/icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.1</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.2</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
@@ -401,7 +401,7 @@ button.danger:hover{background:#ffe9ec}
   </div>
   <div class="mf-body">
     <p class="help">Only frame artwork and layout settings are shared. Customer photos, edits, and exports stay on this device.</p>
-    <button id="mf-admin-toggle" class="btn small ghost" type="button">Administrator sign-in</button>
+    <button id="mf-admin-toggle" class="btn small ghost" type="button">Sign in for personal cloud</button>
     <form id="mf-form" class="mf-form" hidden>
       <label for="mf-email">Work email</label>
       <input type="email" id="mf-email" autocomplete="username" required maxlength="254">
@@ -414,6 +414,10 @@ button.danger:hover{background:#ffe9ec}
       <button id="mf-signout" class="btn small" type="button" hidden>Sign out</button>
     </div>
     <p id="mf-message" role="status" aria-live="polite"></p>
+    <div class="mf-row" role="group" aria-label="Cloud template library type">
+      <button id="mf-show-shared" class="btn small primary" type="button">Published for everyone</button>
+      <button id="mf-show-private" class="btn small" type="button">My private cloud</button>
+    </div>
     <section id="mf-tools" aria-label="Shared template actions" hidden>
       <div class="mf-row">
         <button id="mf-publish" class="btn primary" type="button" hidden>Publish current frame</button>
@@ -425,6 +429,14 @@ button.danger:hover{background:#ffe9ec}
         <span id="mf-page"></span>
         <button id="mf-next" class="btn small" type="button">Next page</button>
       </div>
+    </section>
+    <section id="mf-private-section" aria-label="Your private cloud templates" hidden>
+      <p class="help">These frames are visible only to your approved signed-in account. They synchronize through Supabase when online; they are not stored in the public offline cache. Customer photos in your editing queue are never uploaded.</p>
+      <div class="mf-row">
+        <button id="mf-private-save" class="btn primary" type="button">Save current frame privately</button>
+        <button id="mf-private-refresh" class="btn" type="button">Refresh my templates</button>
+      </div>
+      <div id="mf-private-list" class="frameLibGrid"></div>
     </section>
   </div>
 </dialog>
