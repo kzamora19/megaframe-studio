@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=blue-m-20261118" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=blue-m-20261118" />
-<title>MegaFrame Studio v2.3 | Photo Filters & Editing</title>
+<title>MegaFrame Studio v2.4 | Photo Filters & Editing</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input[type=file]{display:none}input[type=range]{accent-color:#265dff;width:100%}input[type=text],select{background:#fff;border:1px solid #dce2f2;border-radius:10px;outline:0;color:#172343;padding:10px 11px;width:100%;min-width:0}input[type=text]:focus,select:focus{border-color:#4167ff;box-shadow:0 0 0 3px #c5d3ff80}
@@ -184,12 +184,16 @@ button.danger:hover{background:#ffe9ec}
 .photoQuality[data-grade="medium"]{border-color:#e4cf90;background:#fff9e9;color:#78540f}
 .photoQuality[data-grade="good"]{border-color:#b6dcca;background:#f1fbf6;color:#206044}
 .photoQuality strong{display:block;font-size:12px;margin-bottom:3px}
+.templateToolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.templateToolbar label{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:600}
+.templateToolbar select{max-width:185px;font-size:12px;padding:7px 8px}
+.favoriteBtn[aria-pressed="true"]{background:#fff2d8!important;color:#856000!important;border-color:#ecc76d!important}
 </style>
 </head>
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="/icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.3</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.4</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
@@ -352,6 +356,7 @@ button.danger:hover{background:#ffe9ec}
  <div class="frameLibBody">
   <div class="frameLibTabs" role="tablist" aria-label="Frame source"><button id="libTabSaved" type="button" role="tab" aria-selected="true" aria-controls="savedFramesPanel" class="active">My saved frames</button><button id="libTabOnline" type="button" role="tab" aria-selected="false" aria-controls="onlineFramesPanel">Search online</button></div>
   <section id="savedFramesPanel" role="tabpanel" aria-labelledby="libTabSaved"><input id="frameLibSearch" class="frameLibSearch" type="text" placeholder="Search saved frames or campaigns…" aria-label="Search frame library" />
+   <div class="templateToolbar"><label><input id="frameFavoritesOnly" type="checkbox" /> Favorites only</label><label for="frameLibSort">Sort</label><select id="frameLibSort"><option value="default">Default order</option><option value="name">Name A–Z</option><option value="favorites">Favorites first</option></select></div>
    <div id="frameLibGrid" class="frameLibGrid"></div>
    <button id="restoreBuiltins" class="btn small restoreSamples" type="button" hidden>↻ Restore original sample frames</button>
    <p class="frameLibInfo">Built-in sample frames can be removed from this library and restored later. Your own saved templates can be permanently deleted from this browser. Back up custom templates before clearing browser data.</p>
