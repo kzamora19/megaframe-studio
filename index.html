@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=blue-m-20261118" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=blue-m-20261118" />
-<title>MegaFrame Studio v2.4 | Photo Filters & Editing</title>
+<title>MegaFrame Studio v2.5 | Photo Filters & Editing</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input[type=file]{display:none}input[type=range]{accent-color:#265dff;width:100%}input[type=text],select{background:#fff;border:1px solid #dce2f2;border-radius:10px;outline:0;color:#172343;padding:10px 11px;width:100%;min-width:0}input[type=text]:focus,select:focus{border-color:#4167ff;box-shadow:0 0 0 3px #c5d3ff80}
@@ -188,12 +188,47 @@ button.danger:hover{background:#ffe9ec}
 .templateToolbar label{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:600}
 .templateToolbar select{max-width:185px;font-size:12px;padding:7px 8px}
 .favoriteBtn[aria-pressed="true"]{background:#fff2d8!important;color:#856000!important;border-color:#ecc76d!important}
+/* v2.5 Mobile editing: bigger touch targets, comfortable template library and predictable phone layout. */
+@media(max-width:720px){
+ html{scroll-padding-top:12px}
+ .appbar{flex-wrap:wrap;gap:10px;padding:12px 14px}
+ .appbar>.inline{flex-wrap:wrap;gap:7px;justify-content:flex-start}
+ .appbar .btn,.appbar .pwa-install{min-height:42px}
+ .sidebar{padding:14px 12px 24px}
+ .workspace{padding:14px 12px 30px}
+ .pinNav{position:relative!important;top:auto!important;z-index:2;margin:0 0 13px;padding:9px}
+ .pinNavGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .pinNav button{min-height:45px;white-space:normal;line-height:1.3;padding:8px 10px}
+ .sidebar>.section>.sectionHead{min-height:46px;padding:10px}
+ .sidebar .btn,.sidebar input:not([type="checkbox"]):not([type="radio"]),.sidebar select{min-height:43px}
+ .smartFitTools .btn{min-height:44px}
+ .photoActionRow .btn{min-height:44px}
+ .previewTop{flex-wrap:wrap;gap:9px}
+ .previewBody{padding:10px;min-height:180px}
+ .canvasShell{width:100%;max-width:520px}
+ .frameLibrary{width:calc(100vw - 18px);max-height:94dvh}
+ .frameLibHead{padding:13px 14px}
+ .frameLibBody,.mf-body{padding:12px 14px 18px}
+ .frameLibActions button{min-height:43px}
+ .frameLibTabs button{min-height:44px}
+ .frameLibGrid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px}
+ .frameLibCard>img{height:125px}
+ .mf-row{flex-wrap:wrap;gap:8px}
+ .mf-row .btn{min-height:42px}
+}
+@media(max-width:390px){
+ .brandname{font-size:15px}
+ .pinNav button{font-size:10px}
+ .frameLibGrid{grid-template-columns:1fr 1fr}
+ .frameLibActions{grid-template-columns:1fr}
+ .frameLibHead h2{font-size:16px}
+}
 </style>
 </head>
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="/icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.4</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.5</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
@@ -297,6 +332,7 @@ button.danger:hover{background:#ffe9ec}
    <div class="field"><div class="rangerow"><label for="zoom">Zoom</label><span class="value" id="zoomValue">100%</span></div><input id="zoom" type="range" min="10" max="300" step="1" value="100" /></div>
    <div class="field"><div class="rangerow"><label for="rotate">Rotation</label><span class="value" id="rotateValue">0°</span></div><input id="rotate" type="range" min="-180" max="180" value="0" /></div>
    <div class="field"><label for="fitMode">Photo fitting</label><select id="fitMode"><option value="cover">Fill frame (crop edges)</option><option value="contain">Fit full photo (may leave space)</option></select></div>
+   <p class="help" id="touchZoomHint">On touchscreens, use two fingers on the photo preview to zoom the selected picture without changing the frame.</p>
    <div class="smartFitTools"><button id="fitFullPhoto" class="btn small" type="button">Fit entire photo</button><button id="fillPhotoFrame" class="btn small" type="button">Fill frame</button><button id="centerPhoto" class="btn small" type="button">Auto-center</button><button id="resetPhotoPosition" class="btn small" type="button">Reset position</button></div>
    <div id="photoQuality" class="photoQuality" data-grade="none" role="status" aria-live="polite"><strong>Photo quality check</strong>Upload a photo to check its resolution at the selected export size.</div>
    <p class="help">In <b>Adjust photo</b> mode, click a collage cell, then drag to position its photo. Each image retains its own zoom and rotation settings.</p>

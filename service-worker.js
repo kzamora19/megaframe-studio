@@ -1,5 +1,5 @@
 /* MegaFrame Studio PWA — application shell only. Never cache API calls, auth or credentials. */
-const VERSION = 'mf-pwa-v8-favorites-20261118';
+const VERSION = 'mf-pwa-v9-mobile-touch-20261118';
 const CACHE = 'megaframe-shell-' + VERSION;
 const CORE = [
   '/', '/manifest.webmanifest', '/pwa-client.js',
