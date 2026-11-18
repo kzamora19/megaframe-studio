@@ -14,7 +14,7 @@ const assert = require('node:assert/strict');
   await page.locator('#photosInput').setInputFiles({name:'test-photo.png',mimeType:'image/png',buffer:png});
   await page.waitForFunction(() => document.querySelector('#photoCount')?.textContent?.includes('1 photo'),{timeout:20000});
   await page.locator('[data-panel="4"]').click();
-  assert.equal(await page.locator('#photoQuality').getAttribute('data-grade'),'low');
+  await page.waitForFunction(() => document.getElementById('photoQuality')?.dataset.grade==='low',{timeout:15000});
   await page.locator('#fitFullPhoto').click();
   assert.equal(await page.locator('#fitMode').inputValue(),'contain');
   await page.locator('#fillPhotoFrame').click();

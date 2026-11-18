@@ -1,0 +1,92 @@
+name: Build, verify and publish MegaFrame to GitHub Pages
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - '*.js'
+      - 'manifest.webmanifest'
+      - 'icons/**'
+      - 'scripts/build_pages_site.py'
+      - 'qa/smoke-pages.cjs'
+      - '.github/workflows/pages.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - '*.js'
+      - 'manifest.webmanifest'
+      - 'icons/**'
+      - 'scripts/build_pages_site.py'
+      - 'qa/smoke-pages.cjs'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: megaframe-pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify JavaScript syntax
+        run: |
+          node --check editor.js
+          node --check shared.js
+          node --check pwa-client.js
+          node --check service-worker.js
+          node --check qa/smoke-pages.cjs
+      - name: Build self-contained static artifact and local test paths
+        run: |
+          python3 scripts/build_pages_site.py _site
+          mkdir -p _preview/megaframe-studio
+          cp -a _site/. _preview/
+          cp -a _site/. _preview/megaframe-studio/
+      - name: Install browser
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test editing, cloud permissions, touch UI and offline project path
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory _preview >/tmp/megaframe-pages-test.log 2>&1 &
+          sleep 3
+          node qa/smoke-v21.cjs
+          node qa/smoke-v22.cjs
+          node qa/smoke-v25.cjs
+          node qa/smoke-v26.cjs
+          node qa/smoke-pages.cjs
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable/configure GitHub Pages for this repository
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Prepare static site
+        run: python3 scripts/build_pages_site.py _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        name: Publish app to GitHub Pages
+        uses: actions/deploy-pages@v4

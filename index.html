@@ -4,12 +4,16 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#07143c" />
+<meta name="referrer" content="no-referrer" />
+<!-- GitHub Pages does not support per-site security response headers; this CSP is
+     additionally enforced via Vercel headers on the legacy domain. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://upload.wikimedia.org https://commons.wikimedia.org; connect-src 'self' https://commons.wikimedia.org https://upload.wikimedia.org https://vmyoxoiygfcecgkbavgg.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="MegaFrame" />
-<link rel="manifest" href="/manifest.webmanifest" />
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=blue-m-20261118" />
-<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=blue-m-20261118" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=blue-m-20261118" />
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=blue-m-20261118" />
 <title>MegaFrame Studio v2.6 | Photo Filters & Editing</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
@@ -236,7 +240,7 @@ button.danger:hover{background:#ffe9ec}
 </head>
 <body>
 <header class="appbar">
- <div class="brand"><img class="logo" src="/icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
+ <div class="brand"><img class="logo" src="./icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
  <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.6</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>

@@ -43,9 +43,10 @@
   window.addEventListener('offline', refreshStatus);
   refreshStatus();
 
-  if (!('serviceWorker' in navigator) || location.protocol !== 'https:') return;
+  const secureOrigin = location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname);
+  if (!('serviceWorker' in navigator) || !secureOrigin) return;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
       .then(reg => {
         const notifyUpdate = () => {
           if (!navigator.serviceWorker.controller || !reg.waiting) return;
@@ -60,8 +61,12 @@
           reg.installing?.addEventListener('statechange', notifyUpdate);
         });
       }).catch(() => {});
-    let reloading = false;
+    // A first-time installation calls clients.claim() and changes the controller.
+    // Do not reload and interrupt an active photo import on that first claim.
+    // Only reload when an existing service worker has been replaced by an update.
+    let reloading = false, hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController) { hadController = true; return; }
       if (!reloading) { reloading = true; location.reload(); }
     });
   });
