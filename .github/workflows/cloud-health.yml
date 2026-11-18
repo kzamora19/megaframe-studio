@@ -3,7 +3,12 @@ name: Verify MegaFrame shared-template API (public read only)
 on:
   push:
     branches:
-      - feature/custom-icon-cloud-sync
+      - main
+    paths:
+      - .github/workflows/cloud-health.yml
+      - cloud-config.js
+      - shared.js
+  pull_request:
     paths:
       - .github/workflows/cloud-health.yml
       - cloud-config.js
