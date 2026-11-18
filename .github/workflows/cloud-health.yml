@@ -1,0 +1,53 @@
+name: Verify MegaFrame shared-template API (public read only)
+
+on:
+  push:
+    branches:
+      - feature/custom-icon-cloud-sync
+    paths:
+      - .github/workflows/cloud-health.yml
+      - cloud-config.js
+      - shared.js
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-data-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check shared template read and membership exposure
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, pathlib, re, urllib.request, urllib.error
+          js = pathlib.Path('cloud-config.js').read_text()
+          m = re.search(r'Object\.freeze\((\{.*?\})\)', js)
+          if not m:
+              raise SystemExit('Cloud config not found')
+          cfg = json.loads(m.group(1))
+          url = cfg['url'].rstrip('/')
+          def query(path):
+              req=urllib.request.Request(url+path, headers={'apikey':cfg['key'], 'Accept':'application/json'})
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as response:
+                      return response.status,json.load(response)
+              except urllib.error.HTTPError as err:
+                  return err.code, None
+          status, rows=query('/rest/v1/megaframe_templates?select=id,name,revision,updated_at&limit=1')
+          print('Published templates anonymous GET status:',status)
+          if status != 200 or not isinstance(rows,list):
+              raise SystemExit('Shared template public read unavailable; verify schema grants and RLS.')
+          print('Published templates query succeeded. Rows returned:',len(rows))
+          member_status, members=query('/rest/v1/megaframe_members?select=user_id,role&limit=1')
+          print('Anonymous membership endpoint status:',member_status)
+          if isinstance(members,list) and members:
+              raise SystemExit('Anonymous membership data exposed; audit RLS and grants.')
+          print('No membership rows were returned to anonymous requests.')
+          print('NOTE: This cannot verify admin writes, RLS policy definitions or live cross-device editing.')
+          PY
