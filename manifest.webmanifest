@@ -25,7 +25,7 @@
       "src": "/icons/icon-512.png?v=custom-20261118",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/apple-touch-icon.png?v=custom-20261118",
