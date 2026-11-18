@@ -45,7 +45,7 @@
 
   if (!('serviceWorker' in navigator) || location.protocol !== 'https:') return;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
       .then(reg => {
         const notifyUpdate = () => {
           if (!navigator.serviceWorker.controller || !reg.waiting) return;
