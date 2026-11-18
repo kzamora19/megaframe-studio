@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=blue-m-20261118" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=blue-m-20261118" />
-<title>MegaFrame Studio v2.2 | Photo Filters & Editing</title>
+<title>MegaFrame Studio v2.3 | Photo Filters & Editing</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input[type=file]{display:none}input[type=range]{accent-color:#265dff;width:100%}input[type=text],select{background:#fff;border:1px solid #dce2f2;border-radius:10px;outline:0;color:#172343;padding:10px 11px;width:100%;min-width:0}input[type=text]:focus,select:focus{border-color:#4167ff;box-shadow:0 0 0 3px #c5d3ff80}
@@ -179,12 +179,17 @@ button.danger:hover{background:#ffe9ec}
 .draftTools .draftStatus{font-size:11px;line-height:1.5;color:#485b86}
 .smartFitTools{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
 .smartFitTools .btn{min-width:0;text-align:center}
+.photoQuality{background:#f4f7ff;border:1px solid #dbe5ff;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.5;color:#354665}
+.photoQuality[data-grade="low"]{border-color:#e8b9b9;background:#fff4f2;color:#903b32}
+.photoQuality[data-grade="medium"]{border-color:#e4cf90;background:#fff9e9;color:#78540f}
+.photoQuality[data-grade="good"]{border-color:#b6dcca;background:#f1fbf6;color:#206044}
+.photoQuality strong{display:block;font-size:12px;margin-bottom:3px}
 </style>
 </head>
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="/icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.2</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.3</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
@@ -289,6 +294,7 @@ button.danger:hover{background:#ffe9ec}
    <div class="field"><div class="rangerow"><label for="rotate">Rotation</label><span class="value" id="rotateValue">0°</span></div><input id="rotate" type="range" min="-180" max="180" value="0" /></div>
    <div class="field"><label for="fitMode">Photo fitting</label><select id="fitMode"><option value="cover">Fill frame (crop edges)</option><option value="contain">Fit full photo (may leave space)</option></select></div>
    <div class="smartFitTools"><button id="fitFullPhoto" class="btn small" type="button">Fit entire photo</button><button id="fillPhotoFrame" class="btn small" type="button">Fill frame</button><button id="centerPhoto" class="btn small" type="button">Auto-center</button><button id="resetPhotoPosition" class="btn small" type="button">Reset position</button></div>
+   <div id="photoQuality" class="photoQuality" data-grade="none" role="status" aria-live="polite"><strong>Photo quality check</strong>Upload a photo to check its resolution at the selected export size.</div>
    <p class="help">In <b>Adjust photo</b> mode, click a collage cell, then drag to position its photo. Each image retains its own zoom and rotation settings.</p>
    <div class="inline"><button id="resetPhoto" class="btn small">Reset this photo</button><button id="applyAll" class="btn small">Apply fitting to all photos</button></div>
    <div class="photoActionRow"><button id="replaceSelectedPhoto" class="btn small" type="button">↻ Replace selected photo</button><button id="deleteSelectedPhoto" class="btn small danger" type="button">✕ Delete selected photo</button></div>
