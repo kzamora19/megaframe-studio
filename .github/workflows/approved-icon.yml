@@ -1,0 +1,37 @@
+name: Build approved MegaFrame M icons
+
+on:
+  push:
+    branches:
+      - feature/approved-blue-m-branding
+    paths:
+      - assets/custom-icon-source.webp.base64
+      - scripts/build_icons.py
+      - .github/workflows/approved-icon.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Pillow
+        run: python -m pip install Pillow==11.3.0
+      - name: Generate installed app icon sizes
+        run: python scripts/build_icons.py
+      - name: Commit icon assets
+        shell: bash
+        run: |
+          git add icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png
+          if git diff --cached --quiet; then
+            echo "No icon changes."
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Render blue M installed app icons'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
