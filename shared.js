@@ -66,6 +66,39 @@
       } catch { resolve(); }
     });
   }
+  // Reconcile already opened shared frames whenever another device publishes
+  // a newer revision. Keep public artwork only; never persist auth tokens.
+  async function reconcileCachedDetails(rows) {
+    const stale = [];
+    for (const row of rows.slice(0, pageSize)) {
+      const old = await publicCacheRead('details', row.id);
+      if (old && (old.revision !== row.revision || old.updated_at !== row.updated_at))
+        stale.push(row);
+    }
+    // Sequential bounded network work avoids overloading Supabase and
+    // ensures caches never silently overwrite a newer published revision.
+    for (const row of stale) {
+      if (!navigator.onLine) break;
+      try {
+        const results = await api('templates', {
+          id: 'eq.' + row.id, select: metadata + ',settings,artwork'
+        });
+        if (!results?.length) {
+          await publicCacheDelete('details', row.id);
+          continue;
+        }
+        const latest = results[0];
+        checkArtwork(latest.artwork);
+        cleanSettings(latest.settings);
+        await publicCacheWrite('details', row.id, latest);
+      } catch (error) {
+        // Preserve a previously opened copy while the connection is unstable.
+        // The next successful sync will retry this revision.
+        if (error?.status) throw error;
+        break;
+      }
+    }
+  }
   function canUseOfflineCopy(err) {
     return !navigator.onLine || (err && !err.status);
   }
@@ -156,9 +189,11 @@
             limit: String(pageSize + 1), offset: String(offset) });
         }
         await publicCacheWrite('pages', offset, entries);
+        await reconcileCachedDetails(entries);
         lastFetchOnline = true;
         loaded = true;
         paint();
+        message('Online · shared templates synchronized at ' + new Date().toLocaleTimeString());
       } catch (err) {
         if (!canUseOfflineCopy(err)) throw err;
         const cached = await publicCacheRead('pages', offset);
@@ -290,7 +325,7 @@
     setMode('map');
     el('dialog').close();
     notify(usedCache ? 'Offline copy opened. Changes to shared templates sync when online.' :
-      'Opened shared frame. Save template makes a local copy.');
+      'Opened cloud frame. Save template makes a local copy; publish it to share your changes.');
   }
   async function mutate(row, method, body) {
     if (!navigator.onLine) throw Error('Connect to the internet to publish or change shared templates.');
