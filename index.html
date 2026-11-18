@@ -7,7 +7,7 @@
 <meta name="referrer" content="no-referrer" />
 <!-- GitHub Pages does not support per-site security response headers; this CSP is
      additionally enforced via Vercel headers on the legacy domain. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://upload.wikimedia.org https://commons.wikimedia.org; connect-src 'self' https://commons.wikimedia.org https://upload.wikimedia.org https://vmyoxoiygfcecgkbavgg.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob: https://upload.wikimedia.org https://commons.wikimedia.org https://accounts.google.com https://www.gstatic.com; connect-src 'self' https://commons.wikimedia.org https://upload.wikimedia.org https://vmyoxoiygfcecgkbavgg.supabase.co https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="MegaFrame" />
@@ -241,7 +241,7 @@ button.danger:hover{background:#ffe9ec}
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="./icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.6</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><button id="drive-open" class="btn small ghost" type="button">Google Drive backup</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.6 + Drive</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
@@ -515,6 +515,63 @@ button.danger:hover{background:#ffe9ec}
   </div>
 </dialog>
 
+<style>
+#drive-dialog[hidden],#drive-dialog [hidden]{display:none!important}
+#drive-dialog{width:min(690px,calc(100vw - 24px));max-height:92dvh;border:0;border-radius:18px;padding:0;box-shadow:0 22px 65px #101f4866}
+#drive-dialog::backdrop{background:#14234599}
+.driveHead{display:flex;align-items:start;justify-content:space-between;gap:12px;padding:18px 22px;background:#eef3ff}
+.driveHead h2{font-size:18px;margin:0 0 5px;color:#18336d}
+.driveHead p{font-size:12px;color:#566888;margin:0}
+.driveBody{padding:18px 22px;overflow:auto;max-height:calc(92dvh - 80px)}
+.driveBody h3{font-size:14px;margin:18px 0 8px}
+.driveBody .driveControls{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.driveBody .driveControls .btn{min-height:42px}
+.driveBody .driveNotice{background:#f1f6ff;border:1px solid #d7e4ff;border-radius:11px;padding:10px 12px;font-size:12px;line-height:1.5;color:#35486e}
+.driveBody .driveNotice strong{display:block}
+.driveBody .drivePrivacy{display:flex;gap:8px;align-items:start;font-size:12px;line-height:1.5;margin:11px 0}
+.driveBody .drivePrivacy input{margin-top:3px;accent-color:#2454f0}
+.driveBody #drive-status{font-size:12px;color:#345b8d;min-height:20px;line-height:1.5;margin:10px 0}
+.driveBody #drive-list{display:grid;gap:8px;margin-bottom:10px}
+.driveBackupCard{border:1px solid #e0e9f7;border-radius:12px;padding:11px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;background:#fff}
+.driveBackupCard strong{font-size:12px;flex:1 1 210px;overflow-wrap:anywhere}
+.driveBackupCard small{font-size:11px;color:#62728b;flex:1 1 140px}
+.driveBackupCard .btn{min-height:40px}
+.driveBody details{border:1px solid #e0e8f5;border-radius:12px;padding:11px 13px;margin-top:14px}
+.driveBody summary{cursor:pointer;font-weight:700;font-size:12px}
+.driveBody input[type="text"]{min-height:43px;width:100%;margin:7px 0}
+.driveBody a{color:#2552c2}
+@media(max-width:720px){.driveHead,.driveBody{padding:13px 15px}.driveBackupCard .btn{flex:1 1 100%}}
+</style>
+<dialog id="drive-dialog" aria-labelledby="drive-title">
+  <div class="driveHead">
+    <div><h2 id="drive-title">Google Drive backups</h2><p>Optional backups and restoration — separate from Supabase templates</p></div>
+    <button id="drive-close" class="btn small" type="button">Close</button>
+  </div>
+  <div class="driveBody">
+    <div class="driveNotice"><strong>Google Drive is optional.</strong> Supabase still handles your shared/private templates and Administrator, Editor and Viewer roles. These Drive backups belong to the Google account you authorize. Photos remain local by default.</div>
+    <div class="driveControls">
+      <button id="drive-connect" class="btn primary" type="button">Connect Google Drive</button>
+      <button id="drive-disconnect" class="btn" type="button" hidden>Disconnect</button>
+      <span id="drive-connection" class="help">Not connected</span>
+    </div>
+    <p id="drive-status" role="status" aria-live="polite"></p>
+    <h3>Create a backup</h3>
+    <label class="drivePrivacy"><input id="drive-photos" type="checkbox" /> <span>Include imported customer photos and adjustments (full project backup). <strong>Off by default.</strong> Enabling this will upload the images to your Google Drive after a separate confirmation.</span></label>
+    <div class="driveControls"><button id="drive-backup" class="btn primary" type="button" disabled>Back up current frame</button><button id="drive-refresh" class="btn" type="button" disabled>Refresh backups</button></div>
+    <p class="help">Frame-only backups include the selected frame artwork, opening, borders and layout settings, but never imported customer photos. Backups are saved as JSON in a visible “MegaFrame Studio” folder in your own Google Drive; the app does not delete existing backups.</p>
+    <h3>Restore from Google Drive</h3>
+    <div id="drive-list" aria-label="Google Drive backups"></div>
+    <details id="drive-settings">
+      <summary>Google connection settings</summary>
+      <p class="help">Before connecting for the first time, the app owner must enable the Google Drive API and register a Google OAuth 2.0 <strong>Web application</strong> at Google Cloud. Authorized JavaScript origin: <code>https://kzamora19.github.io</code>. Use the <code>drive.file</code> scope. This is a public Client ID, not a Google password or client secret.</p>
+      <label for="drive-client-id" class="help"><strong>Google OAuth Web Client ID</strong></label>
+      <input id="drive-client-id" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="123456789-abcdef.apps.googleusercontent.com" aria-describedby="drive-client-hint"/>
+      <div class="driveControls"><button id="drive-save-client" class="btn" type="button">Save Client ID on this device</button><a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Google OAuth credentials</a></div>
+      <p id="drive-client-hint" class="help">Saving the Client ID only configures this browser. For all users to connect automatically, the app owner can publish the same public Client ID in <code>google-drive-config.js</code>.</p>
+    </details>
+  </div>
+</dialog>
+
 <script src="./sample_image-0.js" defer></script>
 <script src="./sample_image-1.js" defer></script>
 <script src="./sample_image-2.js" defer></script>
@@ -527,6 +584,8 @@ button.danger:hover{background:#ffe9ec}
 <script src="./gold_image-3.js" defer></script>
 <script src="./editor.js" defer></script>
 <script src="./cloud-config.js" defer></script>
+<script src="./google-drive-config.js" defer></script>
+<script src="./google-drive.js" defer></script>
 <script src="./shared.js" defer></script>
 <script src="./pwa-client.js" defer></script>
 </body></html>
