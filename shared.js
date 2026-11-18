@@ -7,8 +7,70 @@
   let session = null, role = '', generation = 0, refreshing, checking, entries = [], busy = false, offset = 0, loaded = false, adminFormOpen = false;
   const pageSize = 30;
   const metadata = 'id,name,revision,updated_at';
+  // Store only publicly readable published template data; never cache tokens,
+  // passwords, roles or authenticated API responses.
+  const PUBLIC_CACHE_DB = 'megaframe_shared_public_v1';
+  let publicDbPromise, lastFetchOnline = false;
+  function publicDb() {
+    if (publicDbPromise) return publicDbPromise;
+    publicDbPromise = new Promise(resolve => {
+      if (!('indexedDB' in window)) return resolve(null);
+      try {
+        const request = indexedDB.open(PUBLIC_CACHE_DB, 1);
+        request.onupgradeneeded = () => {
+          for (const name of ['pages', 'details']) {
+            if (!request.result.objectStoreNames.contains(name))
+              request.result.createObjectStore(name);
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => resolve(null);
+      } catch { resolve(null); }
+    });
+    return publicDbPromise;
+  }
+  async function publicCacheRead(store, key) {
+    const db = await publicDb();
+    if (!db) return null;
+    return new Promise(resolve => {
+      try {
+        const request = db.transaction(store, 'readonly').objectStore(store).get(key);
+        request.onsuccess = () => resolve(request.result ?? null);
+        request.onerror = () => resolve(null);
+      } catch { resolve(null); }
+    });
+  }
+  async function publicCacheWrite(store, key, value) {
+    const db = await publicDb();
+    if (!db) return;
+    await new Promise(resolve => {
+      try {
+        const tx = db.transaction(store, 'readwrite');
+        tx.objectStore(store).put(value, key);
+        tx.oncomplete = resolve;
+        tx.onerror = resolve;
+        tx.onabort = resolve;
+      } catch { resolve(); }
+    });
+  }
+  async function publicCacheDelete(store, key) {
+    const db = await publicDb();
+    if (!db) return;
+    await new Promise(resolve => {
+      try {
+        const tx = db.transaction(store, 'readwrite');
+        tx.objectStore(store).delete(key);
+        tx.oncomplete = resolve;
+        tx.onerror = resolve;
+        tx.onabort = resolve;
+      } catch { resolve(); }
+    });
+  }
+  function canUseOfflineCopy(err) {
+    return !navigator.onLine || (err && !err.status);
+  }
   const message = value => { el('message').textContent = value; };
-  const isAdmin = () => role === 'admin';
+  const isAdmin = () => role === 'admin' && navigator.onLine;
   const signedOut = () => {
     generation++;
     session = null; role = ''; refreshing = null; checking = null;
@@ -74,25 +136,44 @@
     if (checking) return checking;
     const g = generation, page = offset;
     checking = (async () => {
-      if (session) {
-        const memberships = await api('members', { select: 'role', user_id: 'eq.' + session.uid });
-        const current = memberships[0]?.role;
-        if (!['admin', 'staff'].includes(current)) {
-          signedOut();
-          message('This account cannot manage templates. Public templates remain available.');
-        } else role = current;
-      } else role = '';
-      // Published templates are readable under the Supabase anon role.
-      // No email/password or account registration is required for browsing.
-      entries = await api('templates', { select: metadata, order: 'updated_at.desc,id.asc',
-        limit: String(pageSize + 1), offset: String(page) });
-      if (!entries.length && offset) offset = 0;
-      if (page !== offset) {
+      lastFetchOnline = false;
+      try {
+        if (!navigator.onLine) throw Error('No network connection.');
+        if (session) {
+          const memberships = await api('members', { select: 'role', user_id: 'eq.' + session.uid });
+          const current = memberships[0]?.role;
+          if (!['admin', 'staff'].includes(current)) {
+            signedOut();
+            message('This account cannot manage templates. Public templates remain available.');
+          } else role = current;
+        } else role = '';
+        // Cloud is authoritative whenever online. Only published public metadata is cached.
         entries = await api('templates', { select: metadata, order: 'updated_at.desc,id.asc',
-          limit: String(pageSize + 1), offset: String(offset) });
+          limit: String(pageSize + 1), offset: String(page) });
+        if (!entries.length && offset) offset = 0;
+        if (page !== offset) {
+          entries = await api('templates', { select: metadata, order: 'updated_at.desc,id.asc',
+            limit: String(pageSize + 1), offset: String(offset) });
+        }
+        await publicCacheWrite('pages', offset, entries);
+        lastFetchOnline = true;
+        loaded = true;
+        paint();
+      } catch (err) {
+        if (!canUseOfflineCopy(err)) throw err;
+        const cached = await publicCacheRead('pages', offset);
+        if (!cached) {
+          entries = [];
+          loaded = true;
+          paint();
+          message('Offline: no saved shared-library page yet. Connect once to browse templates.');
+          return;
+        }
+        entries = cached;
+        loaded = true;
+        paint();
+        message('Offline: showing the last synchronized shared-template list. Previously opened frames are available.');
       }
-      loaded = true;
-      paint();
     })().finally(() => { if (g === generation) checking = null; });
     return checking;
   }
@@ -182,22 +263,43 @@
   }
   async function openShared(row) {
     const g = generation;
-    const result = await api('templates', { id: 'eq.' + row.id, select: metadata + ',settings,artwork' });
-    if (!result.length) { await sync(); throw Error('This template is no longer available.'); }
-    const t = result[0], data = checkArtwork(t.artwork), settings = cleanSettings(t.settings);
+    let t, usedCache = false;
+    if (navigator.onLine) {
+      try {
+        const result = await api('templates', { id: 'eq.' + row.id, select: metadata + ',settings,artwork' });
+        if (!result.length) {
+          await publicCacheDelete('details', row.id);
+          await sync();
+          throw Error('This template is no longer available.');
+        }
+        t = result[0];
+      } catch (err) {
+        if (!canUseOfflineCopy(err)) throw err;
+      }
+    }
+    if (!t) {
+      t = await publicCacheRead('details', row.id);
+      usedCache = true;
+      if (!t) throw Error('This shared frame is not cached on this device. Open it online once first.');
+    }
+    const data = checkArtwork(t.artwork), settings = cleanSettings(t.settings);
     const frame = await decodedImage(data);
     if (g !== generation) return;
+    if (!usedCache) await publicCacheWrite('details', row.id, t);
     applyTemplate({ id: 'new', sharedSource: true, name: t.name, data, ...settings }, data, frame);
     setMode('map');
     el('dialog').close();
-    notify('Opened shared frame. Save template makes a local copy.');
+    notify(usedCache ? 'Offline copy opened. Changes to shared templates sync when online.' :
+      'Opened shared frame. Save template makes a local copy.');
   }
   async function mutate(row, method, body) {
+    if (!navigator.onLine) throw Error('Connect to the internet to publish or change shared templates.');
     await sync();
     requireAdmin();
     const changes = await api('templates', row
       ? { id: 'eq.' + row.id, revision: 'eq.' + row.revision, select: metadata }
       : { select: metadata }, { method, body, returning: true });
+    if (row) await publicCacheDelete('details', row.id);
     await sync();
     if (changes?.length !== 1) throw Error('This template changed on another device. Review the refreshed list and try again.');
   }
@@ -259,7 +361,7 @@
     message('Administrator signed out. Public templates are still available.');
     if (token) await request('/auth/v1/logout?scope=local', { method: 'POST', token }).catch(() => {});
   };
-  el('refresh').onclick = () => run(async () => { offset = 0; await sync(); message('Shared library synchronized.'); });
+  el('refresh').onclick = () => run(async () => { offset = 0; await sync(); message(lastFetchOnline ? 'Shared library synchronized.' : 'Showing cached shared templates (offline).'); });
   el('publish').onclick = () => run(() => saveShared(null));
   el('previous').onclick = () => run(async () => { offset = Math.max(0, offset - pageSize); await sync(); });
   el('next').onclick = () => run(async () => { offset += pageSize; await sync(); });

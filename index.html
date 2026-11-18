@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#07143c" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="MegaFrame" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
 <title>MegaFrame Studio v2.0 | Photo Filters & Editing</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
@@ -161,13 +168,23 @@ button.danger:hover{background:#ffe9ec}
 .thumb .remove{display:none !important}
 .exportBatchActions{flex-wrap:wrap;margin:4px 0 16px}.exportGalleryItems{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}.exportFileCard{min-width:0;border:1px solid #e0e7f6;border-radius:12px;padding:9px;display:flex;flex-direction:column;gap:8px}.exportFileCard img{width:100%;aspect-ratio:1;object-fit:contain;background:#f2f6fd;border-radius:8px}.exportFileCard strong{font-size:11px;overflow-wrap:anywhere}.exportFileCard .btn{width:100%}.exportGalleryItems .help{margin:0}@media(max-width:720px){.exportBatchActions{flex-direction:column;align-items:stretch}.exportBatchActions>.btn{width:100%}}
 .liveExportHint{background:#eef4ff;border:1px solid #c8d9ff;color:#274477;border-radius:11px;padding:10px 12px;margin-top:12px;display:grid;gap:4px;font-size:12px;line-height:1.35}.liveExportHint strong{color:#1d43c6;font-weight:850}.liveExportHint small{color:#6077a0;line-height:1.4}.exportPreviewMeta{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}.exportPreviewMeta small{white-space:nowrap}.exportPreviewMeta .btn{padding:7px 9px;font-size:11px}.canvasShell #exportPreviewCanvas{width:100%;height:auto;display:block;max-width:100%;border-radius:5px}.canvasShell #exportPreviewCanvas[hidden]{display:none!important}.canvasShell.liveExport{touch-action:pan-y}.canvasShell.liveExport #previewCanvas{display:none}.canvasShell.liveExport #exportPreviewCanvas{display:block;touch-action:pan-y}.exportInspectScroll{overflow:auto;max-height:68vh;padding:16px;background:#e9edf6;text-align:center}.exportInspectScroll canvas{display:block;margin:0 auto;width:auto;height:auto;max-width:none;background:#fff;box-shadow:0 2px 8px #1b336055}.exportInspectNote{padding:10px 20px 16px;font-size:11px;color:#6b7c9b}@media(max-width:720px){.exportPreviewMeta{justify-content:flex-start}.previewTop{align-items:flex-start;flex-wrap:wrap}.exportInspectScroll{max-height:65vh}}
+
+.pwa-status{font-size:11px;color:#526985;white-space:normal}
+.pwa-install{white-space:nowrap}
+.pwa-update{padding:10px 18px;background:#fff7db;color:#654b08;font-size:12px;display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap}
+.pwa-update[hidden],.pwa-install[hidden]{display:none!important}
+@media(max-width:720px){.pwa-install{font-size:11px}.pwa-status{font-size:10px}}
 </style>
 </head>
 <body>
 <header class="appbar">
  <div class="brand"><div class="logo">M</div><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.0</span></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.0</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
+<div id="pwa-update" class="pwa-update" role="status" hidden>
+  A new version of MegaFrame Studio is available. Save or export any work before updating.
+  <button id="pwa-update-reload" class="btn small" type="button">Update &amp; reload</button>
+</div>
 <main class="appbody">
 <aside class="sidebar">
 <nav id="pinNav" class="pinNav" aria-label="Section navigation">
@@ -418,4 +435,5 @@ button.danger:hover{background:#ffe9ec}
 <script src="./editor.js" defer></script>
 <script src="./cloud-config.js" defer></script>
 <script src="./shared.js" defer></script>
+<script src="./pwa-client.js" defer></script>
 </body></html>
