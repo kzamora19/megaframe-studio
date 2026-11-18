@@ -31,6 +31,8 @@
   $d('refresh').disabled = busy || !connected;
   $d('connect').disabled = busy;
   $d('save-client').disabled = busy;
+  // An upload refreshes the list while busy; re-enable Restore after it finishes.
+  for (const button of $d('list').querySelectorAll('button')) button.disabled=busy;
   $d('connection').textContent = connected ?
    'Connected for this session · Drive file access only' : 'Not connected';
   $d('client-id').value = chosenClientId();
