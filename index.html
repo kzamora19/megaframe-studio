@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=blue-m-20261118" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=blue-m-20261118" />
-<title>MegaFrame Studio v2.5 | Photo Filters & Editing</title>
+<title>MegaFrame Studio v2.6 | Photo Filters & Editing</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input[type=file]{display:none}input[type=range]{accent-color:#265dff;width:100%}input[type=text],select{background:#fff;border:1px solid #dce2f2;border-radius:10px;outline:0;color:#172343;padding:10px 11px;width:100%;min-width:0}input[type=text]:focus,select:focus{border-color:#4167ff;box-shadow:0 0 0 3px #c5d3ff80}
@@ -223,12 +223,21 @@ button.danger:hover{background:#ffe9ec}
  .frameLibActions{grid-template-columns:1fr}
  .frameLibHead h2{font-size:16px}
 }
+.mfMemberForm{display:grid;grid-template-columns:minmax(0,2fr) minmax(115px,1fr) auto;gap:9px;align-items:end;margin:10px 0 14px}
+.mfMemberForm .field{margin:0}
+.mfMemberForm .btn{min-height:43px}
+.mfMemberForm label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}
+.mfMemberForm input,.mfMemberForm select{width:100%;height:43px}
+.mfMemberCard{border:1px solid #e0e8f6;border-radius:11px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;background:#fff}
+.mfMemberCard strong{font-size:12px;overflow-wrap:anywhere}
+.mfMemberCard small{font-size:11px;color:#6b7791}
+@media(max-width:720px){.mfMemberForm{grid-template-columns:minmax(0,1fr);gap:8px}.mfMemberForm .btn{width:100%}}
 </style>
 </head>
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="/icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.5</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.6</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
@@ -464,6 +473,7 @@ button.danger:hover{background:#ffe9ec}
     <div class="mf-row" role="group" aria-label="Cloud template library type">
       <button id="mf-show-shared" class="btn small primary" type="button">Published for everyone</button>
       <button id="mf-show-private" class="btn small" type="button">My private cloud</button>
+      <button id="mf-show-members" class="btn small" type="button" hidden>User management</button>
     </div>
     <section id="mf-tools" aria-label="Shared template actions" hidden>
       <div class="mf-row">
@@ -484,6 +494,17 @@ button.danger:hover{background:#ffe9ec}
         <button id="mf-private-refresh" class="btn" type="button">Refresh my templates</button>
       </div>
       <div id="mf-private-list" class="frameLibGrid"></div>
+    </section>
+    <section id="mf-members-section" aria-label="Manage approved application accounts" hidden>
+      <p class="help">Only administrators can assign access. First create the user's email account in <a href="https://supabase.com/dashboard/project/vmyoxoiygfcecgkbavgg/auth/users" target="_blank" rel="noopener noreferrer">Supabase Authentication</a>, then assign a role below. No passwords or administrator keys are stored here.</p>
+      <div class="help"><strong>Administrator</strong> manages members and published templates; <strong>Editor</strong> publishes and edits templates; <strong>Viewer</strong> can browse shared frames but cannot publish. Legacy Staff retains its existing access.</div>
+      <form id="mf-member-form" class="mfMemberForm">
+        <div class="field"><label for="mf-member-email">Existing account email</label><input type="email" id="mf-member-email" autocomplete="off" maxlength="254" required placeholder="user@example.com" /></div>
+        <div class="field"><label for="mf-member-role">Role</label><select id="mf-member-role"><option value="viewer">Viewer</option><option value="editor">Editor</option><option value="admin">Administrator</option></select></div>
+        <button id="mf-member-save" class="btn primary" type="submit">Assign role</button>
+      </form>
+      <div class="mf-row"><button id="mf-members-refresh" class="btn small" type="button">Refresh accounts</button><span class="help">Changing roles updates access on the next signed-in library refresh.</span></div>
+      <div id="mf-members-list" role="list" aria-label="Approved MegaFrame users"></div>
     </section>
   </div>
 </dialog>
