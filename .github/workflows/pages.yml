@@ -10,6 +10,7 @@ on:
       - 'icons/**'
       - 'scripts/build_pages_site.py'
       - 'qa/smoke-pages.cjs'
+      - 'qa/smoke-previews.cjs'
       - '.github/workflows/pages.yml'
   push:
     branches: [main]
@@ -20,6 +21,7 @@ on:
       - 'icons/**'
       - 'scripts/build_pages_site.py'
       - 'qa/smoke-pages.cjs'
+      - 'qa/smoke-previews.cjs'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -45,6 +47,7 @@ jobs:
           node --check pwa-client.js
           node --check service-worker.js
           node --check qa/smoke-pages.cjs
+          node --check qa/smoke-previews.cjs
       - name: Build self-contained static artifact and local test paths
         run: |
           python3 scripts/build_pages_site.py _site
@@ -64,6 +67,7 @@ jobs:
           node qa/smoke-v25.cjs
           node qa/smoke-v26.cjs
           node qa/smoke-pages.cjs
+          node qa/smoke-previews.cjs
 
   publish:
     if: github.event_name != 'pull_request'
