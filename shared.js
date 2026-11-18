@@ -6,6 +6,10 @@
     /^sb_publishable_[A-Za-z0-9_-]+$/.test(cfg?.key || '');
   let session = null, role = '', generation = 0, refreshing, checking, entries = [], busy = false, offset = 0, loaded = false, adminFormOpen = false;
   let activeTab = 'shared', privateEntries = [], privateLoaded = false, memberEntries = [];
+  // Thumbnails are loaded only for visible cards; private artwork stays in memory.
+  let previewObserver = null, previewGeneration = 0, previewActive = 0;
+  let previewJobs = [];
+  const privatePreviewMemory = new Map();
   const pageSize = 30;
   const metadata = 'id,name,revision,updated_at';
   // Store only publicly readable published template data; never cache tokens,
@@ -110,6 +114,7 @@
     generation++;
     session = null; role = ''; refreshing = null; checking = null;
     adminFormOpen = false; privateEntries = []; privateLoaded = false; memberEntries = []; activeTab = 'shared';
+    privatePreviewMemory.clear();
     // Shared artwork is public. Signing out of administrator mode must not
     // remove a frame a customer already opened or erase local photo edits.
     paint();
@@ -220,7 +225,125 @@
     node.textContent = label; node.disabled = busy; node.onclick = handler;
     return node;
   }
+
+  // Render the actual frame artwork for visible cards, not full-resolution
+  // customer photos. Public previews can reuse already-public offline records;
+  // owner-private previews are fetched with the signed-in JWT and never persisted.
+  function resetPreviewTasks() {
+    previewGeneration++;
+    previewObserver?.disconnect();
+    previewObserver = null;
+    previewJobs = [];
+    if ('IntersectionObserver' in window) {
+      previewObserver = new IntersectionObserver(items => {
+        for (const item of items) {
+          if (!item.isIntersecting) continue;
+          previewObserver.unobserve(item.target);
+          const task = item.target._framePreviewTask;
+          item.target._framePreviewTask = null;
+          if (task) previewJobs.push(task);
+        }
+        pumpPreviewTasks();
+      }, { root: el('dialog'), rootMargin: '140px 0px' });
+    }
+  }
+  function pumpPreviewTasks() {
+    while (previewActive < 3 && previewJobs.length) {
+      const next = previewJobs.shift();
+      if (next.generation !== previewGeneration) continue;
+      previewActive++;
+      Promise.resolve().then(next.load).catch(() => {}).finally(() => {
+        previewActive--;
+        pumpPreviewTasks();
+      });
+    }
+  }
+  function scheduleFramePreview(card, row, privateFrame = false) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'mfPreviewPlaceholder';
+    placeholder.textContent = 'Loading frame preview…';
+    placeholder.setAttribute('aria-label', 'Preview for ' + row.name);
+    card.prepend(placeholder);
+    const currentGeneration = previewGeneration;
+    const accountId = session?.uid;
+    const current = () => card.isConnected && currentGeneration === previewGeneration &&
+      (!privateFrame || (session?.uid === accountId && activeTab === 'private'));
+    const load = async () => {
+      if (!current()) return;
+      let artwork;
+      try {
+        if (privateFrame) {
+          if (!session || !accountId || !navigator.onLine) {
+            placeholder.textContent = 'Private preview needs a connection';
+            return;
+          }
+          const memory = privatePreviewMemory.get(row.id);
+          if (memory?.revision === row.revision && memory.accountId === accountId) {
+            artwork = memory.artwork;
+          } else {
+            const result = await api('private_templates', {
+              id: 'eq.' + row.id, select: 'id,revision,artwork'
+            });
+            if (!result.length || result[0].revision !== row.revision) {
+              throw Error('Private frame has changed');
+            }
+            artwork = checkArtwork(result[0].artwork);
+            if (!current()) return;
+            // Do not write owner-private artwork to the public IndexedDB cache.
+            if (privatePreviewMemory.size >= 15) privatePreviewMemory.clear();
+            privatePreviewMemory.set(row.id, { accountId, revision: row.revision, artwork });
+          }
+        } else {
+          const cached = await publicCacheRead('details', row.id);
+          if (cached?.revision === row.revision && cached?.updated_at === row.updated_at) {
+            artwork = checkArtwork(cached.artwork);
+          } else if (navigator.onLine) {
+            const result = await api('templates', {
+              id: 'eq.' + row.id, select: metadata + ',settings,artwork'
+            });
+            if (!result.length || result[0].revision !== row.revision) {
+              throw Error('Published frame has changed');
+            }
+            artwork = checkArtwork(result[0].artwork);
+            cleanSettings(result[0].settings);
+            if (!current()) return;
+            await publicCacheWrite('details', row.id, result[0]);
+          } else {
+            placeholder.textContent = 'Preview not cached on this device';
+            return;
+          }
+        }
+        if (!current()) return;
+        const img = document.createElement('img');
+        img.alt = 'Frame preview: ' + row.name;
+        img.decoding = 'async';
+        img.referrerPolicy = 'no-referrer';
+        img.onload = () => {
+          if (current() && placeholder.isConnected) placeholder.replaceWith(img);
+        };
+        img.onerror = () => {
+          if (current()) placeholder.textContent = 'Preview unavailable';
+        };
+        img.src = artwork;
+      } catch (error) {
+        if (current()) {
+          console.warn('MegaFrame preview unavailable:', error?.message);
+          placeholder.textContent = 'Preview unavailable';
+        }
+      }
+    };
+    const task = { generation: currentGeneration, load };
+    if (previewObserver) {
+      card._framePreviewTask = task;
+      previewObserver.observe(card);
+    } else {
+      previewJobs.push(task);
+      pumpPreviewTasks();
+    }
+  }
+
   function paint() {
+    resetPreviewTasks();
     el('form').hidden = !configured || !!session || !adminFormOpen;
     el('admin-toggle').hidden = !configured || !!session;
     el('title').textContent = activeTab==='private'?'My private cloud templates':activeTab==='members'?'User management':'Shared templates';
@@ -309,6 +432,7 @@
           btn('Delete',()=>run(()=>removePrivate(row)),true)
         );
         card.append(heading,timestamp,actions);
+        scheduleFramePreview(card, row, true);
         el('private-list').append(card);
       }
     }
@@ -334,6 +458,7 @@
         btn('Delete', () => run(() => remove(row)), true)
       );
       card.append(name, updated, actions);
+      scheduleFramePreview(card, row);
       el('list').append(card);
     }
   }
@@ -475,6 +600,7 @@
   }
   async function mutatePrivate(row,method,body) {
     requirePersonalCloud(true);
+    if (row) privatePreviewMemory.delete(row.id);
     const rows=await api('private_templates',row
       ? {id:'eq.'+row.id,revision:'eq.'+row.revision,select:metadata}
       : {select:metadata}, {method,body,returning:true});
