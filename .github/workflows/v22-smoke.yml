@@ -1,0 +1,38 @@
+name: MegaFrame v2.2 browser smoke tests
+on:
+  push:
+    branches:
+      - feature/v22-private-template-cloud
+  pull_request:
+    paths:
+      - shared.js
+      - index.html
+      - qa/smoke-v22.cjs
+      - .github/workflows/v22-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify scripts
+        run: |
+          node --check editor.js
+          node --check shared.js
+          node --check service-worker.js
+          node --check qa/smoke-v22.cjs
+      - name: Install browser
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Smoke test
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/megaframe-http.log 2>&1 &
+          sleep 3
+          node qa/smoke-v21.cjs
+          node qa/smoke-v22.cjs
