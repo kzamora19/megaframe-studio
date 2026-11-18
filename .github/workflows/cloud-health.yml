@@ -44,6 +44,18 @@ jobs:
           if status != 200 or not isinstance(rows,list):
               raise SystemExit('Shared template public read unavailable; verify schema grants and RLS.')
           print('Published templates query succeeded. Rows returned:',len(rows))
+          # Validate the actual artwork and settings fields that MegaFrame Studio
+          # needs to open and edit published frames. Never log the data itself.
+          full_status, full_rows=query('/rest/v1/megaframe_templates?select=id,name,revision,updated_at,settings,artwork&limit=1')
+          if full_status != 200 or not isinstance(full_rows,list):
+              raise SystemExit('Full shared-template fetch failed.')
+          if full_rows:
+              sample = full_rows[0]
+              if not isinstance(sample.get('settings'),dict) or not isinstance(sample.get('artwork'),str):
+                  raise SystemExit('Shared template settings/artwork missing or malformed.')
+              if not sample['artwork'].startswith(('data:image/png;base64,', 'data:image/jpeg;base64,', 'data:image/webp;base64,')):
+                  raise SystemExit('Shared template artwork has unsupported format.')
+              print('Published frame artwork and settings are accessible and formatted as expected.')
           member_status, members=query('/rest/v1/megaframe_members?select=user_id,role&limit=1')
           print('Anonymous membership endpoint status:',member_status)
           if isinstance(members,list) and members:
