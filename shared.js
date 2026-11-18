@@ -154,7 +154,7 @@
   async function api(table, params, options = {}) {
     const isPublicRead = table === 'templates' && (options.method || 'GET') === 'GET';
     if (!session && !isPublicRead) throw Error('Administrator sign-in is required for this action.');
-    const g = generation, token = session ? await access() : undefined;
+    const g = generation, token = isPublicRead ? undefined : (session ? await access() : undefined);
     if (g !== generation) throw Error('The session changed. Try again.');
     try {
       const result = await request('/rest/v1/megaframe_' + table + '?' + new URLSearchParams(params), { ...options, token });
@@ -400,11 +400,25 @@
   el('publish').onclick = () => run(() => saveShared(null));
   el('previous').onclick = () => run(async () => { offset = Math.max(0, offset - pageSize); await sync(); });
   el('next').onclick = () => run(async () => { offset += pageSize; await sync(); });
+  // Keep shared templates synchronized while the application is open,
+  // even when the Shared Templates dialog is closed. Avoid frequent
+  // mobile-network requests; opening the dialog always refreshes immediately.
+  let nextBackgroundRefresh = 0;
   const background = () => {
-    if (configured && el('dialog').open && !busy && !document.hidden) sync().catch(err => message(err.message));
+    if (!configured || !navigator.onLine || document.hidden || busy || checking) return;
+    const now = Date.now();
+    if (now < nextBackgroundRefresh) return;
+    nextBackgroundRefresh = now + (el('dialog').open ? 30000 : 120000);
+    sync().catch(err => {
+      if (el('dialog').open) message(err.message);
+    });
   };
-  window.addEventListener('online', background);
+  window.addEventListener('online', () => {
+    nextBackgroundRefresh = 0;
+    background();
+  });
   document.addEventListener('visibilitychange', background);
-  setInterval(background, 20000);
+  setInterval(background, 30000);
   paint();
+  background();
 })();
