@@ -1,0 +1,39 @@
+name: MegaFrame v2.6 access and regression tests
+on:
+  push:
+    branches:
+      - feature/v26-member-roles
+  pull_request:
+    paths:
+      - shared.js
+      - index.html
+      - qa/smoke-v26.cjs
+      - .github/workflows/v26-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  role-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify JavaScript
+        run: |
+          node --check editor.js
+          node --check shared.js
+          node --check qa/smoke-v26.cjs
+      - name: Install browser
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test existing editor and user roles
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
+          sleep 3
+          node qa/smoke-v21.cjs
+          node qa/smoke-v22.cjs
+          node qa/smoke-v25.cjs
+          node qa/smoke-v26.cjs
