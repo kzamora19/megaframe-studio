@@ -1,0 +1,37 @@
+name: Generate MegaFrame app icons
+
+on:
+  push:
+    branches:
+      - feature/custom-icon-cloud-sync
+    paths:
+      - assets/custom-icon-source.webp.base64
+      - scripts/build_icons.py
+      - .github/workflows/custom-icon.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install image processor
+        run: python -m pip install 'Pillow==11.3.0'
+      - name: Render installed-app icons
+        run: python scripts/build_icons.py
+      - name: Commit approved icon sizes
+        shell: bash
+        run: |
+          git add icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png
+          if git diff --cached --quiet; then
+            echo "Icons are already up to date."
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Render selected MegaFrame app icons'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
