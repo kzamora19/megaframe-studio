@@ -222,6 +222,7 @@
   function paint() {
     el('form').hidden = !configured || !!session || !adminFormOpen;
     el('admin-toggle').hidden = !configured || !!session;
+    el('title').textContent = activeTab==='private'?'My private cloud templates':'Shared templates';
     el('tools').hidden = !configured || activeTab !== 'shared';
     el('private-section').hidden = !configured || activeTab !== 'private';
     el('show-shared').classList.toggle('primary',activeTab==='shared');
