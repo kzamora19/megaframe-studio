@@ -1,0 +1,38 @@
+name: MegaFrame v2.5 mobile browser test
+on:
+  push:
+    branches:
+      - feature/v25-mobile-touch-editor
+  pull_request:
+    paths:
+      - editor.js
+      - index.html
+      - qa/smoke-v25.cjs
+      - .github/workflows/v25-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: JS validation
+        run: |
+          node --check editor.js
+          node --check shared.js
+          node --check qa/smoke-v25.cjs
+      - name: Browser dependencies
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Mobile browser verification
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
+          sleep 3
+          node qa/smoke-v21.cjs
+          node qa/smoke-v22.cjs
+          node qa/smoke-v25.cjs
