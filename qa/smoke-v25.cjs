@@ -30,6 +30,7 @@ const assert = require('node:assert/strict');
   });
   assert.equal(state.mode,true,'Adjust mode is active');
   assert.ok(Number(state.zoom)>140,'Two-finger pinch increases selected-photo zoom');
+  await page.locator('[data-panel="0"]').click();
   await page.locator('#openFrameLibrary').click();
   await page.locator('#frameLibGrid .favoriteBtn').first().waitFor();
   assert.equal(await page.locator('#frameLibrary').isVisible(),true);
