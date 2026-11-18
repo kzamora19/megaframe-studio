@@ -154,7 +154,7 @@
   async function api(table, params, options = {}) {
     const isPublicRead = table === 'templates' && (options.method || 'GET') === 'GET';
     if (!session && !isPublicRead) throw Error('Administrator sign-in is required for this action.');
-    const g = generation, token = session ? await access() : undefined;
+    const g = generation, token = isPublicRead ? undefined : (session ? await access() : undefined);
     if (g !== generation) throw Error('The session changed. Try again.');
     try {
       const result = await request('/rest/v1/megaframe_' + table + '?' + new URLSearchParams(params), { ...options, token });
