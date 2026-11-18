@@ -57,7 +57,8 @@ jobs:
       - name: Install browser
         run: |
           npm install --no-save --ignore-scripts playwright@1.56.1
-          npx playwright install --with-deps chromium
+          # GitHub's Ubuntu image includes Chromium runtime libraries; avoid slow apt provisioning.
+          npx playwright install chromium --only-shell
       - name: Test editing, cloud permissions, touch UI and offline project path
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 --directory _preview >/tmp/megaframe-pages-test.log 2>&1 &
