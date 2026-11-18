@@ -1,0 +1,37 @@
+name: MegaFrame v2.1 browser smoke tests
+on:
+  push:
+    branches:
+      - feature/v21-session-recovery-smart-fit
+  pull_request:
+    paths:
+      - editor.js
+      - index.html
+      - qa/smoke-v21.cjs
+      - .github/workflows/v21-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check JS syntax
+        run: |
+          node --check editor.js
+          node --check shared.js
+          node --check service-worker.js
+          node --check qa/smoke-v21.cjs
+      - name: Install Playwright browser
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run local site and smoke test
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/megaframe-http.log 2>&1 &
+          sleep 3
+          node qa/smoke-v21.cjs

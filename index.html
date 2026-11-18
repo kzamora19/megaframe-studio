@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=blue-m-20261118" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=blue-m-20261118" />
-<title>MegaFrame Studio v2.0 | Photo Filters & Editing</title>
+<title>MegaFrame Studio v2.1 | Photo Filters & Editing</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input[type=file]{display:none}input[type=range]{accent-color:#265dff;width:100%}input[type=text],select{background:#fff;border:1px solid #dce2f2;border-radius:10px;outline:0;color:#172343;padding:10px 11px;width:100%;min-width:0}input[type=text]:focus,select:focus{border-color:#4167ff;box-shadow:0 0 0 3px #c5d3ff80}
@@ -174,12 +174,17 @@ button.danger:hover{background:#ffe9ec}
 .pwa-update{padding:10px 18px;background:#fff7db;color:#654b08;font-size:12px;display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap}
 .pwa-update[hidden],.pwa-install[hidden]{display:none!important}
 @media(max-width:720px){.pwa-install{font-size:11px}.pwa-status{font-size:10px}}
+.draftTools{background:#f2f6ff;border:1px solid #dce6ff;border-radius:12px;padding:10px;margin:10px 0}
+.draftTools .draftActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.draftTools .draftStatus{font-size:11px;line-height:1.5;color:#485b86}
+.smartFitTools{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
+.smartFitTools .btn{min-width:0;text-align:center}
 </style>
 </head>
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="/icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.0</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.1</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
@@ -206,6 +211,7 @@ button.danger:hover{background:#ffe9ec}
    <button class="btn ghost libraryOpen" id="openOnlineTemplates" type="button">⌕ Search online for frames</button>
    <div class="inline" style="margin-top:9px"><button id="changeTemplate" class="btn wide">＋ Upload frame</button><button id="saveTemplate" class="btn wide primary">Save template</button></div>
    <input type="file" id="templateInput" accept="image/png,image/jpeg,image/webp" />
+   <div class="draftTools"><div class="draftStatus" id="draftStatus" role="status" aria-live="polite">Local recovery: checking for a saved draft…</div><div class="draftActions"><button id="saveDraftNow" class="btn small" type="button">Save draft now</button><button id="clearSavedDraft" class="btn small" type="button">Clear recovery copy</button></div><p class="help" style="margin:7px 0 0">Your unfinished photos and edits are saved only on this device—not uploaded to Supabase. Back up important images separately.</p></div>
    <div class="inline" style="margin-top:9px"><button id="renameTemplate" class="btn small">Rename</button><button id="duplicateTemplate" class="btn small">Duplicate</button></div>
    <div class="inline" style="margin-top:9px"><button id="backupTemplate" class="btn small">↓ Backup template</button><button id="restoreTemplate" class="btn small">↑ Restore backup</button></div>
    <input type="file" id="backupInput" accept=".json,application/json" />
@@ -282,6 +288,7 @@ button.danger:hover{background:#ffe9ec}
    <div class="field"><div class="rangerow"><label for="zoom">Zoom</label><span class="value" id="zoomValue">100%</span></div><input id="zoom" type="range" min="10" max="300" step="1" value="100" /></div>
    <div class="field"><div class="rangerow"><label for="rotate">Rotation</label><span class="value" id="rotateValue">0°</span></div><input id="rotate" type="range" min="-180" max="180" value="0" /></div>
    <div class="field"><label for="fitMode">Photo fitting</label><select id="fitMode"><option value="cover">Fill frame (crop edges)</option><option value="contain">Fit full photo (may leave space)</option></select></div>
+   <div class="smartFitTools"><button id="fitFullPhoto" class="btn small" type="button">Fit entire photo</button><button id="fillPhotoFrame" class="btn small" type="button">Fill frame</button><button id="centerPhoto" class="btn small" type="button">Auto-center</button><button id="resetPhotoPosition" class="btn small" type="button">Reset position</button></div>
    <p class="help">In <b>Adjust photo</b> mode, click a collage cell, then drag to position its photo. Each image retains its own zoom and rotation settings.</p>
    <div class="inline"><button id="resetPhoto" class="btn small">Reset this photo</button><button id="applyAll" class="btn small">Apply fitting to all photos</button></div>
    <div class="photoActionRow"><button id="replaceSelectedPhoto" class="btn small" type="button">↻ Replace selected photo</button><button id="deleteSelectedPhoto" class="btn small danger" type="button">✕ Delete selected photo</button></div>

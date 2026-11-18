@@ -86,7 +86,7 @@ async function dbPut(t){const db=await dbOpen();if(!db)return false;return new P
 async function dbDelete(id){const db=await dbOpen();if(!db)return false;return new Promise(resolve=>{try{const x=db.transaction(DB_STORE,'readwrite');x.objectStore(DB_STORE).delete(id);x.oncomplete=()=>resolve(true);x.onerror=()=>resolve(false)}catch{resolve(false)}})}
 async function uploadTemplate(file){if(!isPhotoFile(file))return notify('Please select JPG, PNG or WebP image.');try{let data=await dataUrlOf(file);const frame=await decodedImage(data);if(frame.width<200||frame.height<200)return notify('Please use a frame at least 200 × 200 pixels.');const rect={x:Math.round(frame.width*.10),y:Math.round(frame.height*.20),w:Math.round(frame.width*.80),h:Math.round(frame.height*.60)};const name=file.name.replace(/\.[^.]+$/,'');const opening=blankShape();const t={id:'new',name,data,rect,shape:cloneShape(opening),frameOpening:cloneShape(opening),appearance:{borderColor:'#d7b34a',borderWidth:8,replaceOpening:false}};applyTemplate(t,data,frame);setMode('map');notify('Frame imported without a shape. Choose an opening from the dropdown, draw one, or reuse a saved shape.')}catch(err){notify('Could not import the frame: '+err.message)}}
 function boundRect(r){const W=app.frame?.width||2018,H=app.frame?.height||2048;let x=Math.max(0,Math.min(W-8,r.x)),y=Math.max(0,Math.min(H-8,r.y));let w=Math.max(8,Math.min(W-x,r.w)),h=Math.max(8,Math.min(H-y,r.h));return{x,y,w,h}}
-function render(){if(renderPending)return;renderPending=true;requestAnimationFrame(()=>{renderPending=false;drawPreview();drawLiveExportPreview()})}
+function render(){scheduleDraftSave();if(renderPending)return;renderPending=true;requestAnimationFrame(()=>{renderPending=false;drawPreview();drawLiveExportPreview()})}
 function canvasSize(){const canvas=$('previewCanvas');const frame=app.frame;if(!frame)return null;if(canvas.width!==frame.width||canvas.height!==frame.height){canvas.width=frame.width;canvas.height=frame.height}return canvas}
 function drawPhoto(ctx,photo,points){const rect=shapeBounds(points);ctx.save();polygonPath(ctx,points);ctx.clip();ctx.fillStyle='#fff';ctx.fillRect(rect.x,rect.y,rect.w,rect.h);const im=enhancedPhotoImage(photo);if(!im){ctx.restore();return}const rot=(photo.rot||0)*Math.PI/180;const absC=Math.abs(Math.cos(rot)),absS=Math.abs(Math.sin(rot));const bw=im.width*absC+im.height*absS,bh=im.width*absS+im.height*absC;const base=(photo.fit==='contain'?Math.min(rect.w/bw,rect.h/bh):Math.max(rect.w/bw,rect.h/bh));const sc=base*(photo.zoom||1);const dw=im.width*sc,dh=im.height*sc;const cx=rect.x+rect.w/2+(photo.dx||0)*rect.w,cy=rect.y+rect.h/2+(photo.dy||0)*rect.h;ctx.translate(cx,cy);ctx.rotate(rot);ctx.filter=photoFilterCSS(photo);ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.filter='none';ctx.restore()}
 function renderComposite(ctx,scale,photosOrPage,previewOnly=false){const frame=app.frame;if(!frame)return;const W=frame.width,H=frame.height;ctx.clearRect(0,0,W*scale,H*scale);ctx.save();ctx.scale(scale,scale);ctx.drawImage(frame,0,0);const needsCleanup=!!app.appearance?.replaceOpening&&app.frameOpening?.points?.length>=3;if(needsCleanup)coverOriginalOpening(ctx,app.frameOpening.points);let items=[];if(typeof photosOrPage==='number')items=getPagePhotos(photosOrPage);else if(Array.isArray(photosOrPage))items=photosOrPage;else if(photosOrPage)items=[photosOrPage];const missing=!hasPhotoShape();if(items.length&&(!missing||previewOnly)){const bounds=missing?app.rect:app.rect;const points=missing?rectPoints(bounds):app.shape.points;const cells=layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,bounds,app.collage.gap);if(missing){ctx.save();ctx.globalAlpha=.94}for(let i=0;i<Math.min(items.length,cells.length);i++)drawCollagePhoto(ctx,items[i],points,cells[i]);if(missing)ctx.restore()}if(needsCleanup){ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);addPolygonPath(ctx,app.frameOpening.points);ctx.clip('evenodd');ctx.drawImage(frame,0,0);ctx.restore()}if(hasPhotoShape())strokeOpeningBorder(ctx,app.shape.points);if(missing&&previewOnly&&items.length){const r=app.rect;ctx.save();ctx.lineWidth=Math.max(4,W/340);ctx.strokeStyle='#f5c94d';ctx.setLineDash([Math.max(8,W/90),Math.max(6,W/150)]);ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.setLineDash([]);const size=Math.max(18,Math.round(W/53));const label='PREVIEW ONLY · SELECT A PHOTO SHAPE';ctx.font=`bold ${size}px system-ui,sans-serif`;const mw=ctx.measureText(label).width;ctx.fillStyle='#101e4dde';ctx.fillRect(r.x,r.y,Math.min(r.w,mw+32),size+22);ctx.fillStyle='#fff';ctx.fillText(label,r.x+14,r.y+size+9);ctx.restore()}ctx.restore()}
@@ -102,7 +102,7 @@ function isPhotoFile(f){return f&&(/image\/(png|jpeg|webp)/.test(f.type)||/\.(pn
 async function importPhotos(list){const files=Array.from(list).filter(isPhotoFile);if(!files.length)return notify('Select JPG, PNG or WebP photos.');saveHistory();let count=0;for(const file of files){try{const data=await dataUrlOf(file),image=await decodedImage(data);const photo={id:'p'+Date.now()+Math.random(),name:file.name,data,image,zoom:1,rot:0,dx:0,dy:0,fit:'cover',filters:{...FILTER_DEFAULTS},filterPreset:'none'};app.photos.push(photo);count++}catch(err){console.warn('Skipped unreadable image',file.name,err)}}if(count){selectPhoto(app.photos.length-count);setMode('adjust');updateGallery();notify(count+' photo'+(count!==1?'s':'')+' imported and ready for framing or collage.')}else notify('No valid photos could be imported.')}
 function selectPhoto(i){if(!app.photos.length){app.selected=-1;updateControls();render();updateLabels();return}app.selected=(i+app.photos.length)%app.photos.length;updateControls();updateGallery();render();updateLabels()}
 function updateLabels(){const p=getPhoto(),count=app.collage.count,pages=Math.ceil(app.photos.length/count),page=currentPage(),hasShape=hasPhotoShape();$('previewLabel').textContent=!hasShape?(p?'Preview only · Choose a photo opening in section 2 before exporting':'No photo opening selected · Choose a shape or reuse one from Frame Library'):p?count===1?`${app.selected+1} of ${app.photos.length} · ${p.name}`:`Collage ${page+1} of ${pages} · Slot ${app.selected%count+1} · ${p.name}`:'Frame ready · upload photos to get started';$('photoCount').textContent=`${app.photos.length} photo${app.photos.length===1?'':'s'} uploaded`;$('queueSummary').textContent=app.photos.length?`${pages} frame${pages===1?'':'s'} · ${count} photo${count===1?'':'s'} per frame${hasShape?'':' · preview only'}`:'No photos yet';$('previous').disabled=pages<2;$('next').disabled=pages<2;$('downloadOne').disabled=!p||app.exporting||!hasShape;$('downloadZip').disabled=!app.photos.length||app.exporting||!hasShape;$('prepareAll').disabled=!app.photos.length||app.exporting||!hasShape;for(const id of ['quickReplacePhoto','quickDeletePhoto','replaceSelectedPhoto','deleteSelectedPhoto'])if($(id))$(id).disabled=!p;updateCollageInfo()}
-function updateControls(){const p=getPhoto();$('zoom').value=Math.round((p?.zoom||1)*100);$('zoomValue').textContent=$('zoom').value+'%';$('rotate').value=p?.rot||0;$('rotateValue').textContent=$('rotate').value+'°';$('fitMode').value=p?.fit||'cover';for(const id of ['zoom','rotate','fitMode','resetPhoto','applyAll','replaceSelectedPhoto','deleteSelectedPhoto','quickReplacePhoto','quickDeletePhoto'])$(id).disabled=!p;const f=filtersOf(p);$('filterPreset').value=p?.filterPreset||'none';for(const [key,suffix] of [['Brightness','brightness'],['Contrast','contrast'],['Saturation','saturation'],['Grayscale','grayscale'],['Sepia','sepia']]){$('filter'+key).value=f[suffix];$('filter'+key+'Value').textContent=f[suffix]+'%';$('filter'+key).disabled=!p}for(const id of ['filterPreset','resetPhotoFilters'])$(id).disabled=!p;const enh=enhanceSettings(p);for(const [id,key] of [['enhanceSharpness','sharpness'],['enhanceDenoise','denoise']]){$(id).value=enh[key];$(id+'Value').textContent=enh[key]+'%';$(id).disabled=!p}$('resetEnhancement').disabled=!p}
+function updateControls(){const p=getPhoto();$('zoom').value=Math.round((p?.zoom||1)*100);$('zoomValue').textContent=$('zoom').value+'%';$('rotate').value=p?.rot||0;$('rotateValue').textContent=$('rotate').value+'°';$('fitMode').value=p?.fit||'cover';for(const id of ['zoom','rotate','fitMode','resetPhoto','applyAll','replaceSelectedPhoto','deleteSelectedPhoto','quickReplacePhoto','quickDeletePhoto','fitFullPhoto','fillPhotoFrame','centerPhoto','resetPhotoPosition'])$(id).disabled=!p;const f=filtersOf(p);$('filterPreset').value=p?.filterPreset||'none';for(const [key,suffix] of [['Brightness','brightness'],['Contrast','contrast'],['Saturation','saturation'],['Grayscale','grayscale'],['Sepia','sepia']]){$('filter'+key).value=f[suffix];$('filter'+key+'Value').textContent=f[suffix]+'%';$('filter'+key).disabled=!p}for(const id of ['filterPreset','resetPhotoFilters'])$(id).disabled=!p;const enh=enhanceSettings(p);for(const [id,key] of [['enhanceSharpness','sharpness'],['enhanceDenoise','denoise']]){$(id).value=enh[key];$(id+'Value').textContent=enh[key]+'%';$(id).disabled=!p}$('resetEnhancement').disabled=!p}
 function updateGallery(){const g=$('gallery');g.innerHTML='';if(!app.photos.length){g.innerHTML='<div class="emptyGallery" style="grid-column:1/-1">Your imported photos will appear here. Drag thumbnails to rearrange collage slots.</div>';updateLabels();return}const frag=document.createDocumentFragment();app.photos.forEach((p,i)=>{const b=document.createElement('div');b.className='thumb'+(i===app.selected?' active':'');b.title=p.name+' — drag to swap positions';b.tabIndex=0;b.draggable=true;b.setAttribute('role','button');b.setAttribute('aria-label',`Select photo ${i+1}: ${p.name}`);const img=document.createElement('img');img.src=p.data;img.alt='';img.style.filter=photoFilterCSS(p);const n=document.createElement('div');n.className='name';n.textContent=p.name;const num=document.createElement('span');num.className='num';num.textContent=String(i+1).padStart(2,'0');const head=document.createElement('div');head.className='thumbTopActions';
 const replaceBtn=document.createElement('button');replaceBtn.type='button';replaceBtn.className='thumbReplace';replaceBtn.textContent='↻ Replace';replaceBtn.title='Replace this photo in the same collage slot';replaceBtn.setAttribute('aria-label','Replace '+p.name);
 replaceBtn.draggable=false;replaceBtn.onclick=e=>{e.preventDefault();e.stopPropagation();selectPhoto(i);$('replacePhotoInput').click()};
@@ -220,6 +220,178 @@ function createPreset(type,r){const cx=r.x+r.w/2,cy=r.y+r.h/2,x=r.x,y=r.y,w=r.w,
 function scalePointsFrom(points,anchor,factor){let upper=8;for(const p of points){const dx=p.x-anchor.x,dy=p.y-anchor.y;if(dx>0)upper=Math.min(upper,(app.frame.width-anchor.x)/dx);if(dx<0)upper=Math.min(upper,-anchor.x/dx);if(dy>0)upper=Math.min(upper,(app.frame.height-anchor.y)/dy);if(dy<0)upper=Math.min(upper,-anchor.y/dy)}const f=clamp(Number.isFinite(factor)?factor:1,.08,Math.max(.08,upper));return points.map(p=>({x:anchor.x+(p.x-anchor.x)*f,y:anchor.y+(p.y-anchor.y)*f}))}
 function scaleHandles(){if(!hasPhotoShape())return[];const b=app.rect,d=Math.max(16,app.frame.width/70),w=app.frame.width,h=app.frame.height;const c=[[b.x-d,b.y-d,'tl'],[b.x+b.w+d,b.y-d,'tr'],[b.x+b.w+d,b.y+b.h+d,'br'],[b.x-d,b.y+b.h+d,'bl']];return c.map(([x,y,corner])=>({x:clamp(x,9,w-9),y:clamp(y,9,h-9),corner}))}
 function resetScaleUI(){app.sliderStart=null;app.editingSlider=null;if($('shapeScale')){$('shapeScale').value=100;$('shapeScaleValue').textContent='100%'}}
+// v2.1: unfinished sessions are LOCAL ONLY. Customer photo data is never sent to the cloud.
+const DRAFT_DB_NAME = 'megaframe_studio_recovery_v1';
+let draftDatabasePromise, draftEnabled = false, draftTimer = null, draftWriting = false, draftQueued = false;
+function draftStatus(message) { const node = $('draftStatus'); if (node) node.textContent = message; }
+function openDraftDatabase() {
+ if (draftDatabasePromise) return draftDatabasePromise;
+ draftDatabasePromise = new Promise(resolve => {
+  if (!window.indexedDB) return resolve(null);
+  try {
+   const req = indexedDB.open(DRAFT_DB_NAME, 1);
+   req.onupgradeneeded = () => {
+    if (!req.result.objectStoreNames.contains('session'))
+     req.result.createObjectStore('session');
+   };
+   req.onsuccess = () => resolve(req.result);
+   req.onerror = () => resolve(null);
+  } catch { resolve(null); }
+ });
+ return draftDatabasePromise;
+}
+async function draftRead() {
+ const db = await openDraftDatabase();
+ if (!db) return null;
+ return new Promise(resolve => {
+  try {
+   const req = db.transaction('session', 'readonly').objectStore('session').get('current');
+   req.onsuccess = () => resolve(req.result ?? null);
+   req.onerror = () => resolve(null);
+  } catch { resolve(null); }
+ });
+}
+async function draftWrite(record) {
+ const db = await openDraftDatabase();
+ if (!db) throw Error('Local storage unavailable');
+ return new Promise((resolve,reject) => {
+  try {
+   const tx = db.transaction('session','readwrite');
+   tx.objectStore('session').put(record,'current');
+   tx.oncomplete = () => resolve();
+   tx.onerror = () => reject(tx.error || Error('Storage quota exceeded'));
+   tx.onabort = () => reject(tx.error || Error('Draft save aborted'));
+  } catch(err) { reject(err); }
+ });
+}
+async function draftDelete() {
+ const db = await openDraftDatabase();
+ if (!db) return false;
+ return new Promise(resolve => {
+  try {
+   const tx=db.transaction('session','readwrite');
+   tx.objectStore('session').delete('current');
+   tx.oncomplete=()=>resolve(true);
+   tx.onerror=()=>resolve(false);
+  }catch { resolve(false); }
+ });
+}
+function serializeDraft() {
+ if (!app.frame || !app.template?.data) return null;
+ return {
+  format:'MegaFrameDraftV1',savedAt:Date.now(),
+  template:{
+   id: app.template.id,name:app.template.name,data:app.template.data,
+   rect:{...app.rect},shape:cloneShape(app.shape),frameOpening:cloneShape(app.frameOpening),
+   appearance:{...app.appearance},collage:{...app.collage}
+  },
+  photos:app.photos.map(p=>({
+   id:p.id,name:p.name,data:p.data,zoom:p.zoom,rot:p.rot,
+   dx:p.dx,dy:p.dy,fit:p.fit,filters:{...filtersOf(p)},
+   filterPreset:p.filterPreset||'none',enhancement:{...enhanceSettings(p)}
+  })),
+  selected:app.selected,mode:app.mode,
+  prefix:$('prefix')?.value||'',exportType:$('exportType')?.value||'image/jpeg',
+  exportSize:$('exportSize')?.value||'original'
+ };
+}
+async function saveCurrentDraft() {
+ if (!draftEnabled || !app.frame) return;
+ if (draftWriting) { draftQueued = true; return; }
+ draftWriting = true;
+ try {
+  const draft = serializeDraft();
+  if (!draft) return;
+  // Avoid silently exhausting browser storage on very large batches.
+  const estimatedBytes = draft.template.data.length + draft.photos.reduce((n,p)=>n+(p.data?.length||0),0);
+  if (estimatedBytes > 80*1024*1024) {
+   draftStatus('Recovery copy not saved: this batch is over 80 MB. Export your photos before closing.');
+   return;
+  }
+  await draftWrite(draft);
+  draftStatus('Draft saved on this device · '+new Date(draft.savedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+ }catch(err) {
+  console.warn('Local draft recovery unavailable',err);
+  draftStatus('Draft not saved (storage unavailable or full). Export your work before closing.');
+ }finally {
+  draftWriting = false;
+  if (draftQueued) { draftQueued = false; scheduleDraftSave(); }
+ }
+}
+function scheduleDraftSave() {
+ if (!draftEnabled) return;
+ clearTimeout(draftTimer);
+ draftTimer = setTimeout(saveCurrentDraft, 1500);
+}
+async function restoreLocalDraft(record) {
+ if (record?.format!=='MegaFrameDraftV1'||!record.template) throw Error('Unrecognized recovery format');
+ const t=record.template;
+ if (typeof t.data!=='string'||!/^data:image\/(png|jpeg|webp);base64,/.test(t.data)) throw Error('Saved frame data is invalid');
+ const frame = await decodedImage(t.data);
+ const safeTemplate={
+  id:'new',name:String(t.name||'Recovered frame').slice(0,140),data:t.data,
+  rect:t.rect,shape:cloneShape(t.shape),frameOpening:cloneShape(t.frameOpening),
+  appearance:t.appearance||{},collage:t.collage||{count:1,layout:'grid',gap:1}
+ };
+ applyTemplate(safeTemplate,t.data,frame);
+ const photos=[];
+ for (const item of (Array.isArray(record.photos)?record.photos:[]).slice(0,100)) {
+  if (typeof item.data!=='string'||!/^data:image\/(png|jpeg|webp);base64,/.test(item.data)) continue;
+  try {
+   const image=await decodedImage(item.data);
+   photos.push({
+    id:String(item.id||'p'+photos.length),name:String(item.name||'Recovered photo').slice(0,160),
+    data:item.data,image,zoom:clamp(Number(item.zoom)||1,.1,3),
+    rot:clamp(Number(item.rot)||0,-180,180),
+    dx:clamp(Number(item.dx)||0,-5,5),dy:clamp(Number(item.dy)||0,-5,5),
+    fit:item.fit==='contain'?'contain':'cover',
+    filters:{...FILTER_DEFAULTS,...(item.filters||{})},
+    filterPreset:item.filterPreset||'none',enhancement:{...enhanceSettings(item)}
+   });
+  }catch(err){console.warn('Skipping a damaged recovered photo',err)}
+ }
+ app.photos=photos;
+ app.selected=photos.length?clamp(Number(record.selected)||0,0,photos.length-1):-1;
+ if (['image/jpeg','image/png'].includes(record.exportType)) $('exportType').value=record.exportType;
+ if (['original','2x','1080','1350'].includes(record.exportSize)) $('exportSize').value=record.exportSize;
+ if (typeof record.prefix==='string') $('prefix').value=record.prefix.slice(0,50);
+ updateShapeUI();syncAppearanceUI();updateControls();updateGallery();
+ setMode(record.mode==='adjust'?'adjust':'map');render();updateLabels();
+}
+async function initializeDraftRecovery() {
+ const saved=await draftRead();
+ if (saved?.format==='MegaFrameDraftV1' && saved.template) {
+  const date=saved.savedAt?new Date(saved.savedAt).toLocaleString():'a previous session';
+  const restore=await confirmAction(
+   'Restore unfinished editing session?',
+   'A draft was saved on this device on '+date+'. Restore its photos, frame and adjustments? Choose Cancel to start fresh and discard the old recovery copy.',
+   'Restore my edits'
+  );
+  if (restore) {
+   try { await restoreLocalDraft(saved); notify('Restored your unfinished editing session from this device.'); }
+   catch(err) { console.error(err);draftStatus('Saved draft could not be restored: '+err.message); }
+  } else {
+   await draftDelete();
+   draftStatus('Started a new session. The previous recovery copy was discarded.');
+  }
+ }else draftStatus('Auto-save ready. Edits and imported photos stay on this device.');
+ draftEnabled = true;
+ $('saveDraftNow').onclick = () => { clearTimeout(draftTimer);saveCurrentDraft(); };
+ $('prefix').addEventListener('input', scheduleDraftSave);
+ $('clearSavedDraft').onclick = async() => {
+  if (!await confirmAction('Clear local recovery copy?',
+   'Delete the locally saved recovery copy? Photos currently open in the editor will stay, but they will not be recoverable until a new save.','Clear recovery copy')) return;
+  clearTimeout(draftTimer);
+  const previous=draftEnabled;draftEnabled=false;
+  const removed=await draftDelete();draftEnabled=previous;
+  draftStatus(removed?'Recovery copy cleared. New edits will auto-save again.':'Could not clear local recovery storage.');
+ };
+ // Visibility changes are a last opportunity to save recent edits.
+ document.addEventListener('visibilitychange',()=>{
+  if (document.hidden && draftEnabled) { clearTimeout(draftTimer);saveCurrentDraft(); }
+ });
+}
+
 function snapshot(){return{shape:cloneShape(app.shape),rect:{...app.rect},photos:app.photos.map(p=>({...p})),selected:app.selected,collage:{...app.collage},appearance:{...app.appearance}}}
 function restoreSnapshot(v){app.shape=cloneShape(v.shape);app.rect=hasPhotoShape()?shapeBounds(app.shape.points):{...(v.rect||app.rect)};app.photos=v.photos.map(p=>({...p}));app.selected=app.photos.length?clamp(v.selected,0,app.photos.length-1):-1;app.collage={...v.collage};app.appearance={...app.appearance,...(v.appearance||{})};$('collageCount').value=String(app.collage.count);$('collageLayout').value=app.collage.layout;$('collageGap').value=String(app.collage.gap);$('collageGapValue').textContent=app.collage.gap+'%';syncAppearanceUI();resetScaleUI();updateShapeUI();updateControls();updateGallery();render()}
 function saveHistory(){if(!app.frame)return;app.undoStack.push(snapshot());if(app.undoStack.length>65)app.undoStack.shift();app.redoStack=[];updateHistoryButtons()}
@@ -290,6 +462,12 @@ function setupEvents(){
  const dz=$('dropzone');dz.onclick=()=>$('photosInput').click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('photosInput').click()}};$('photosInput').onchange=async e=>{await importPhotos(e.target.files);e.target.value=''};dz.ondragover=e=>{e.preventDefault();dz.classList.add('dragging')};dz.ondragleave=()=>dz.classList.remove('dragging');dz.ondrop=e=>{e.preventDefault();dz.classList.remove('dragging');importPhotos(e.dataTransfer.files)};
  $('clearPhotos').onclick=async()=>{if(!app.photos.length)return;if(!await confirmAction('Clear entire photo batch?',`Remove all ${app.photos.length} imported photos from this batch? You can use Undo to restore them.`,'Clear all photos'))return;saveHistory();app.photos=[];selectPhoto(-1);updateGallery();notify('Photo queue cleared. Undo can restore the photos.')};
  $('zoom').onpointerdown=()=>{if(getPhoto())saveHistory()};$('rotate').onpointerdown=()=>{if(getPhoto())saveHistory()};for(const name of ['zoom','rotate'])$(name).addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(e.key)&&getPhoto())saveHistory()});$('zoom').oninput=e=>{const p=getPhoto();if(!p)return;p.zoom=+e.target.value/100;$('zoomValue').textContent=e.target.value+'%';render()};$('rotate').oninput=e=>{const p=getPhoto();if(!p)return;p.rot=+e.target.value;$('rotateValue').textContent=e.target.value+'°';render()};$('fitMode').onchange=e=>{const p=getPhoto();if(!p)return;saveHistory();p.fit=e.target.value;render()};
+ for(const [id,update] of [
+  ['fitFullPhoto',p=>{p.fit='contain';p.zoom=1;p.dx=0;p.dy=0}],
+  ['fillPhotoFrame',p=>{p.fit='cover';p.zoom=1;p.dx=0;p.dy=0}],
+  ['centerPhoto',p=>{p.dx=0;p.dy=0}],
+  ['resetPhotoPosition',p=>{p.zoom=1;p.rot=0;p.dx=0;p.dy=0}]
+ ]) $(id).onclick=()=>{const p=getPhoto();if(!p)return;saveHistory();update(p);updateControls();render();};
  $('quickReplacePhoto').onclick=()=>$('replacePhotoInput').click();$('replaceSelectedPhoto').onclick=()=>$('replacePhotoInput').click();
  $('replacePhotoInput').onchange=async e=>{const file=e.target.files?.[0];e.target.value='';if(file)await replaceCurrentPhoto(file)};
  $('quickDeletePhoto').onclick=()=>deletePhotoAt(app.selected);$('deleteSelectedPhoto').onclick=()=>deletePhotoAt(app.selected);
@@ -310,5 +488,5 @@ function setupEvents(){
  $('previous').onclick=()=>goPage(-1);$('next').onclick=()=>goPage(1);$('downloadOne').onclick=exportSelected;$('downloadZip').onclick=exportZip;$('prepareAll').onclick=prepareAllPhotos;$('closeExportGallery').onclick=()=>$('exportGallery').close();$('exportGallery').addEventListener('close',clearPreparedImages);$('shareBatch').onclick=sharePreparedImages;$('downloadBatch').onclick=downloadPreparedImages;
  window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName))){e.preventDefault();if(e.shiftKey)redo();else undo();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}if(e.target instanceof HTMLElement&&['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;if(e.key==='Escape'&&app.drawingPolygon){app.drawingPolygon=false;app.draftPoints=[];updateShapeUI();render()}if(e.key==='Enter'&&app.drawingPolygon){finishPolygon()}if(e.key==='ArrowRight'&&app.photos.length){goPage(1)}if(e.key==='ArrowLeft'&&app.photos.length){goPage(-1)}});
 }
-async function start(){setupAccordion();setupPinnedNav();setupEvents();loadHiddenSamples();app.templates=await dbAll();populateTemplates();await chooseAvailableFrame();updateControls();updateGallery();setMode('map');status('Ready · v2.0. Customer photos are processed on this device.');}
+async function start(){setupAccordion();setupPinnedNav();setupEvents();loadHiddenSamples();app.templates=await dbAll();populateTemplates();await chooseAvailableFrame();updateControls();updateGallery();setMode('map');status('Ready · v2.1. Customer photos are processed on this device.');await initializeDraftRecovery();}
 start().catch(err=>{console.error(err);notify('App could not initialize: '+err.message)});
