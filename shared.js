@@ -5,7 +5,7 @@
   const configured = /^https:\/\/[a-z0-9]+\.supabase\.co$/.test(cfg?.url || '') &&
     /^sb_publishable_[A-Za-z0-9_-]+$/.test(cfg?.key || '');
   let session = null, role = '', generation = 0, refreshing, checking, entries = [], busy = false, offset = 0, loaded = false, adminFormOpen = false;
-  let activeTab = 'shared', privateEntries = [], privateLoaded = false;
+  let activeTab = 'shared', privateEntries = [], privateLoaded = false, memberEntries = [];
   const pageSize = 30;
   const metadata = 'id,name,revision,updated_at';
   // Store only publicly readable published template data; never cache tokens,
@@ -105,10 +105,11 @@
   }
   const message = value => { el('message').textContent = value; };
   const isAdmin = () => role === 'admin' && navigator.onLine;
+  const canPublish = () => ['admin','editor'].includes(role) && navigator.onLine;
   const signedOut = () => {
     generation++;
     session = null; role = ''; refreshing = null; checking = null;
-    adminFormOpen = false; privateEntries = []; privateLoaded = false; activeTab = 'shared';
+    adminFormOpen = false; privateEntries = []; privateLoaded = false; memberEntries = []; activeTab = 'shared';
     // Shared artwork is public. Signing out of administrator mode must not
     // remove a frame a customer already opened or erase local photo edits.
     paint();
@@ -176,7 +177,7 @@
         if (session) {
           const memberships = await api('members', { select: 'role', user_id: 'eq.' + session.uid });
           const current = memberships[0]?.role;
-          if (!['admin', 'staff'].includes(current)) {
+          if (!['admin', 'editor', 'viewer', 'staff'].includes(current)) {
             signedOut();
             message('This account cannot manage templates. Public templates remain available.');
           } else role = current;
@@ -222,15 +223,20 @@
   function paint() {
     el('form').hidden = !configured || !!session || !adminFormOpen;
     el('admin-toggle').hidden = !configured || !!session;
-    el('title').textContent = activeTab==='private'?'My private cloud templates':'Shared templates';
+    el('title').textContent = activeTab==='private'?'My private cloud templates':activeTab==='members'?'User management':'Shared templates';
     el('tools').hidden = !configured || activeTab !== 'shared';
     el('private-section').hidden = !configured || activeTab !== 'private';
+    el('members-section').hidden = !isAdmin() || activeTab !== 'members';
+    el('show-members').hidden = !isAdmin();
+    el('show-members').classList.toggle('primary',activeTab==='members');
+    el('member-save').disabled = busy;
+    el('members-refresh').disabled = busy;
     el('show-shared').classList.toggle('primary',activeTab==='shared');
     el('show-private').classList.toggle('primary',activeTab==='private');
     el('private-save').disabled = busy;
     el('private-refresh').disabled = busy;
-    el('private-save').hidden = !session || !['admin','staff'].includes(role);
-    el('publish').hidden = !isAdmin();
+    el('private-save').hidden = !session || !['admin','staff','editor'].includes(role);
+    el('publish').hidden = !canPublish();
     el('signout').hidden = !session;
     el('signin').disabled = busy;
     el('publish').disabled = busy;
@@ -238,7 +244,11 @@
     el('previous').disabled = busy || offset === 0;
     el('next').disabled = busy || entries.length <= pageSize;
     el('page').textContent = 'Page ' + (Math.floor(offset / pageSize) + 1);
-    el('identity').textContent = role === 'admin' ? 'Administrator' : role === 'staff' ? 'Staff · private cloud enabled' : 'Public library · no sign-in needed';
+    el('identity').textContent = role === 'admin' ? 'Administrator' :
+      role === 'editor' ? 'Editor · may publish templates' :
+      role === 'viewer' ? 'Viewer · read only' :
+      role === 'staff' ? 'Staff · legacy access' :
+      'Public library · no sign-in needed';
     el('list').replaceChildren();
     el('private-list').replaceChildren();
     if (activeTab === 'private') {
@@ -259,8 +269,8 @@
         timestamp.textContent = 'Updated ' + new Date(row.updated_at).toLocaleString();
         const actions = document.createElement('div');
         actions.className = 'frameLibActions';
-        actions.append(
-          btn('Open private frame',()=>run(()=>openPrivate(row))),
+        actions.append(btn('Open private frame',()=>run(()=>openPrivate(row))));
+        if(['admin','staff','editor'].includes(role))actions.append(
           btn('Rename',()=>run(()=>renamePrivate(row))),
           btn('Replace with current frame',()=>run(()=>savePrivate(row))),
           btn('Delete',()=>run(()=>removePrivate(row)),true)
@@ -285,7 +295,7 @@
       const actions = document.createElement('div');
       actions.className = 'frameLibActions';
       actions.append(btn('Open frame', () => run(() => openShared(row))));
-      if (isAdmin()) actions.append(
+      if (canPublish()) actions.append(
         btn('Rename', () => run(() => rename(row))),
         btn('Replace with current frame', () => run(() => saveShared(row))),
         btn('Delete', () => run(() => remove(row)), true)
@@ -330,8 +340,8 @@
       throw Error('Shared artwork must be a JPG, PNG or WebP under 9 MB.');
     return artwork;
   }
-  function requireAdmin() {
-    if (!isAdmin()) throw Error('Only an administrator can change shared templates.');
+  function requirePublisher() {
+    if (!canPublish()) throw Error('Only an administrator or editor may change published templates.');
   }
   async function openShared(row) {
     const g = generation;
@@ -367,7 +377,7 @@
   async function mutate(row, method, body) {
     if (!navigator.onLine) throw Error('Connect to the internet to publish or change shared templates.');
     await sync();
-    requireAdmin();
+    requirePublisher();
     const changes = await api('templates', row
       ? { id: 'eq.' + row.id, revision: 'eq.' + row.revision, select: metadata }
       : { select: metadata }, { method, body, returning: true });
@@ -376,7 +386,7 @@
     if (changes?.length !== 1) throw Error('This template changed on another device. Review the refreshed list and try again.');
   }
   async function saveShared(row) {
-    requireAdmin();
+    requirePublisher();
     if (!app.template || !app.frame) throw Error('Open or import a frame first.');
     // This payload is built only from the template artwork and frame settings.
     const artwork = checkArtwork(app.template.data), settings = cleanSettings(app);
@@ -389,14 +399,14 @@
     message(row ? 'Shared template replaced.' : 'Template published to the shared library.');
   }
   async function rename(row) {
-    requireAdmin();
+    requirePublisher();
     const name = await popupAction({ title: 'Rename shared template', message: 'The new name will appear on all devices.', value: row.name, confirmLabel: 'Rename' });
     if (name === null || name === row.name) return;
     await mutate(row, 'PATCH', { name });
     message('Shared template renamed.');
   }
   async function remove(row) {
-    requireAdmin();
+    requirePublisher();
     if (!await confirmAction('Delete shared template?', 'Permanently remove “' + row.name + '” from the shared library?', 'Delete shared template')) return;
     await mutate(row, 'DELETE');
     message('Shared template deleted.');
@@ -404,8 +414,9 @@
 
   // v2.2: Private cloud frame library uses authenticated owner-only RLS.
   // Never add this data to the public service worker/IndexedDB cache.
-  function requirePersonalCloud() {
-    if (!session || !['admin','staff'].includes(role) || !navigator.onLine)
+  function requirePersonalCloud(write = false) {
+    const allowed = write ? ['admin','staff','editor'] : ['admin','staff','editor','viewer'];
+    if (!session || !allowed.includes(role) || !navigator.onLine)
       throw Error('Sign in with an approved account and connect to the internet to use private cloud templates.');
   }
   async function loadPrivate() {
@@ -430,7 +441,7 @@
     notify('Private cloud frame opened. Save a local template copy if you need offline access.');
   }
   async function mutatePrivate(row,method,body) {
-    requirePersonalCloud();
+    requirePersonalCloud(true);
     const rows=await api('private_templates',row
       ? {id:'eq.'+row.id,revision:'eq.'+row.revision,select:metadata}
       : {select:metadata}, {method,body,returning:true});
@@ -438,7 +449,7 @@
     if (rows?.length!==1) throw Error('This private template was changed on another device. Review your refreshed library and try again.');
   }
   async function savePrivate(row) {
-    requirePersonalCloud();
+    requirePersonalCloud(true);
     if (!app.template || !app.frame) throw Error('Select or import a frame first.');
     const name=await popupAction({
       title:row?'Replace private cloud template':'Save private cloud template',
@@ -453,7 +464,7 @@
     message(row?'Private template replaced.':'Private template saved to your account.');
   }
   async function renamePrivate(row) {
-    requirePersonalCloud();
+    requirePersonalCloud(true);
     const name=await popupAction({
       title:'Rename private cloud template',message:'Rename this template in your personal cloud library.',
       value:row.name,confirmLabel:'Rename'
@@ -463,7 +474,7 @@
     message('Private template renamed.');
   }
   async function removePrivate(row) {
-    requirePersonalCloud();
+    requirePersonalCloud(true);
     if (!await confirmAction('Delete private cloud template?',
       'Permanently delete “'+row.name+'” from your private account? Local copies will not be deleted.',
       'Delete private template')) return;
