@@ -1,0 +1,36 @@
+name: MegaFrame v2.7 roadmap completion regression
+on:
+  pull_request:
+    paths:
+      - editor.js
+      - index.html
+      - qa/smoke-v27.cjs
+      - .github/workflows/v27-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  roadmap-regression:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate JavaScript
+        run: |
+          node --check editor.js
+          node --check qa/smoke-v27.cjs
+          node --check shared.js
+      - name: Install Chromium
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test saved state, mobile handling and roadmap features
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
+          sleep 3
+          node qa/smoke-v21.cjs
+          node qa/smoke-v22.cjs
+          node qa/smoke-v25.cjs
+          node qa/smoke-v27.cjs
