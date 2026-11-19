@@ -1,5 +1,5 @@
 /* MegaFrame Studio PWA — application shell only. Never cache API calls, auth or credentials. */
-const VERSION = 'mf-pwa-v13-optional-drive-20261118';
+const VERSION = 'mf-pwa-v14-drive-default-client-20261119';
 const CACHE = 'megaframe-shell-' + VERSION;
 // Resolve the shell relative to this worker, not the web origin root.
 // Works at both / (legacy Vercel) and /megaframe-studio/ (GitHub Pages).

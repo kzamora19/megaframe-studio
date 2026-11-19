@@ -408,6 +408,11 @@ button.danger:hover{background:#ffe9ec}
    <div class="templateToolbar"><label><input id="frameFavoritesOnly" type="checkbox" /> Favorites only</label><label for="frameLibSort">Sort</label><select id="frameLibSort"><option value="default">Default order</option><option value="name">Name A–Z</option><option value="favorites">Favorites first</option></select></div>
    <div id="frameLibGrid" class="frameLibGrid"></div>
    <button id="restoreBuiltins" class="btn small restoreSamples" type="button" hidden>↻ Restore original sample frames</button>
+   <div class="driveNotice" style="margin-top:12px;padding:10px 12px;border:1px solid #dce6fb;border-radius:11px;background:#f2f6ff;font-size:12px;line-height:1.5">
+     <strong>Saved on this browser</strong> — these frames are stored locally, not in Google Drive.
+     To view or restore your Google Drive backups, open the separate backup window.
+     <button type="button" id="drive-from-frame-library" class="btn small" style="margin:8px 0 0;min-height:40px">Open Google Drive backups</button>
+   </div>
    <p class="frameLibInfo">Built-in sample frames can be removed from this library and restored later. Your own saved templates can be permanently deleted from this browser. Back up custom templates before clearing browser data.</p>
   </section>
   <section id="onlineFramesPanel" role="tabpanel" aria-labelledby="libTabOnline" hidden>
@@ -548,7 +553,7 @@ button.danger:hover{background:#ffe9ec}
     <button id="drive-close" class="btn small" type="button">Close</button>
   </div>
   <div class="driveBody">
-    <div class="driveNotice"><strong>Google Drive is optional.</strong> Supabase still handles your shared/private templates and Administrator, Editor and Viewer roles. These Drive backups belong to the Google account you authorize. Photos remain local by default.</div>
+    <div class="driveNotice"><strong>Google Drive is optional. OAuth testing access is limited to Google-approved test users.</strong>  Supabase still handles your shared/private templates and Administrator, Editor and Viewer roles. These Drive backups belong to the Google account you authorize. Photos remain local by default.</div>
     <div class="driveControls">
       <button id="drive-connect" class="btn primary" type="button">Connect Google Drive</button>
       <button id="drive-disconnect" class="btn" type="button" hidden>Disconnect</button>

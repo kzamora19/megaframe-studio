@@ -287,12 +287,17 @@
    if(chosenClientId())loadGoogleScript().catch(e=>message(e.message));
   };
   $d('close').onclick=()=> $d('dialog').close();
+  // Local saved frames and Drive backups are intentionally separate libraries.
+  document.getElementById('drive-from-frame-library')?.addEventListener('click', () => {
+    document.getElementById('frameLibrary')?.close();
+    $d('open').click();
+  });
   $d('connect').onclick=connect;
   $d('disconnect').onclick=disconnect;
   $d('save-client').onclick=saveClientId;
   $d('backup').onclick=backup;
   $d('refresh').onclick=()=>refreshBackups();
-  message('Optional Google Drive backup. Supabase remains your shared/private template library.');
+  message('Optional Google Drive backup. Only Google-approved test users can connect while OAuth is in Testing.');
   paint();
  }
  initialize();
