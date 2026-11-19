@@ -236,6 +236,21 @@ button.danger:hover{background:#ffe9ec}
 .mfMemberCard strong{font-size:12px;overflow-wrap:anywhere}
 .mfMemberCard small{font-size:11px;color:#6b7791}
 @media(max-width:720px){.mfMemberForm{grid-template-columns:minmax(0,1fr);gap:8px}.mfMemberForm .btn{width:100%}}
+
+/* Roadmap completion preview: library organization, compare gallery and mobile drawer. */
+.mobileDrawerToggle{display:none}
+.frameLibCard .frameMeta{font-size:11px;color:#566a91;overflow-wrap:anywhere}
+.frameLibActions .btn.organizeFrame{flex:1 1 calc(50% - 6px)}
+.exportFileCard .comparePair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.exportFileCard .comparePair figure{margin:0;min-width:0}
+.exportFileCard .comparePair img{width:100%;height:auto;aspect-ratio:1;object-fit:contain;border-radius:7px;display:block}
+.exportFileCard .comparePair figcaption{font-size:10px;text-align:center;color:#52617e;margin-top:5px;line-height:1.3}
+@media(max-width:720px){
+ .mobileDrawerToggle{display:flex;width:100%;min-height:48px;margin:0 0 9px;background:#edf3ff;color:#1e43ae;border-color:#c6d5ff;font-size:13px}
+ .sidebar.mobileDrawerClosed{padding-bottom:9px}
+ .sidebar.mobileDrawerClosed>.pinNav,.sidebar.mobileDrawerClosed>.section{display:none!important}
+ .templateToolbar select{max-width:none;flex:1 1 135px}
+}
 </style>
 </head>
 <body>
@@ -249,6 +264,7 @@ button.danger:hover{background:#ffe9ec}
 </div>
 <main class="appbody">
 <aside class="sidebar">
+<button id="mobileDrawerToggle" class="btn mobileDrawerToggle" type="button" aria-expanded="true" aria-controls="pinNav">Hide editing controls ▴</button>
 <nav id="pinNav" class="pinNav" aria-label="Section navigation">
  <div class="pinNavTitle"><span>SECTIONS</span><span>Select one panel</span></div>
  <div class="pinNavGrid">
@@ -368,7 +384,8 @@ button.danger:hover{background:#ffe9ec}
     <div class="filterEditorTitle"><strong>Photo enhancement</strong><span>Only the selected photo is processed. Original uploads remain unchanged.</span></div>
     <div class="field"><div class="rangerow"><label for="enhanceSharpness">Sharpness</label><span class="value" id="enhanceSharpnessValue">0%</span></div><input id="enhanceSharpness" type="range" min="0" max="100" step="5" value="0" /></div>
     <div class="field"><div class="rangerow"><label for="enhanceDenoise">Noise reduction / pixel smoothing</label><span class="value" id="enhanceDenoiseValue">0%</span></div><input id="enhanceDenoise" type="range" min="0" max="100" step="5" value="0" /></div>
-    <button id="resetEnhancement" class="btn small" type="button">↺ Reset photo enhancement</button>
+    <button id="autoLighting" class="btn small" type="button">☀ Auto-correct lighting</button>
+     <button id="resetEnhancement" class="btn small" type="button">↺ Reset photo enhancement</button>
     <p class="help">Moderate adjustments work best. These controls improve appearance but cannot recover details missing in the source photo.</p>
    </div>
   </section>
@@ -405,7 +422,7 @@ button.danger:hover{background:#ffe9ec}
  <div class="frameLibBody">
   <div class="frameLibTabs" role="tablist" aria-label="Frame source"><button id="libTabSaved" type="button" role="tab" aria-selected="true" aria-controls="savedFramesPanel" class="active">My saved frames</button><button id="libTabOnline" type="button" role="tab" aria-selected="false" aria-controls="onlineFramesPanel">Search online</button></div>
   <section id="savedFramesPanel" role="tabpanel" aria-labelledby="libTabSaved"><input id="frameLibSearch" class="frameLibSearch" type="text" placeholder="Search saved frames or campaigns…" aria-label="Search frame library" />
-   <div class="templateToolbar"><label><input id="frameFavoritesOnly" type="checkbox" /> Favorites only</label><label for="frameLibSort">Sort</label><select id="frameLibSort"><option value="default">Default order</option><option value="name">Name A–Z</option><option value="favorites">Favorites first</option></select></div>
+   <div class="templateToolbar"><label><input id="frameFavoritesOnly" type="checkbox" /> Favorites only</label><label for="frameLibSort">Sort</label><select id="frameLibSort"><option value="default">Default order</option><option value="name">Name A–Z</option><option value="favorites">Favorites first</option></select><label for="frameLibFolder">Folder</label><select id="frameLibFolder"><option value="">All folders</option></select><label for="frameLibCategory">Category</label><select id="frameLibCategory"><option value="">All categories</option></select></div>
    <div id="frameLibGrid" class="frameLibGrid"></div>
    <button id="restoreBuiltins" class="btn small restoreSamples" type="button" hidden>↻ Restore original sample frames</button>
    <div class="driveNotice" style="margin-top:12px;padding:10px 12px;border:1px solid #dce6fb;border-radius:11px;background:#f2f6ff;font-size:12px;line-height:1.5">
@@ -429,7 +446,7 @@ button.danger:hover{background:#ffe9ec}
 <dialog id="exportGallery" class="frameLibrary" aria-labelledby="exportGalleryTitle">
  <div class="frameLibHead"><div><h2 id="exportGalleryTitle">Save your framed photos</h2><p id="exportGalleryCount">Your images are ready as separate files.</p></div><button id="closeExportGallery" type="button" class="btn small">✕ Close</button></div>
  <div class="frameLibBody">
-  <p class="help">No ZIP extractor needed. On a phone, use <strong>Share all photos</strong> if supported, or tap <strong>Save image</strong> on each photo. On desktop, separate downloads may require browser permission.</p>
+  <p class="help">Compare each framed photo with the same photo before filters and enhancement, then save or share the finished results. No ZIP extractor needed. On a phone, use <strong>Share all photos</strong> if supported, or tap <strong>Save image</strong> on each photo. On desktop, separate downloads may require browser permission.</p>
   <div class="inline exportBatchActions">
    <button type="button" id="shareBatch" class="btn primary">Share all photos</button>
    <button type="button" id="downloadBatch" class="btn">↓ Download separate files</button>
