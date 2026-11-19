@@ -5,6 +5,9 @@ on:
       - editor.js
       - index.html
       - qa/smoke-v27.cjs
+      - qa/smoke-v27-cloud.cjs
+      - shared.js
+      - db/v27_template_organization.sql
       - .github/workflows/v27-smoke.yml
   workflow_dispatch:
 permissions:
@@ -21,6 +24,7 @@ jobs:
         run: |
           node --check editor.js
           node --check qa/smoke-v27.cjs
+          node --check qa/smoke-v27-cloud.cjs
           node --check shared.js
       - name: Install Chromium
         run: |
@@ -34,3 +38,4 @@ jobs:
           node qa/smoke-v22.cjs
           node qa/smoke-v25.cjs
           node qa/smoke-v27.cjs
+          node qa/smoke-v27-cloud.cjs
