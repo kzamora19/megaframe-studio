@@ -7,12 +7,12 @@ const assert = require('node:assert/strict');
  const browser=await chromium.launch({headless:true});
  const page=await browser.newPage({viewport:{width:1380,height:950}});
  const errors=[],files=[],uploads=[];
- const clientId='1234567890-test.apps.googleusercontent.com', fakeToken='test-only-access-token';
+ const clientId='873550026587-clo2e2vrthc8621unnmjio3des0nehfm.apps.googleusercontent.com', fakeToken='test-only-access-token';
  let folderExists=false;
  page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(({scope,token})=>{
   window.google={accounts:{oauth2:{
-   initTokenClient:config=>({
+   initTokenClient:config=>(window.__driveTestOAuthClientId=config.client_id, {
     requestAccessToken:()=>Promise.resolve().then(()=>
      config.callback({access_token:token,scope,expires_in:3600}))
    }),
@@ -62,15 +62,17 @@ const assert = require('node:assert/strict');
  try{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'));
-  await page.locator('#drive-open').click();
+  await page.locator('#openFrameLibrary').click();
+  await page.locator('#drive-from-frame-library').click();
   await page.locator('#drive-dialog[open]').waitFor();
+  assert.equal(await page.locator('#frameLibrary').evaluate(x=>x.open),false,
+    'Local frame library should close when switching to Drive');
   assert.equal(await page.locator('#drive-photos').isChecked(),false);
+  assert.equal(await page.locator('#drive-client-id').inputValue(),clientId,
+    'The public OAuth Client ID should work on a fresh browser without manual setup');
   await page.locator('#drive-connect').click();
-  assert.match(await page.locator('#drive-status').textContent(),/not configured/i);
-  await page.locator('#drive-client-id').fill(clientId);
-  await page.locator('#drive-save-client').click();
-  assert.match(await page.locator('#drive-status').textContent(),/saved on this device/);
-  await page.locator('#drive-connect').click();
+  await page.waitForFunction(()=>window.__driveTestOAuthClientId);
+  assert.equal(await page.evaluate(()=>window.__driveTestOAuthClientId),clientId);
   await page.waitForFunction(()=>document.querySelector('#drive-connection')?.textContent?.includes('Connected'));
   assert.equal(await page.locator('#drive-backup').isEnabled(),true);
   await page.locator('#drive-backup').click();
