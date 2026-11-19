@@ -53,5 +53,11 @@
         }
       ]
     }
-  ]
+  ],
+  "proxy": {
+    "entrypoint": "proxy.mjs",
+    "matcher": [
+      "/(.*)"
+    ]
+  }
 }
