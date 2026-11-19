@@ -1,0 +1,33 @@
+name: MegaFrame PTG access staging checks
+on:
+  push:
+    branches: [feature/ptg-tl-gated-access-20261119]
+  pull_request:
+    paths:
+      - "studio-access/**"
+      - "studio-access.html"
+      - "studio-access.js"
+      - "proxy.mjs"
+      - "api/studio-session.js"
+      - "service-worker.js"
+      - "vercel.json"
+      - "tests/studio-gate.test.mjs"
+      - ".github/workflows/studio-access-ci.yml"
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: JS checks and PTG ticket gate regression
+        run: |
+          node --check proxy.mjs
+          node --check api/studio-session.js
+          node --check studio-access/verify.mjs
+          node --check studio-access.js
+          node --check service-worker.js
+          node --test tests/studio-gate.test.mjs

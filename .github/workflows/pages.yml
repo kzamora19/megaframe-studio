@@ -93,11 +93,11 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Prepare static site
-        run: python3 scripts/build_pages_site.py _site
+      - name: Prepare protected-access redirect
+        run: python3 scripts/prepare_pages_redirect.py
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: _pages_redirect
       - id: deployment
-        name: Publish app to GitHub Pages
+        name: Publish secured access redirect to GitHub Pages
         uses: actions/deploy-pages@v4
