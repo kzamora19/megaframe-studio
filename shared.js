@@ -11,7 +11,32 @@
   let previewJobs = [];
   const privatePreviewMemory = new Map();
   const pageSize = 30;
-  const metadata = 'id,name,revision,updated_at';
+  const cloudFilters = { shared: { folder: '', category: '' }, private: { folder: '', category: '' } };
+  const organization = row => ({
+    folder: typeof row?.folder==='string' && row.folder.trim() ? row.folder : 'Unfiled',
+    category: typeof row?.category==='string' && row.category.trim() ? row.category : 'General'
+  });
+  const cleanOrganization = (field,value) => {
+    const result=String(value||'').trim();
+    if (!result || result.length>60 || /[\u0000-\u001f]/.test(result)) throw Error('Enter a '+field+' between 1 and 60 characters.');
+    return result;
+  };
+  function updateCloudFilters(kind, rows) {
+    const state=cloudFilters[kind];
+    for (const field of ['folder','category']) {
+      const select=el(kind+'-'+field),selection=state[field];
+      const names=[...new Set(rows.map(row=>organization(row)[field]))].sort((a,b)=>a.localeCompare(b));
+      select.replaceChildren(new Option(field==='folder'?'All folders':'All categories',''));
+      for (const name of names) select.add(new Option(name,name));
+      state[field]=names.includes(selection)?selection:'';
+      select.value=state[field];
+    }
+  }
+  function matchesCloudFilter(kind, row) {
+    const state=cloudFilters[kind],org=organization(row);
+    return (!state.folder||org.folder===state.folder) && (!state.category||org.category===state.category);
+  }
+  const metadata = 'id,name,folder,category,revision,updated_at';
   // Store only publicly readable published template data; never cache tokens,
   // passwords, roles or authenticated API responses.
   const PUBLIC_CACHE_DB = 'megaframe_shared_public_v1';
@@ -374,6 +399,8 @@
       'Public library · no sign-in needed';
     el('list').replaceChildren();
     el('private-list').replaceChildren();
+    updateCloudFilters('shared',entries.slice(0,pageSize));
+    updateCloudFilters('private',privateEntries);
     el('members-list').replaceChildren();
     if (isAdmin() && activeTab==='members') {
       if(!memberEntries.length){
@@ -416,22 +443,25 @@
         const tip = document.createElement('p');
         tip.textContent = privateLoaded ? 'No private templates saved yet.' : 'Select Refresh my templates to load your private cloud library.';
         el('private-list').append(tip);
-      } else for (const row of privateEntries) {
+      } else for (const row of privateEntries.filter(item=>matchesCloudFilter('private',item))) {
         const card = document.createElement('article');
         card.className = 'frameLibCard';
         const heading = document.createElement('strong');
         heading.textContent = row.name;
         const timestamp = document.createElement('small');
         timestamp.textContent = 'Updated ' + new Date(row.updated_at).toLocaleString();
+        const org=document.createElement('small');org.className='mfOrgLabel';
+        org.textContent=organization(row).folder+' · '+organization(row).category;
         const actions = document.createElement('div');
         actions.className = 'frameLibActions';
         actions.append(btn('Open private frame',()=>run(()=>openPrivate(row))));
         if(['admin','staff','editor'].includes(role))actions.append(
           btn('Rename',()=>run(()=>renamePrivate(row))),
+          btn('Organize',()=>run(()=>organizeCloudTemplate(row,true))),
           btn('Replace with current frame',()=>run(()=>savePrivate(row))),
           btn('Delete',()=>run(()=>removePrivate(row)),true)
         );
-        card.append(heading,timestamp,actions);
+        card.append(heading,timestamp,org,actions);
         scheduleFramePreview(card, row, true);
         el('private-list').append(card);
       }
@@ -442,22 +472,25 @@
       empty.textContent = loaded ? 'No shared templates yet.' : 'Loading published frames…';
       el('list').append(empty);
     }
-    for (const row of entries.slice(0, pageSize)) {
+    for (const row of entries.slice(0, pageSize).filter(item=>matchesCloudFilter('shared',item))) {
       const card = document.createElement('article');
       card.className = 'frameLibCard';
       const name = document.createElement('strong');
       name.textContent = row.name;
       const updated = document.createElement('small');
       updated.textContent = 'Updated ' + new Date(row.updated_at).toLocaleString();
+      const org=document.createElement('small');org.className='mfOrgLabel';
+      org.textContent=organization(row).folder+' · '+organization(row).category;
       const actions = document.createElement('div');
       actions.className = 'frameLibActions';
       actions.append(btn('Open frame', () => run(() => openShared(row))));
       if (canPublish()) actions.append(
         btn('Rename', () => run(() => rename(row))),
+        btn('Organize', () => run(() => organizeCloudTemplate(row,false))),
         btn('Replace with current frame', () => run(() => saveShared(row))),
         btn('Delete', () => run(() => remove(row)), true)
       );
-      card.append(name, updated, actions);
+      card.append(name, updated, org, actions);
       scheduleFramePreview(card, row);
       el('list').append(card);
     }
@@ -526,7 +559,7 @@
     const frame = await decodedImage(data);
     if (g !== generation) return;
     if (!usedCache) await publicCacheWrite('details', row.id, t);
-    applyTemplate({ id: 'new', sharedSource: true, name: t.name, data, ...settings }, data, frame);
+    applyTemplate({ id: 'new', sharedSource: true, name: t.name, data, ...settings, ...organization(t) }, data, frame);
     setMode('map');
     el('dialog').close();
     notify(usedCache ? 'Offline copy opened. Changes to shared templates sync when online.' :
@@ -553,7 +586,7 @@
         'Use only approved frame artwork. Everyone with library access can open it. The photo queue stays on this device.',
       value: row?.name || app.template.name.slice(0, 140), confirmLabel: row ? 'Replace shared template' : 'Publish template' });
     if (name === null) return;
-    await mutate(row, row ? 'PATCH' : 'POST', { name, artwork, settings });
+    await mutate(row, row ? 'PATCH' : 'POST', { name, artwork, settings, ...organization(row || app.template) });
     message(row ? 'Shared template replaced.' : 'Template published to the shared library.');
   }
   async function rename(row) {
@@ -562,6 +595,28 @@
     if (name === null || name === row.name) return;
     await mutate(row, 'PATCH', { name });
     message('Shared template renamed.');
+  }
+  async function organizeCloudTemplate(row,privateFrame) {
+    if (privateFrame) requirePersonalCloud(true);
+    else requirePublisher();
+    const org=organization(row);
+    const folder=await popupAction({
+      title:privateFrame?'Private template folder':'Shared template folder',
+      message:'Choose a folder name. Shared folders are visible to everyone with access.',
+      value:org.folder,confirmLabel:'Next'
+    });
+    if(folder===null)return;
+    const category=await popupAction({
+      title:'Template category',
+      message:'Choose a category to organize frames across devices.',
+      value:org.category,confirmLabel:'Save organization'
+    });
+    if(category===null)return;
+    const changes={folder:cleanOrganization('folder',folder),category:cleanOrganization('category',category)};
+    if(changes.folder===org.folder&&changes.category===org.category)return;
+    if(privateFrame)await mutatePrivate(row,'PATCH',changes);
+    else await mutate(row,'PATCH',changes);
+    message('Cloud template folder and category synchronized.');
   }
   async function remove(row) {
     requirePublisher();
@@ -593,7 +648,7 @@
     const t=rows[0];
     const data=checkArtwork(t.artwork),settings=cleanSettings(t.settings);
     const frame=await decodedImage(data);
-    applyTemplate({id:'new',name:t.name,data,...settings,privateSource:true},data,frame);
+    applyTemplate({id:'new',name:t.name,data,...settings,...organization(t),privateSource:true},data,frame);
     setMode('map');
     el('dialog').close();
     notify('Private cloud frame opened. Save a local template copy if you need offline access.');
@@ -619,7 +674,7 @@
     if (name===null) return;
     const settings=cleanSettings(app),artwork=checkArtwork(app.template.data);
     await mutatePrivate(row,row?'PATCH':'POST',
-      row?{name,settings,artwork}:{owner_id:session.uid,name,settings,artwork});
+      row?{name,settings,artwork,...organization(row)}:{owner_id:session.uid,name,settings,artwork,...organization(app.template)});
     message(row?'Private template replaced.':'Private template saved to your account.');
   }
   async function renamePrivate(row) {
@@ -711,6 +766,11 @@
   };
   el('private-save').onclick = () => run(()=>savePrivate(null));
   el('private-refresh').onclick = () => run(loadPrivate);
+  for(const kind of ['shared','private']){
+    for(const field of ['folder','category']){
+      el(kind+'-'+field).onchange=e=>{cloudFilters[kind][field]=e.target.value;paint()};
+    }
+  }
   el('admin-toggle').onclick = () => { adminFormOpen = !adminFormOpen; paint(); };
   el('form').onsubmit = event => {
     event.preventDefault();
