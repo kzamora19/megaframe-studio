@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
   const response=await page.goto(base,{waitUntil:'domcontentloaded'});
   assert.equal(response.status(),200);
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:45000});
-  assert.match(await page.title(),/MegaFrame Studio v2\.6/);
+  assert.match(await page.title(),/MegaFrame Studio v2\.7/);
   const paths=await page.evaluate(async()=>{
    const manifestNode=document.querySelector('link[rel="manifest"]');
    const manifestUrl=new URL(manifestNode.getAttribute('href'),location.href);
