@@ -200,7 +200,9 @@ try {
   assert.match(await restored.locator("#actionModalTitle").textContent(),
     /Restore unfinished editing session/);
   await restored.locator("#actionModalConfirm").click();
-  await restored.locator("#photoCount").getByText(/1 photo/i).waitFor({timeout:20000});
+  await restored.locator("#photoCount").waitFor({state:"attached",timeout:20000});
+  assert.match(await restored.locator("#photoCount").textContent(),/1 photo/i,
+    "Encrypted photo draft must restore even while the Import section is collapsed.");
   assert.match(await restored.locator("#draftStatus").textContent(),/Draft saved|Auto-save|Restored/i);
 
   // Changing the PTG account's server-issued recovery scope MUST NOT display
