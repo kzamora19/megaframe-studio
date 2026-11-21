@@ -91,7 +91,7 @@ jobs:
   publish:
     # DO NOT publish the public editor when the draft is merged. The explicit
     # owner-controlled release variable must be enabled only after hosted acceptance.
-    if: github.event_name != 'pull_request' && vars.MEGAFRAME_CUTOVER_APPROVED == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && vars.MEGAFRAME_CUTOVER_APPROVED == 'true'
     needs: verify
     runs-on: ubuntu-24.04
     permissions:
