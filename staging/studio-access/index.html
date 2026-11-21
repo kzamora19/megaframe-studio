@@ -24,7 +24,20 @@ main{padding:20px}
 #cloudMessage{width:100%;color:#34455d;font-size:12px}
 @media(max-width:700px){#cloudPanel{padding:10px;gap:6px}#cloudPanel small{width:100%}}
 </style>
-</head>
+<style>
+#drivePanel{display:flex;align-items:center;flex-wrap:wrap;gap:9px;background:#f8fbff;
+  padding:12px 16px;border-bottom:1px solid #dae3f0;font:13px/1.5 system-ui}
+#drivePanel[hidden],#drivePanel [hidden]{display:none!important}
+#drivePanel strong{font-size:13px;color:#1d2836}
+#drivePanel small{font-size:11px;color:#526174;max-width:330px}
+#drivePanel button{font:600 12px system-ui;padding:8px 11px;border-radius:7px;
+ background:#355ee8;color:white;border:1px solid #2348c7}
+#drivePanel button:disabled{opacity:.55;cursor:not-allowed}
+#drivePanel select{min-width:140px;max-width:220px;padding:7px;border:1px solid #b7c4d5;border-radius:7px}
+#drivePanel label{font:600 11px system-ui;color:#34455d;display:flex;align-items:center;gap:5px}
+#driveMessage{width:100%;color:#34455d;font-size:12px}
+@media(max-width:700px){#drivePanel{padding:10px;gap:6px}#drivePanel small{width:100%}}
+</style></head>
 <body>
 <header>MegaFrame Studio — development preview</header>
 <main>
@@ -39,16 +52,30 @@ main{padding:20px}
   <button type="button" id="cloudRestore">Retrieve cloud project</button>
   <output id="cloudMessage" role="status" aria-live="polite"></output>
  </section>
+
+<section id="drivePanel" hidden aria-label="Manual Google Drive encrypted project backups">
+  <strong>Google Drive Backups</strong>
+  <small>Additional, opt-in storage in your own Google Drive. Supabase saving is unchanged. Encrypted projects may include customer photos.</small>
+  <button type="button" id="driveConnect">Connect Google Drive</button>
+  <button type="button" id="driveDisconnect" hidden>Disconnect</button>
+  <button type="button" id="driveRefresh">Refresh Drive backups</button>
+  <label id="driveLocalWrap">Local project <select id="driveLocalProject"></select></label>
+  <button type="button" id="driveBackup">Back up to Google Drive</button>
+  <label>Drive backups <select id="driveRemoteProject"></select></label>
+  <button type="button" id="driveRestore">Retrieve from Google Drive</button>
+  <output id="driveMessage" role="status" aria-live="polite"></output>
+</section>
 <div id="mount"></div>
 </main>
 <script>
 window.MEGAFRAME_STUDIO_PRIVATE_CONFIG = {
   endpoint: "https://vmyoxoiygfcecgkbavgg.supabase.co/functions/v1/megaframe-editor-delivery",
   publishableKey: "",
+  googleDriveClientId: "873550026587-clo2e2vrthc8621unnmjio3des0nehfm.apps.googleusercontent.com",
   checkIntervalMs: 30000,
 };
 </script>
-<script src="./draft-vault.js" defer></script>
+<script src="./draft-vault.js" defer></script><script src="./drive-backup.js" defer></script>
 <script src="./launch.js" defer></script>
 </body>
 </html>
