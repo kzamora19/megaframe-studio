@@ -13,6 +13,7 @@ const assert=require('node:assert/strict');
   assert.equal(await page.evaluate(()=>app.template.id),'new');
   assert.equal(await page.evaluate(()=>app.photos.length),0);
   assert.equal(await page.evaluate(()=>hasUnsavedChanges()),false);
+  await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
   await page.locator('#photosInput').setInputFiles({name:'unfinished.png',mimeType:'image/png',buffer:png});
   await page.waitForFunction(()=>app.photos.length===1&&hasUnsavedChanges());
