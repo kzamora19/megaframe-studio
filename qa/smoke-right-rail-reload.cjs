@@ -87,19 +87,25 @@ const assert=require('node:assert/strict');
    window.dispatchEvent(e);return e.defaultPrevented;
   }),true,'Native browser unload warning remains for other paths');
 
-  // Mobile has a readable stacked layout and keeps selected-photo controls above the queue.
+  // On phones, both panels begin collapsed to leave the canvas clear.
   await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.locator('#mobileSlidesToggle').getAttribute('aria-expanded'),'false');
+  assert.equal(await page.locator('.photoQueueSidebar').isVisible(),false);
+  assert.equal(await page.locator('.sidebar').isVisible(),false);
+  await page.locator('#mobileSlidesToggle').click();
   const mobile=await page.evaluate(()=>{
    const a=document.querySelector('.photoQueueSidebar').getBoundingClientRect();
    const w=document.querySelector('.workspace').getBoundingClientRect();
    const p=document.querySelector('.photoQueuePinned').getBoundingClientRect();
    const g=document.querySelector('.galleryWrap').getBoundingClientRect();
-   return {rightRailTop:a.top,workspaceBottom:w.bottom,controlsBottom:p.bottom,queueTop:g.top,
+   return {rightRailBottom:a.bottom,workspaceTop:w.top,controlsBottom:p.bottom,queueTop:g.top,
     scrollWidth:document.documentElement.scrollWidth,viewport:innerWidth};
   });
-  assert.ok(mobile.rightRailTop>=mobile.workspaceBottom-3,'Mobile queue comes after editor');
+  assert.ok(mobile.rightRailBottom<=mobile.workspaceTop+3,'Expanded slide navigator must push the canvas down without covering it');
   assert.ok(mobile.queueTop>=mobile.controlsBottom-3,'Mobile controls precede thumbnails');
   assert.ok(mobile.scrollWidth<=mobile.viewport+3,'Mobile layout must not overflow horizontally');
+  await page.locator('#mobileSlidesToggle').click();
+  assert.equal(await page.locator('.photoQueueSidebar').isVisible(),false);
 
   // Named project is persisted before a deliberate in-app reload.
   await page.locator('#reloadStudio').click();
