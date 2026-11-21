@@ -1,5 +1,5 @@
 /* MegaFrame Studio PWA — application shell only. Never cache API calls, auth or credentials. */
-const VERSION = 'mf-pwa-v26-editor-numeric-values-20261121';
+const VERSION = 'mf-pwa-v27-chat-navigation-numeric-values-20261121';
 const CACHE = 'megaframe-shell-' + VERSION;
 // Resolve the shell relative to this worker, not the web origin root.
 // Works at both / (legacy Vercel) and /megaframe-studio/ (GitHub Pages).
@@ -7,7 +7,7 @@ const APP_ROOT = new URL('./', self.location.href);
 const APP_PATH = APP_ROOT.pathname;
 const CORE = [
   './', './manifest.webmanifest', './pwa-client.js',
-  './editor.js', './overlay-engine.js', './shared.js', './cloud-config.js', './google-drive-config.js', './google-drive.js',
+  './editor.js', './chat-sidebar.js', './chat-sidebar.css', './overlay-engine.js', './shared.js', './cloud-config.js', './google-drive-config.js', './google-drive.js',
   './sample_image-0.js', './sample_image-1.js', './sample_image-2.js',
   './sample_image-3.js', './sample_image-4.js', './sample_image-5.js',
   './gold_image-0.js', './gold_image-1.js', './gold_image-2.js', './gold_image-3.js',
