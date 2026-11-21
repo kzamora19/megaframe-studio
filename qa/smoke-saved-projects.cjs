@@ -60,6 +60,7 @@ const assert=require('node:assert/strict');
   await page.locator('#openProjects').click();
   await page.locator('.savedProjectCard').filter({hasText:'Customer frame B'}).getByRole('button',{name:'Delete'}).click();
   await page.locator('#actionModalConfirm').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.savedProjectCard').length===1);
   assert.equal(await page.locator('.savedProjectCard').count(),1,'Delete only removes chosen project');
   await page.locator('#importProjectFile').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:payload});
   await page.waitForFunction(()=>document.querySelectorAll('.savedProjectCard').length===2);
