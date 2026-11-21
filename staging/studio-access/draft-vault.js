@@ -76,7 +76,45 @@
       if(!validProjectId(id))throw Error("Unsupported named project ID.");
       return scope+":project:"+id;
     };
+    // Explicit, opt-in encrypted cloud transfer. The PTG service receives
+    // ONLY this ciphertext envelope, never raw customer photos or draft keys.
+    const b64=buffer=>btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      .replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+    const unb64=value=>{
+      if(typeof value!=="string"||!value.length||!/^[A-Za-z0-9_-]+$/.test(value))
+        throw Error("Invalid encrypted cloud envelope.");
+      const raw=atob(value.replaceAll("-","+").replaceAll("_","/")+"=".repeat((4-value.length%4)%4));
+      return Uint8Array.from(raw,c=>c.charCodeAt(0));
+    };
+    async function cloudExport(id){
+      const record=await operation("readonly","read",projectKey(id));
+      if(!record)return null;
+      if(record.format!=="AES-GCM-v1"||!(record.iv instanceof Uint8Array)||
+         record.iv.byteLength!==12||!(record.encrypted instanceof ArrayBuffer))
+        throw Error("Invalid local encrypted project.");
+      const encrypted=b64(record.encrypted);
+      if(encrypted.length>1_200_000)throw Error("Cloud archive limit exceeded: keep this project local or export a backup file.");
+      return {iv:b64(record.iv),encrypted};
+    }
+    async function cloudImport(id,record){
+      const key=projectKey(id);
+      if(!record||typeof record!=="object"||typeof record.iv!=="string"||record.iv.length!==16||
+         typeof record.encrypted!=="string"||record.encrypted.length>1_200_000)
+        throw Error("Invalid encrypted cloud project.");
+      const iv=unb64(record.iv),encrypted=unb64(record.encrypted);
+      if(iv.byteLength!==12||encrypted.byteLength<16)throw Error("Invalid cloud AES-GCM data.");
+      const plaintext=await crypto.subtle.decrypt(
+        {name:"AES-GCM",iv,additionalData:aad(key)},await keyPromise,encrypted);
+      const payload=JSON.parse(decoder.decode(plaintext));
+      if(payload?.format!=="MegaFrameProjectV1"||payload.id!==id||
+         payload.payload?.format!=="MegaFrameDraftV1"||!Array.isArray(payload.payload.photos))
+        throw Error("Cloud project content does not match the selected project.");
+      return operation("readwrite","write",key,{format:"AES-GCM-v1",iv,
+        encrypted:encrypted.buffer,updatedAt:Date.now()});
+    }
     return Object.freeze({
+      ["cloud-export"]:cloudExport,
+      ["cloud-import"]:cloudImport,
       async read(){return readRecord(scope);},
       async write(record){
         if(!record||record.format!=="MegaFrameDraftV1"||!Array.isArray(record.photos))
