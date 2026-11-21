@@ -976,15 +976,41 @@ function externalTemplateSearch(engine){const term=$('onlineTemplateQuery').valu
 async function searchOnlineFrames(event){if(event)event.preventDefault();const query=$('onlineTemplateQuery').value.trim();if(!query)return;$('onlineSearchStatus').textContent='Searching Wikimedia Commons…';$('onlineResults').replaceChildren();$('runOnlineSearch').disabled=true;try{const params=new URLSearchParams({action:'query',generator:'search',gsrsearch:query+' filetype:bitmap',gsrnamespace:'6',gsrlimit:'20',prop:'imageinfo',iiprop:'url|mime|size|extmetadata',iiurlwidth:'640',iiextmetadatafilter:'LicenseShortName',format:'json',origin:'*'});const res=await fetch('https://commons.wikimedia.org/w/api.php?'+params,{mode:'cors'});if(!res.ok)throw Error('Search service returned HTTP '+res.status);const body=await res.json();const items=Object.values(body.query?.pages||{}).map(p=>{const i=p.imageinfo?.[0];return i&&i.thumburl&&i.descriptionurl?{title:p.title.replace(/^File:/i,''),thumbnail:i.thumburl,original:i.url,source:i.descriptionurl,mime:i.mime,size:i.size,license:(i.extmetadata?.LicenseShortName?.value||'License details on source page').replace(/<[^>]*>/g,'')}:null}).filter(Boolean);renderOnlineResults(items);$('onlineSearchStatus').textContent=items.length?`Found ${items.length} images on Wikimedia Commons. Open the source to check licensing before using an image for advertising.`:'No matching images found here. Try another search or one of the external sources.'}catch(err){$('onlineSearchStatus').textContent='Online results unavailable ('+err.message+'). Check your internet connection, or try Google Images, Bing Images, or Canva below.'}finally{$('runOnlineSearch').disabled=false}}
 function renderOnlineResults(items){const grid=$('onlineResults');grid.replaceChildren();for(const item of items){const card=document.createElement('article');card.className='frameLibCard';const im=document.createElement('img');im.src=item.thumbnail;im.loading='lazy';im.alt=item.title;const name=document.createElement('strong');name.textContent=item.title;const lic=document.createElement('small');lic.className='onlineLicense';lic.textContent=item.license;const source=document.createElement('a');source.className='onlineAttribution';source.textContent='View image source and license';source.href=item.source;source.target='_blank';source.rel='noopener noreferrer';const actions=document.createElement('div');actions.className='frameLibActions';const use=document.createElement('button');use.type='button';use.className='btn primary';use.textContent='Import as frame';use.onclick=()=>importOnlineFrame(item,use);actions.append(use);card.append(im,name,lic,source,actions);grid.append(card)}}
 async function importOnlineFrame(item,button){button.disabled=true;button.textContent='Importing…';$('onlineSearchStatus').textContent='Importing image. If the source blocks browser downloads, use its source page to download manually.';try{const url=(['image/png','image/jpeg','image/webp'].includes(item.mime)&&item.size>0&&item.size<=18*1024*1024)?item.original:item.thumbnail;const res=await fetch(url,{mode:'cors'});if(!res.ok)throw Error('Image request returned HTTP '+res.status);const blob=await res.blob();const mime=blob.type.split(';')[0].toLowerCase();const supported=['image/jpeg','image/png','image/webp'].includes(mime);if(!supported)throw Error('This image type is not supported; download a PNG or JPG from its source page');if(blob.size>35*1024*1024)throw Error('Image too large; download a smaller PNG or JPG instead');const ext=mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg';const filename=(item.title.replace(/[^a-z0-9_.-]+/gi,'_').replace(/\.[^.]+$/,'').slice(0,70)||'Online_Frame')+'.'+ext;const oldFrame=app.template;await uploadTemplate(new File([blob],filename,{type:mime}));if(app.template===oldFrame)throw Error('Could not decode image');$('frameLibrary').close();showPanel(0);notify('Imported online image. Choose a photo-opening shape, then save the template.')}catch(err){$('onlineSearchStatus').textContent='Import failed: '+err.message+'. Open the source and download a JPG/PNG/WebP, then use Upload frame.'}finally{button.disabled=false;button.textContent='Import as frame'}}
-function showPanel(index){app.overlayEditing=index===6;if($('modeTag'))$('modeTag').textContent=app.overlayEditing?'Overlay editing':app.mode==='map'?'Shape editing':'Photo / collage adjusting';const nav=$('pinNav'),sidebar=document.querySelector('.sidebar'),sections=[...sidebar.querySelectorAll(':scope > .section')];const active=sections[index];if(!active)return;if(sidebar.classList.contains('mobileDrawerClosed'))setMobileDrawerOpen(true);sections.forEach((section,i)=>{section.classList.toggle('activePanel',i===index)});nav.querySelectorAll('button[data-panel]').forEach(button=>{const selected=Number(button.dataset.panel)===index;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected))});if(active.classList.contains('is-collapsed'))active.querySelector(':scope > .sectionHead').click();sidebar.scrollTop=0;setLiveExportPreview(index===5)}
+function showPanel(index){app.overlayEditing=index===6;if($('modeTag'))$('modeTag').textContent=app.overlayEditing?'Overlay editing':app.mode==='map'?'Shape editing':'Photo / collage adjusting';const nav=$('pinNav'),sidebar=document.querySelector('.sidebar'),sections=[...sidebar.querySelectorAll(':scope > .section')];const active=sections[index];if(!active)return;if(sidebar.classList.contains('mobileDrawerClosed')&&!window.matchMedia('(max-width:720px)').matches)setMobileDrawerOpen(true);sections.forEach((section,i)=>{section.classList.toggle('activePanel',i===index)});nav.querySelectorAll('button[data-panel]').forEach(button=>{const selected=Number(button.dataset.panel)===index;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected))});if(active.classList.contains('is-collapsed'))active.querySelector(':scope > .sectionHead').click();sidebar.scrollTop=0;setLiveExportPreview(index===5)}
 function setMobileDrawerOpen(open){
- const sidebar=document.querySelector('.sidebar'),btn=$('mobileDrawerToggle');
+ const sidebar=document.querySelector('.sidebar'),btn=$('mobileDrawerToggle'),mobileBtn=$('mobileEditToggle');
  sidebar.classList.toggle('mobileDrawerClosed',!open);
  btn.setAttribute('aria-expanded',String(open));
  btn.textContent=open?'Hide editing controls ▴':'Show editing controls ▾';
+ mobileBtn.setAttribute('aria-expanded',String(open));
+ mobileBtn.textContent=open?'☰ Hide controls ▴':'☰ Editing controls ▾';
+ if(open&&window.matchMedia('(max-width:720px)').matches&&
+    !document.querySelector('.photoQueueSidebar').classList.contains('photoQueueClosed')){
+  setMobileSlidesOpen(false);
+ }
+}
+function setMobileSlidesOpen(open){
+ const slides=document.querySelector('.photoQueueSidebar'),btn=$('mobileSlidesToggle');
+ slides.classList.toggle('photoQueueClosed',!open);
+ btn.setAttribute('aria-expanded',String(open));
+ btn.textContent=open?'▤ Hide slides ▴':'▤ Photo slides ▾';
+ if(open&&window.matchMedia('(max-width:720px)').matches&&
+    !document.querySelector('.sidebar').classList.contains('mobileDrawerClosed')){
+  setMobileDrawerOpen(false);
+ }
 }
 function setupMobileDrawer(){
  $('mobileDrawerToggle').onclick=()=>setMobileDrawerOpen(document.querySelector('.sidebar').classList.contains('mobileDrawerClosed'));
+ $('mobileEditToggle').onclick=()=>setMobileDrawerOpen(document.querySelector('.sidebar').classList.contains('mobileDrawerClosed'));
+ $('mobileSlidesToggle').onclick=()=>setMobileSlidesOpen(document.querySelector('.photoQueueSidebar').classList.contains('photoQueueClosed'));
+ setMobileDrawerOpen(false);
+ setMobileSlidesOpen(false);
+ // PWA windows can be resized between desktop and phone widths.
+ // Entering mobile mode always restores the canvas-first collapsed view.
+ const mobileQuery=window.matchMedia('(max-width:720px)');
+ mobileQuery.addEventListener('change',event=>{
+  if(event.matches){setMobileDrawerOpen(false);setMobileSlidesOpen(false);}
+ });
 }
 function setupPinnedNav(){const nav=$('pinNav');nav.querySelectorAll('button[data-panel]').forEach(button=>{button.addEventListener('click',()=>showPanel(Number(button.dataset.panel)))});showPanel(0)}
 
