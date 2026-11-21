@@ -26,6 +26,10 @@ jobs:
           node --check staging/build-private-package.mjs
           node --test staging/private-package.test.mjs
           node --test staging/private-delivery-policy.test.mjs
+      - name: Validate undeployed editor-free historical Pages cutover preview
+        run: |
+          node --check staging/build-cutover-pages.mjs
+          node --test staging/cutover-pages.test.mjs
       - name: Check private launcher and vault JavaScript syntax
         run: |
           node --check staging/studio-access/launch.js
