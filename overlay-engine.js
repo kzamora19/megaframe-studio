@@ -345,7 +345,15 @@ function overlayFontPickerInit(){
  });
  search.addEventListener('input',filter);
  const sidebar=document.querySelector('.sidebar');
- sidebar?.addEventListener('scroll',()=>overlayFontPickerClose(false),{passive:true});
+ // The collapsible mobile editing panel scrolls itself. Keep an open font
+ // chooser aligned with its button when that panel scrolls into view; a late
+ // scroll event after tapping the button must not immediately dismiss it.
+ sidebar?.addEventListener('scroll',()=>{
+  if(menu.hidden)return;
+  const anchor=button.getBoundingClientRect(),bounds=sidebar.getBoundingClientRect();
+  if(anchor.bottom<bounds.top||anchor.top>bounds.bottom)overlayFontPickerClose(false);
+  else position();
+ },{passive:true});
  window.addEventListener('resize',()=>{if(!menu.hidden)position()});
  overlayFontPickerSync();
 }
