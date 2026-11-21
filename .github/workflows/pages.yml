@@ -20,6 +20,7 @@ on:
       - 'qa/smoke-new-project.cjs'
       - 'qa/smoke-overlays.cjs'
       - 'qa/smoke-multiple-overlays.cjs'
+      - 'qa/smoke-overlays-device-review.cjs'
       - 'qa/smoke-drive.cjs'
       - '.github/workflows/pages.yml'
   push:
@@ -41,6 +42,7 @@ on:
       - 'qa/smoke-new-project.cjs'
       - 'qa/smoke-overlays.cjs'
       - 'qa/smoke-multiple-overlays.cjs'
+      - 'qa/smoke-overlays-device-review.cjs'
       - 'qa/smoke-drive.cjs'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -78,6 +80,7 @@ jobs:
           node --check qa/smoke-new-project.cjs
           node --check qa/smoke-overlays.cjs
           node --check qa/smoke-multiple-overlays.cjs
+          node --check qa/smoke-overlays-device-review.cjs
           node --check google-drive.js
           node --check google-drive-config.js
           node --check qa/smoke-drive.cjs
@@ -111,6 +114,7 @@ jobs:
           node qa/smoke-new-project.cjs
           node qa/smoke-overlays.cjs
           node qa/smoke-multiple-overlays.cjs
+          node qa/smoke-overlays-device-review.cjs
           node qa/smoke-drive.cjs
 
   publish:
