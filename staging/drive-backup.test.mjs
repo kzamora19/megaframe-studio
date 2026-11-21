@@ -22,11 +22,11 @@ for(const studio of ["megaframe","flyer"])test("manual Drive backup, recovery, a
     return nodes.get(id);
   }
   let proofAllowed=true,proofChecks=0,exported=0,imported=0;
-  let driveCalls=0,uploaded=null,metadata=null;
+  let driveCalls=0,uploaded=null,metadata=null,transferred="",interruptNext=false,large=false,resumeChecks=0;
   const scope="a".repeat(43);
   const projectId=studio==="flyer"?"p:current":"project_abc";
   const mockExport=async(id,opts)=>{assert.equal(id,projectId);assert.equal(opts.drive,true);
-      exported++;return {iv:"x".repeat(16),encrypted:"ciphertext-only-data"};};
+      exported++;return {iv:"x".repeat(16),encrypted:large?"Q".repeat(9*1024*1024):"ciphertext-only-data"};};
   const mockImport=async(id,record,opts)=>{assert.equal(id,projectId);
       assert.equal(opts.drive,true);assert.equal(record.encrypted,"ciphertext-only-data");imported++;};
   const vault={
@@ -37,8 +37,8 @@ for(const studio of ["megaframe","flyer"])test("manual Drive backup, recovery, a
     ["cloud-import"]:mockImport,cloudImport:mockImport
   };
   const uploadUrl="https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=test";
-  function response(data,extra={}){
-    return {ok:true,status:200,headers:{get:k=>extra[k]||null},
+  function response(data,extra={},status=200){
+    return {ok:status>=200&&status<300,status,headers:{get:k=>extra[k]||null},
       json:async()=>data,blob:async()=>new Blob([uploaded||""]),text:async()=>String(uploaded||"")};
   }
   async function fetchMock(url,opts={}){
@@ -47,12 +47,31 @@ for(const studio of ["megaframe","flyer"])test("manual Drive backup, recovery, a
     assert.equal(opts.credentials,"omit");
     assert.match(opts.headers.Authorization,/^Bearer test-google-token$/);
     if(m==="POST"&&u.pathname.endsWith("/files")&&u.searchParams.has("uploadType")){
-      metadata=JSON.parse(opts.body);
+      metadata=JSON.parse(opts.body);transferred="";uploaded=null;
       return response({},{"Location":uploadUrl});
     }
     if(m==="PUT"&&url===uploadUrl){
-      assert.equal(opts.headers["Content-Range"],"bytes 0-"+(opts.body.size-1)+"/"+opts.body.size);
-      uploaded=await opts.body.text();
+      const range=opts.headers["Content-Range"];
+      if(range.startsWith("bytes */")){
+        resumeChecks++;
+        return response({},{"Range":transferred?"bytes=0-"+(transferred.length-1):null},308);
+      }
+      const m=/^bytes ([0-9]+)-([0-9]+)\/([0-9]+)$/.exec(range);
+      assert.ok(m,"Chunk must include a Google Drive Content-Range");
+      const start=Number(m[1]),end=Number(m[2]),size=Number(m[3]);
+      assert.equal(start,transferred.length,"Upload may only resume from server-confirmed byte");
+      assert.equal(end-start+1,opts.body.size);
+      const chunk=await opts.body.text();
+      assert.equal(chunk.length,opts.body.size);
+      if(interruptNext){
+        interruptNext=false;
+        transferred+=chunk.slice(0,524288);
+        throw Error("Simulated network interruption after partial upload");
+      }
+      transferred+=chunk;
+      if(transferred.length<size)return response({},{"Range":"bytes=0-"+(transferred.length-1)},308);
+      assert.equal(transferred.length,size);
+      uploaded=transferred;
       return response({id:"fileEncrypted123"});
     }
     if(m==="POST"&&u.pathname.endsWith("/files")){
@@ -110,6 +129,12 @@ for(const studio of ["megaframe","flyer"])test("manual Drive backup, recovery, a
   assert.ok(!metadata.appProperties.ownerScope.includes(scope));
   await node("driveRestore").onclick();
   assert.equal(imported,1,"Encrypted Drive retrieval uses the authenticated local vault");
+  large=true;interruptNext=true;
+  await node("driveBackup").onclick();
+  assert.ok(resumeChecks>=1,"Interrupted large upload must ask Google for the received byte range");
+  assert.ok(uploaded&&uploaded.includes('"encrypted":"'+ "Q".repeat(128)),
+    "Interrupted upload must resume and complete the encrypted payload");
+  assert.match(node("driveMessage").textContent,/backup created/i);
   const previousCalls=driveCalls;
   proofAllowed=false;
   await node("driveBackup").onclick();
@@ -126,6 +151,8 @@ test("Drive files are never automatically synchronized or stored as OAuth tokens
   assert.match(source,/PTG proof/);
   assert.match(source,/appProperties/);
   assert.match(source,/uploadType=resumable/);
+  assert.match(source,/uploadResumable/);
+  assert.match(source,/Range.+bytes|bytes.+Range/);
   assert.match(source,/reader\.cancel\(\)/);
   assert.match(source,/More than 1,000 Drive backups/);
   assert.match(source,/Refusing Google Drive authorization to an untrusted destination/);
