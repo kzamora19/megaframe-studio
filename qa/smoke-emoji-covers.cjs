@@ -41,7 +41,7 @@ const assert = require('node:assert/strict');
   assert.ok(images.different&&images.rawBytes>100&&images.editedBytes>100,'Saved image must contain emoji pixels');
   await page.locator('#removeEmojiCover').click();
   assert.equal(await page.evaluate(()=>app.photos[0].covers.length),0);
-  await page.locator('#undo').click();
+  await page.keyboard.press('Control+z');
   assert.equal(await page.evaluate(()=>app.photos[0].covers.length),1,'Undo restores removed emoji');
   await page.locator('#saveDraftNow').click();
   await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Draft saved'),{timeout:35000});
