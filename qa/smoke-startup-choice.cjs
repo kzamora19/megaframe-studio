@@ -43,7 +43,9 @@ const assert=require('node:assert/strict');
   await page.locator('#actionModal[open]').waitFor();
   await page.locator('#actionModalConfirm').click();
   await page.waitForFunction(()=>document.getElementById('previewTitle')?.textContent?.includes('Blank workspace'));
-  assert.equal(await page.locator('#savedProjectsDialog').evaluate(el=>el.open),false);
+  // Restoring a saved project decodes artwork asynchronously; the preview
+  // already says "Blank workspace" before that operation finishes.
+  await page.locator('#savedProjectsDialog').waitFor({state:'hidden',timeout:20000});
   assert.deepEqual(errors,[],'No uncaught browser errors');
   console.log('PASS: every startup offers New/Retrieve, empty library has backup import, named projects restore.');
  } finally {await browser.close()}
