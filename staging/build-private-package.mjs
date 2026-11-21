@@ -48,12 +48,22 @@ for (const name of scriptNames) {
     const namedEnd = code.indexOf("function projectSize(record){",namedBegin);
     if(namedBegin<0 || namedEnd<namedBegin)
       throw Error("MegaFrame named-project storage changed; security review required.");
+    // Only replace IndexedDB-backed CRUD. The current v2.7 startup flow
+    // also defines recoveryArchiveId/deleteLinkedRecovery in this region:
+    // they coordinate automatic recovery, named archive and safe deletion.
+    // Dropping those helpers prevents the startup chooser from opening.
+    const archiveBegin=code.indexOf("// A recovered session has two local representations.",namedBegin);
+    if(archiveBegin<namedBegin||archiveBegin>=namedEnd||
+       !code.slice(archiveBegin,namedEnd).includes("function recoveryArchiveId(draft)")||
+       !code.slice(archiveBegin,namedEnd).includes("async function deleteLinkedRecovery(id)"))
+      throw Error("MegaFrame recovery-project helpers changed; review before packaging.");
+    const recoveryHelpers=code.slice(archiveBegin,namedEnd);
     const namedBridge = [
       "async function projectList(){return window.__MEGAFRAME_PRIVATE_DRAFT__.request('project-list');}",
       "async function projectRead(id){return window.__MEGAFRAME_PRIVATE_DRAFT__.request('project-read',id);}",
       "async function projectWrite(record){return window.__MEGAFRAME_PRIVATE_DRAFT__.request('project-write',record);}",
       "async function projectRemove(id){return window.__MEGAFRAME_PRIVATE_DRAFT__.request('project-delete',id);}",
-      "",
+      recoveryHelpers,
     ].join("\n");
     code=code.slice(0,namedBegin)+namedBridge+code.slice(namedEnd);
     // Current production v2.7 starts on a blank workspace, prompts for
