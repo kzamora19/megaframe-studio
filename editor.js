@@ -91,9 +91,12 @@ async function deletePhotoAt(index){if(!Number.isInteger(index)||index<0||index>
 async function replaceCurrentPhoto(file){if(!file||!getPhoto())return;if(!isPhotoFile(file))return notify('Choose a JPG, PNG, or WebP photo.');const target=getPhoto();const id=target.id;try{const data=await dataUrlOf(file),image=await decodedImage(data);const current=app.photos.find(p=>p.id===id);if(!current)return;saveHistory();Object.assign(current,{name:file.name,data,image,zoom:1,rot:0,dx:0,dy:0,fit:'cover'});resetPhotoFilterState(current);current.enhancement={sharpness:0,denoise:0};current.covers=[];app.activeCoverIndex=-1;updateGallery();updateControls();render();notify('Photo replaced in the same collage slot.')}catch(err){notify('Could not replace photo: '+err.message)}}
 function getPhoto(){return app.photos[app.selected]||null}
 // Emoji covers are local photo edits. They never belong to a shared frame template.
-const FACE_EMOJIS=['😎','😊','😍','🤩','🥰','🙈','❤️','⭐'];
+const EMOJI_CATEGORIES=[{"id":"faces","label":"Smileys","icon":"☺","items":[["😎","cool sunglasses"],["😊","smile blush"],["😀","grinning"],["😁","beaming"],["😄","laugh"],["😃","happy"],["😆","happy laugh"],["😅","sweat smile"],["🤣","rofl"],["😂","tears of joy"],["🙂","slight smile"],["🙃","upside down"],["😉","wink"],["🥰","love"],["😍","heart eyes"],["😘","kiss"],["😗","kiss"],["😙","kissing"],["😚","blush kiss"],["😋","yummy"],["😛","tongue"],["😜","wink tongue"],["🤪","silly"],["😝","squint tongue"],["🤗","embrace"],["🤭","hand mouth"],["🫢","surprise"],["🫣","peek"],["🤫","quiet"],["🤔","thinking"],["🫡","salute"],["🤐","zip mouth"],["🤨","eyebrow"],["😐","neutral"],["😑","expressionless"],["😶","mouthless"],["😏","smirk"],["😒","unamused"],["🙄","eyes roll"],["😬","grimace"],["😌","relieved"],["😔","downcast"],["😪","sleepy"],["🤤","drooling"],["😴","sleeping"],["😷","mask"],["🤒","fever"],["🤕","bandage"],["🤢","nausea"],["🤮","vomit"],["🥵","hot"],["🥶","cold"],["🥴","woozy"],["😵","dizzy"],["🤯","mind blown"],["🥳","party"],["🤩","starry eyes"],["🥸","disguise"],["😕","confused"],["🫤","uncertain"],["😟","worried"],["🙁","sad"],["☹️","frown"],["😮","open mouth"],["😯","hushed"],["😲","shocked"],["😳","embarrassed"],["🥺","pleading"],["🥹","holding tears"],["😦","frown"],["😧","anguish"],["😨","afraid"],["😰","anxious"],["😥","relieved"],["😢","cry"],["😭","sobbing"],["😱","scared"],["😖","confounded"],["😣","persevering"],["😞","disappointed"],["😓","sweat"],["😩","weary"],["😫","tired"],["🥱","yawn"],["😤","annoyed"],["😡","angry"],["😠","mad"],["🤬","cursing"],["😈","devil smile"],["👿","devil"],["💀","skull"],["☠️","crossbones"],["👻","ghost"],["👽","alien"],["🤖","robot"],["🎃","pumpkin"],["😺","cat smile"],["😸","cat laugh"],["😻","cat love"],["😼","cat smirk"],["🙈","hide monkey"],["🙉","hear monkey"],["🙊","speak monkey"]]},{"id":"people","label":"People","icon":"☝","items":[["👶","baby"],["🧒","child"],["👧","girl"],["👦","boy"],["👩","woman"],["👨","man"],["🧑","person"],["👵","grandmother"],["👴","grandfather"],["👮","police"],["👷","construction"],["🕵️","detective"],["🧑‍🎓","student"],["🧑‍🚀","astronaut"],["🧑‍🍳","chef"],["👑","crown"],["🧢","cap"],["🎩","hat"],["🤠","cowboy"],["👋","wave"],["👍","thumbs up"],["👎","thumbs down"],["👌","okay"],["✌️","peace"],["🤞","cross fingers"],["🤙","call me"],["👏","clap"],["🙌","raise hands"],["🫶","heart hands"],["🙏","prayer"],["💪","strong"]]},{"id":"animals","label":"Animals","icon":"🐾","items":[["🐶","dog"],["🐱","cat"],["🐭","mouse"],["🐹","hamster"],["🐰","rabbit"],["🦊","fox"],["🐻","bear"],["🐼","panda"],["🐨","koala"],["🐯","tiger"],["🦁","lion"],["🐮","cow"],["🐷","pig"],["🐸","frog"],["🐵","monkey"],["🐔","chicken"],["🐧","penguin"],["🐦","bird"],["🦄","unicorn"],["🦋","butterfly"],["🐝","bee"],["🐙","octopus"],["🐬","dolphin"],["🦖","dinosaur"],["🐢","turtle"],["🐾","paw"]]},{"id":"food","label":"Food","icon":"🍎","items":[["🍎","apple"],["🍓","strawberry"],["🍌","banana"],["🍒","cherries"],["🍍","pineapple"],["🥑","avocado"],["🥕","carrot"],["🌽","corn"],["🍉","watermelon"],["🍇","grapes"],["🍋","lemon"],["🥥","coconut"],["🍔","burger"],["🍟","fries"],["🍕","pizza"],["🌭","hotdog"],["🥪","sandwich"],["🍩","donut"],["🍪","cookie"],["🎂","birthday cake"],["🍰","cake"],["🍦","ice cream"],["🍭","candy"],["🍫","chocolate"],["☕","coffee"],["🧋","milk tea"],["🥤","drink"],["🍹","juice"]]},{"id":"activities","label":"Activities","icon":"⚽","items":[["⚽","soccer"],["🏀","basketball"],["🏐","volleyball"],["🎾","tennis"],["🏸","badminton"],["🎱","billiards"],["🏆","trophy"],["🥇","medal"],["🎮","game"],["🎲","dice"],["🎯","target"],["🎨","art"],["🎤","microphone"],["🎧","headphones"],["🎵","music"],["🎸","guitar"],["🎺","trumpet"],["🎉","party popper"],["🎊","confetti"],["🎈","balloon"],["🎁","gift"],["🎀","ribbon"],["🪩","disco"]]},{"id":"travel","label":"Travel","icon":"🚗","items":[["🚗","car"],["🚙","suv"],["🚕","taxi"],["🚌","bus"],["🚓","police car"],["🚲","bicycle"],["🏍️","motorcycle"],["✈️","plane"],["🚀","rocket"],["🚁","helicopter"],["🚢","ship"],["⛵","boat"],["🌏","earth asia"],["🌍","world"],["🗺️","map"],["🏠","house"],["🏡","home"],["🏢","building"],["🏖️","beach"],["🌄","sunrise"],["🌈","rainbow"],["☀️","sun"],["🌙","moon"],["🌟","bright star"],["❄️","ice"],["⛄","snowman"],["🔥","fire"],["🌻","sunflower"]]},{"id":"objects","label":"Objects","icon":"💡","items":[["💡","lightbulb idea"],["📱","phone"],["💻","laptop"],["⌚","watch"],["📷","camera"],["📸","photo"],["📺","television"],["🔑","key"],["🔒","lock"],["📦","box"],["🧸","teddy"],["🛒","shopping cart"],["💰","money bag"],["💵","cash"],["💎","diamond"],["🔔","bell"],["📣","megaphone"],["🧲","magnet"],["🪄","magic wand"],["🪞","mirror"],["🕶️","sunglasses"],["👓","glasses"],["🧠","brain"],["🦷","tooth"],["🧼","soap"]]},{"id":"symbols","label":"Symbols","icon":"♥","items":[["❤️","red heart"],["🩷","pink heart"],["🧡","orange heart"],["💛","yellow heart"],["💚","green heart"],["💙","blue heart"],["💜","purple heart"],["🖤","black heart"],["🤍","white heart"],["🤎","brown heart"],["💖","sparkle heart"],["💗","growing heart"],["💝","gift heart"],["💘","arrow heart"],["💞","revolving hearts"],["💕","two hearts"],["💯","hundred"],["✅","check"],["✔️","tick"],["❌","cross"],["⚠️","warning"],["❗","exclamation"],["❓","question"],["🔴","red circle"],["🟡","yellow circle"],["🟢","green circle"],["🔵","blue circle"],["⭐","star"],["💫","stars"],["✨","sparkles"]]}];
+const EMOJI_LIBRARY=EMOJI_CATEGORIES.flatMap(cat=>cat.items.map(([symbol,keywords])=>({symbol,keywords,category:cat.id})));
+const FACE_EMOJIS=new Set(EMOJI_LIBRARY.map(x=>x.symbol));
+let emojiCategory='faces',emojiQuery='',emojiPickerMode='add';
 function safeCovers(input) {
- return (Array.isArray(input)?input:[]).slice(0,16).filter(c=>c&&FACE_EMOJIS.includes(c.symbol)).map(c=>({
+ return (Array.isArray(input)?input:[]).slice(0,16).filter(c=>c&&FACE_EMOJIS.has(c.symbol)).map(c=>({
   symbol:c.symbol,x:clamp(Number.isFinite(Number(c.x))?Number(c.x):.5,.06,.94),
   y:clamp(Number.isFinite(Number(c.y))?Number(c.y):.43,.06,.94),
   size:clamp(Number.isFinite(Number(c.size))?Number(c.size):.28,.12,.7)
@@ -103,8 +106,8 @@ function activeCover(){const p=getPhoto();return p?.covers?.[app.activeCoverInde
 function updateEmojiControls(){
  const p=getPhoto(),cover=activeCover();
  $('addEmojiCover').disabled=!p;
- $('emojiCoverChoice').disabled=!p;
- $('emojiCoverChoice').value=cover?.symbol||'😎';
+ $('emojiPickerOpen').disabled=!p;
+ $('emojiPickerOpen').textContent=cover?'Change '+cover.symbol:'Choose emoji';
  $('emojiCoverSize').disabled=!cover;
  $('emojiCoverSize').value=String(Math.round((cover?.size||.28)*100));
  $('emojiCoverSizeValue').textContent=$('emojiCoverSize').value+'%';
@@ -113,12 +116,12 @@ function updateEmojiControls(){
   cover?'Drag the emoji over the face, then adjust the size. Tap another emoji to select it.':
   'Tap “😎 Cover face” below the preview, then drag the emoji to the face.';
 }
-function addEmojiCover(){
+function addEmojiCover(symbol='😎'){
  const p=getPhoto();if(!p)return notify('Import and select a customer photo first.');
  if(!hasPhotoShape())return notify('Choose a photo opening before placing an emoji.');
  if((p.covers||[]).length>=16)return notify('Maximum 16 emoji covers per photo.');
  saveHistory();p.covers=safeCovers(p.covers);
- p.covers.push({symbol:$('emojiCoverChoice').value||'😎',x:.5,y:.43,size:.28});
+ p.covers.push({symbol:FACE_EMOJIS.has(symbol)?symbol:'😎',x:.5,y:.43,size:.28});
  app.activeCoverIndex=p.covers.length-1;
  setLiveExportPreview(false);setMode('adjust');showPanel(4);updateEmojiControls();render();
  notify('Emoji added. Drag it over the face; use Size to adjust. Add another for another face.');
@@ -133,10 +136,9 @@ function drawFaceCovers(ctx,photo,cell,points){
  ctx.beginPath();ctx.rect(cell.x,cell.y,cell.w,cell.h);ctx.clip();
  ctx.textAlign='center';ctx.textBaseline='middle';
  for(const cover of photo.covers.slice(0,16)){
-  if(!FACE_EMOJIS.includes(cover.symbol))continue;
+  if(!FACE_EMOJIS.has(cover.symbol))continue;
   const g=coverGeometry(cover,cell);
-  // Opaque disk under the symbol ensures no face is visible through transparent emoji pixels.
-  ctx.fillStyle='#ffdb91';ctx.beginPath();ctx.arc(g.x,g.y,g.radius,0,2*Math.PI);ctx.fill();
+  // Draw just the native emoji glyph; no artificial yellow backdrop.
   ctx.font=Math.round(g.diameter)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
   ctx.fillText(cover.symbol,g.x,g.y,g.diameter*1.16);
  }
@@ -664,7 +666,7 @@ const t={id:prior||'template_'+Date.now()+'_'+Math.random().toString(36).slice(2
   ['resetPhotoPosition',p=>{p.zoom=1;p.rot=0;p.dx=0;p.dy=0}]
  ]) $(id).onclick=()=>{const p=getPhoto();if(!p)return;saveHistory();update(p);updateControls();render();};
  $('addEmojiCover').onclick=addEmojiCover;
- $('emojiCoverChoice').onchange=e=>{const cover=activeCover();if(!cover)return;saveHistory();cover.symbol=FACE_EMOJIS.includes(e.target.value)?e.target.value:'😎';updateEmojiControls();render()};
+ $('emojiCoverChoice').onchange=e=>{const cover=activeCover();if(!cover)return;saveHistory();cover.symbol=FACE_EMOJIS.has(e.target.value)?e.target.value:'😎';updateEmojiControls();render()};
  $('emojiCoverSize').onpointerdown=()=>{if(activeCover())saveHistory()};
  $('emojiCoverSize').onkeydown=e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(e.key)&&activeCover())saveHistory()};
  $('emojiCoverSize').oninput=e=>{const cover=activeCover();if(!cover)return;cover.size=clamp(Number(e.target.value)/100,.12,.7);$('emojiCoverSizeValue').textContent=e.target.value+'%';render()};
