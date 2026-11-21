@@ -251,6 +251,18 @@ button.danger:hover{background:#ffe9ec}
  .sidebar.mobileDrawerClosed>.pinNav,.sidebar.mobileDrawerClosed>.section{display:none!important}
  .templateToolbar select{max-width:none;flex:1 1 135px}
 }
+
+/* Local photo-only privacy covers; selection ring is editor-only and never exported. */
+.emojiCoverTools{margin:12px 0;padding:12px;border:1px solid #dde6fb;border-radius:12px;background:#f7faff}
+.emojiCoverTools .filterEditorTitle{margin-bottom:10px}
+.emojiCoverRow{margin-bottom:10px;flex-wrap:wrap}
+.emojiCoverRow label{font-size:12px;font-weight:750;color:#43506a}
+.emojiCoverRow select{width:90px;flex:0 0 90px;padding:7px 8px}
+.emojiCoverRow button{min-height:36px;white-space:nowrap}
+.emojiCoverTools input[type=range]{width:100%}
+#addEmojiCover{background:#fff5d6;border-color:#ffd785;color:#604300;white-space:nowrap}
+#addEmojiCover:hover:not(:disabled){background:#ffebaa;border-color:#ffbf42}
+@media(max-width:720px){.emojiCoverTools{padding:10px}.previewActions{flex-wrap:wrap}.emojiCoverRow{gap:8px}}
 </style>
 </head>
 <body>
@@ -367,6 +379,18 @@ button.danger:hover{background:#ffe9ec}
    <p class="help">In <b>Adjust photo</b> mode, click a collage cell, then drag to position its photo. Each image retains its own zoom and rotation settings.</p>
    <div class="inline"><button id="resetPhoto" class="btn small">Reset this photo</button><button id="applyAll" class="btn small">Apply fitting to all photos</button></div>
    <div class="photoActionRow"><button id="replaceSelectedPhoto" class="btn small" type="button">↻ Replace selected photo</button><button id="deleteSelectedPhoto" class="btn small danger" type="button">✕ Delete selected photo</button></div>
+   <div class="emojiCoverTools" aria-label="Face-cover emoji controls">
+    <div class="filterEditorTitle"><strong>😎 Emoji privacy cover</strong><span>Selected photo only</span></div>
+    <div class="inline emojiCoverRow">
+     <label for="emojiCoverChoice">Emoji</label>
+     <select id="emojiCoverChoice" aria-label="Choose face cover emoji"><option value="😎">😎</option><option value="😊">😊</option><option value="😍">😍</option><option value="🤩">🤩</option><option value="🥰">🥰</option><option value="🙈">🙈</option><option value="❤️">❤️</option><option value="⭐">⭐</option></select>
+     <button type="button" class="btn small" id="removeEmojiCover">Remove selected</button>
+    </div>
+    <div class="rangerow"><label for="emojiCoverSize">Cover size</label><span class="value" id="emojiCoverSizeValue">28%</span></div>
+    <input type="range" id="emojiCoverSize" min="12" max="70" step="1" value="28" />
+    <p class="help" id="emojiCoverHelp">Add an emoji below the preview, drag it over the customer's face, then resize it here. Repeat for other faces.</p>
+    <p class="help">Covers appear in saved JPG/PNG and collages; originals and local drafts still contain the original photo.</p>
+   </div>
    <input id="replacePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
    <div class="filterEditor">
     <div class="filterEditorTitle"><strong>Filters for this photo only</strong><span>Frame artwork is never filtered</span></div>
@@ -412,7 +436,7 @@ button.danger:hover{background:#ffe9ec}
  <div class="previewCard">
   <div class="previewTop"><div><strong id="previewTitle">7-Day Big Savings Sale</strong> <span class="tag" style="margin-left:7px" id="modeTag">Shape editing</span></div><div class="exportPreviewMeta"><small id="previewInfo">1254 × 1254 px</small><button type="button" id="exportInspect" class="btn small" hidden>Inspect 100%</button><button type="button" id="returnEditor" class="btn small" hidden>Back to editing</button></div></div>
   <div class="previewBody"><div class="canvasShell" id="canvasShell"><canvas id="previewCanvas" width="2018" height="2048" aria-label="Photo frame preview and editor"></canvas><canvas id="exportPreviewCanvas" hidden aria-label="Live preview at selected export resolution"></canvas></div></div>
-  <div class="previewFoot"><span id="previewLabel">Sample frame · upload photos to get started</span><div class="inline previewActions"><button id="quickReplacePhoto" class="btn small" type="button">↻ Replace photo</button><button id="quickDeletePhoto" class="btn small danger" type="button">✕ Delete photo</button><button id="previous" class="btn small">‹ Previous</button><button id="next" class="btn small">Next ›</button></div></div>
+  <div class="previewFoot"><span id="previewLabel">Sample frame · upload photos to get started</span><div class="inline previewActions"><button id="addEmojiCover" class="btn small" type="button" title="Add an emoji over a customer's face">😎 Cover face</button><button id="quickReplacePhoto" class="btn small" type="button">↻ Replace photo</button><button id="quickDeletePhoto" class="btn small danger" type="button">✕ Delete photo</button><button id="previous" class="btn small">‹ Previous</button><button id="next" class="btn small">Next ›</button></div></div>
  </div>
  <div class="galleryWrap"><div class="galleryTop"><h2>Batch photo queue</h2><span class="counter" id="queueSummary">No photos yet</span></div><div class="gallery" id="gallery"><div class="emptyGallery" style="grid-column:1/-1">Your imported photos will appear here. Select any to edit its image or collage slot.</div></div></div>
 </section>
