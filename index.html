@@ -263,6 +263,39 @@ button.danger:hover{background:#ffe9ec}
 #addEmojiCover{background:#fff5d6;border-color:#ffd785;color:#604300;white-space:nowrap}
 #addEmojiCover:hover:not(:disabled){background:#ffebaa;border-color:#ffbf42}
 @media(max-width:720px){.emojiCoverTools{padding:10px}.previewActions{flex-wrap:wrap}.emojiCoverRow{gap:8px}}
+
+.emojiPickerDialog{border:1px solid #3f4449;background:#222427;color:#fff;border-radius:18px;padding:0;width:min(370px,calc(100vw - 24px));max-height:min(590px,90dvh);box-shadow:0 22px 65px #0008;overflow:hidden}
+.emojiPickerDialog::backdrop{background:#0d1224a6}
+.emojiPickerHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px 3px;font-size:14px}
+.emojiPickerHeader button{background:transparent;color:#bbb;border:0;font-size:19px;cursor:pointer;padding:4px 8px}
+.emojiSearchWrap{padding:6px 11px}
+.emojiSearchWrap input{display:block;width:100%;border:0;border-radius:18px;background:#3b3d3f;color:white;height:37px;padding:0 14px;font-size:13px;outline-offset:2px}
+.emojiSearchWrap input::placeholder{color:#bababa}
+.emojiPickerCaption{font-size:11px;font-weight:650;color:#aaa;padding:3px 14px 6px}
+.emojiPickerGrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:1px;padding:2px 7px 9px;overflow:auto;height:290px;align-content:start}
+.emojiPickerItem{font:29px/1.35 "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;background:transparent;color:inherit;border:0;border-radius:7px;min-height:42px;padding:3px 0;cursor:pointer}
+.emojiPickerItem:is(:hover,:focus-visible){background:#41464d;outline:1px solid #6a727c}
+.emojiPickerTabs{border-top:1px solid #444;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));padding:6px 4px;gap:2px;background:#25272b}
+.emojiPickerTab{font-size:19px;min-height:38px;color:#bababa;background:transparent;border:0;border-radius:9px;cursor:pointer}
+.emojiPickerTab:is(.active,:hover,:focus-visible){color:#67b9ff;background:#38434d}
+.emojiPickerEmpty{grid-column:1/-1;font-size:12px;color:#aaa;text-align:center}
+.emojiPickerPrivacy{padding:7px 12px 12px;margin:0;color:#aaa;font-size:10px}
+.emojiCoverRow button#emojiPickerOpen{max-width:none;white-space:nowrap}
+@media(max-width:410px){.emojiPickerItem{font-size:26px}.emojiPickerGrid{height:270px}.emojiPickerDialog{max-height:89dvh}}
+
+.savedProjectsDialog{max-width:760px;width:calc(100vw - 24px)}
+.savedProjectsBody{padding:18px 24px 22px}
+.savedProjectList{display:grid;gap:10px;margin:13px 0 20px}
+.savedProjectCard{border:1px solid #e2e8f2;padding:13px;border-radius:11px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;background:#fff}
+.savedProjectCard strong{display:block;font-size:14px;overflow-wrap:anywhere;max-width:400px}
+.savedProjectCard small{display:block;font-size:11px;color:#697a96;margin-top:5px}
+.savedProjectActions{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.savedProjectActions button{min-height:35px}
+.recoveryDetails{margin-top:12px;border-top:1px solid #dfe6f4;padding-top:10px}
+.recoveryDetails summary{cursor:pointer;font-size:12px;font-weight:750;color:#4261aa}
+.recoveryDetails .draftStatus{margin-top:9px}
+#projectSaveStatus{margin:8px 0 0}
+@media(max-width:720px){.savedProjectsBody{padding:14px}.savedProjectActions{width:100%}}
 </style>
 </head>
 <body>
@@ -296,7 +329,7 @@ button.danger:hover{background:#ffe9ec}
    <button class="btn ghost libraryOpen" id="openOnlineTemplates" type="button">⌕ Search online for frames</button>
    <div class="inline" style="margin-top:9px"><button id="changeTemplate" class="btn wide">＋ Upload frame</button><button id="saveTemplate" class="btn wide primary">Save template</button></div>
    <input type="file" id="templateInput" accept="image/png,image/jpeg,image/webp" />
-   <div class="draftTools"><div class="draftStatus" id="draftStatus" role="status" aria-live="polite">Local recovery: checking for a saved draft…</div><div class="draftActions"><button id="saveDraftNow" class="btn small" type="button">Save draft now</button><button id="clearSavedDraft" class="btn small" type="button">Clear recovery copy</button></div><p class="help" style="margin:7px 0 0">Your unfinished photos and edits are saved only on this device—not uploaded to Supabase. Back up important images separately.</p></div>
+   <div class="draftTools"><strong>Unfinished projects</strong><div class="draftActions" style="margin-top:9px"><button id="saveProject" class="btn primary small" type="button">💾 Save Project</button><button id="openProjects" class="btn small" type="button">📂 Open Projects</button></div><p id="projectSaveStatus" class="help" role="status">Name and retrieve multiple unfinished projects on this device.</p><div class="draftStatus" id="draftStatus" role="status" aria-live="polite">Local recovery: checking for a saved draft…</div><div class="draftActions"><button id="saveDraftNow" class="btn small" type="button">Save draft now</button><button id="clearSavedDraft" class="btn small" type="button">Clear recovery copy</button></div><details class="recoveryDetails"><summary>Automatic recovery details</summary><p class="help" style="margin:7px 0 0">Auto-recovery keeps one temporary local draft. Named projects are separate and remain saved. All project data, including original customer photos, stays on this browser unless you export a backup.</p></details></div>
    <div class="inline" style="margin-top:9px"><button id="renameTemplate" class="btn small">Rename</button><button id="duplicateTemplate" class="btn small">Duplicate</button></div>
    <div class="inline" style="margin-top:9px"><button id="backupTemplate" class="btn small">↓ Backup template</button><button id="restoreTemplate" class="btn small">↑ Restore backup</button></div>
    <input type="file" id="backupInput" accept=".json,application/json" />
@@ -383,13 +416,13 @@ button.danger:hover{background:#ffe9ec}
     <div class="filterEditorTitle"><strong>😎 Emoji privacy cover</strong><span>Selected photo only</span></div>
     <div class="inline emojiCoverRow">
      <label for="emojiCoverChoice">Emoji</label>
-     <select id="emojiCoverChoice" aria-label="Choose face cover emoji"><option value="😎">😎</option><option value="😊">😊</option><option value="😍">😍</option><option value="🤩">🤩</option><option value="🥰">🥰</option><option value="🙈">🙈</option><option value="❤️">❤️</option><option value="⭐">⭐</option></select>
+     <button type="button" class="btn small" id="emojiPickerOpen">Choose emoji</button>
      <button type="button" class="btn small" id="removeEmojiCover">Remove selected</button>
     </div>
     <div class="rangerow"><label for="emojiCoverSize">Cover size</label><span class="value" id="emojiCoverSizeValue">28%</span></div>
     <input type="range" id="emojiCoverSize" min="12" max="70" step="1" value="28" />
     <p class="help" id="emojiCoverHelp">Add an emoji below the preview, drag it over the customer's face, then resize it here. Repeat for other faces.</p>
-    <p class="help">Covers appear in saved JPG/PNG and collages; originals and local drafts still contain the original photo.</p>
+    <p class="help">Emojis have no added background. Check that each face is fully covered before sharing; originals and project backups still contain the original photo.</p>
    </div>
    <input id="replacePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
    <div class="filterEditor">
@@ -441,6 +474,23 @@ button.danger:hover{background:#ffe9ec}
  <div class="galleryWrap"><div class="galleryTop"><h2>Batch photo queue</h2><span class="counter" id="queueSummary">No photos yet</span></div><div class="gallery" id="gallery"><div class="emptyGallery" style="grid-column:1/-1">Your imported photos will appear here. Select any to edit its image or collage slot.</div></div></div>
 </section>
 </main>
+<dialog id="emojiPickerDialog" class="emojiPickerDialog" aria-labelledby="emojiPickerTitle">
+ <div class="emojiPickerHeader"><strong id="emojiPickerTitle">Choose an emoji</strong><button id="emojiPickerClose" type="button" aria-label="Close emoji picker">✕</button></div>
+ <div class="emojiSearchWrap"><input id="emojiPickerSearch" type="search" placeholder="⌕ Search emoji..." aria-label="Search emojis" autocomplete="off" /></div>
+ <div id="emojiPickerCaption" class="emojiPickerCaption">Smileys</div>
+ <div id="emojiPickerGrid" class="emojiPickerGrid" role="group" aria-label="Emoji choices"></div>
+ <div id="emojiPickerTabs" class="emojiPickerTabs" role="group" aria-label="Emoji categories"></div>
+ <p class="emojiPickerPrivacy">Transparent emoji overlay. Check face coverage before sharing.</p>
+</dialog>
+<dialog id="savedProjectsDialog" class="frameLibrary savedProjectsDialog" aria-labelledby="savedProjectsTitle">
+ <div class="frameLibHead"><div><h2 id="savedProjectsTitle">Saved projects</h2><p>Open unfinished frames, collages and customer-photo edits</p></div><button id="closeSavedProjects" class="btn small" type="button">Close</button></div>
+ <div class="savedProjectsBody">
+  <div class="inline"><button id="importProject" class="btn small" type="button">↑ Import project backup</button><input hidden type="file" id="importProjectFile" accept=".json,application/json" /></div>
+  <p id="projectListStatus" class="help" role="status">Loading saved projects…</p>
+  <div id="projectList" class="savedProjectList"></div>
+  <p class="help">Only saved on this device by default. Clearing browser data may erase projects; use Backup for a portable copy. Backups contain original customer photos—handle them privately.</p>
+ </div>
+</dialog>
 <dialog id="frameLibrary" class="frameLibrary" aria-labelledby="frameLibTitle">
  <div class="frameLibHead"><div><h2 id="frameLibTitle">Frame Library</h2><p>Open a saved frame or reuse its photo-opening shape</p></div><button id="closeFrameLibrary" class="btn small" type="button">✕ Close</button></div>
  <div class="frameLibBody">

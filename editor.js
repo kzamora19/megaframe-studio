@@ -91,9 +91,12 @@ async function deletePhotoAt(index){if(!Number.isInteger(index)||index<0||index>
 async function replaceCurrentPhoto(file){if(!file||!getPhoto())return;if(!isPhotoFile(file))return notify('Choose a JPG, PNG, or WebP photo.');const target=getPhoto();const id=target.id;try{const data=await dataUrlOf(file),image=await decodedImage(data);const current=app.photos.find(p=>p.id===id);if(!current)return;saveHistory();Object.assign(current,{name:file.name,data,image,zoom:1,rot:0,dx:0,dy:0,fit:'cover'});resetPhotoFilterState(current);current.enhancement={sharpness:0,denoise:0};current.covers=[];app.activeCoverIndex=-1;updateGallery();updateControls();render();notify('Photo replaced in the same collage slot.')}catch(err){notify('Could not replace photo: '+err.message)}}
 function getPhoto(){return app.photos[app.selected]||null}
 // Emoji covers are local photo edits. They never belong to a shared frame template.
-const FACE_EMOJIS=['😎','😊','😍','🤩','🥰','🙈','❤️','⭐'];
+const EMOJI_CATEGORIES=[{"id":"faces","label":"Smileys","icon":"☺","items":[["😎","cool sunglasses"],["😊","smile blush"],["😀","grinning"],["😁","beaming"],["😄","laugh"],["😃","happy"],["😆","happy laugh"],["😅","sweat smile"],["🤣","rofl"],["😂","tears of joy"],["🙂","slight smile"],["🙃","upside down"],["😉","wink"],["🥰","love"],["😍","heart eyes"],["😘","kiss"],["😗","kiss"],["😙","kissing"],["😚","blush kiss"],["😋","yummy"],["😛","tongue"],["😜","wink tongue"],["🤪","silly"],["😝","squint tongue"],["🤗","embrace"],["🤭","hand mouth"],["🫢","surprise"],["🫣","peek"],["🤫","quiet"],["🤔","thinking"],["🫡","salute"],["🤐","zip mouth"],["🤨","eyebrow"],["😐","neutral"],["😑","expressionless"],["😶","mouthless"],["😏","smirk"],["😒","unamused"],["🙄","eyes roll"],["😬","grimace"],["😌","relieved"],["😔","downcast"],["😪","sleepy"],["🤤","drooling"],["😴","sleeping"],["😷","mask"],["🤒","fever"],["🤕","bandage"],["🤢","nausea"],["🤮","vomit"],["🥵","hot"],["🥶","cold"],["🥴","woozy"],["😵","dizzy"],["🤯","mind blown"],["🥳","party"],["🤩","starry eyes"],["🥸","disguise"],["😕","confused"],["🫤","uncertain"],["😟","worried"],["🙁","sad"],["☹️","frown"],["😮","open mouth"],["😯","hushed"],["😲","shocked"],["😳","embarrassed"],["🥺","pleading"],["🥹","holding tears"],["😦","frown"],["😧","anguish"],["😨","afraid"],["😰","anxious"],["😥","relieved"],["😢","cry"],["😭","sobbing"],["😱","scared"],["😖","confounded"],["😣","persevering"],["😞","disappointed"],["😓","sweat"],["😩","weary"],["😫","tired"],["🥱","yawn"],["😤","annoyed"],["😡","angry"],["😠","mad"],["🤬","cursing"],["😈","devil smile"],["👿","devil"],["💀","skull"],["☠️","crossbones"],["👻","ghost"],["👽","alien"],["🤖","robot"],["🎃","pumpkin"],["😺","cat smile"],["😸","cat laugh"],["😻","cat love"],["😼","cat smirk"],["🙈","monkey hide see no evil"],["🙉","hear monkey"],["🙊","speak monkey"]]},{"id":"people","label":"People","icon":"☝","items":[["👶","baby"],["🧒","child"],["👧","girl"],["👦","boy"],["👩","woman"],["👨","man"],["🧑","person"],["👵","grandmother"],["👴","grandfather"],["👮","police"],["👷","construction"],["🕵️","detective"],["🧑‍🎓","student"],["🧑‍🚀","astronaut"],["🧑‍🍳","chef"],["👑","crown"],["🧢","cap"],["🎩","hat"],["🤠","cowboy"],["👋","wave"],["👍","thumbs up"],["👎","thumbs down"],["👌","okay"],["✌️","peace"],["🤞","cross fingers"],["🤙","call me"],["👏","clap"],["🙌","raise hands"],["🫶","heart hands"],["🙏","prayer"],["💪","strong"]]},{"id":"animals","label":"Animals","icon":"🐾","items":[["🐶","dog"],["🐱","cat"],["🐭","mouse"],["🐹","hamster"],["🐰","rabbit"],["🦊","fox"],["🐻","bear"],["🐼","panda"],["🐨","koala"],["🐯","tiger"],["🦁","lion"],["🐮","cow"],["🐷","pig"],["🐸","frog"],["🐵","monkey"],["🐔","chicken"],["🐧","penguin"],["🐦","bird"],["🦄","unicorn"],["🦋","butterfly"],["🐝","bee"],["🐙","octopus"],["🐬","dolphin"],["🦖","dinosaur"],["🐢","turtle"],["🐾","paw"]]},{"id":"food","label":"Food","icon":"🍎","items":[["🍎","apple"],["🍓","strawberry"],["🍌","banana"],["🍒","cherries"],["🍍","pineapple"],["🥑","avocado"],["🥕","carrot"],["🌽","corn"],["🍉","watermelon"],["🍇","grapes"],["🍋","lemon"],["🥥","coconut"],["🍔","burger"],["🍟","fries"],["🍕","pizza"],["🌭","hotdog"],["🥪","sandwich"],["🍩","donut"],["🍪","cookie"],["🎂","birthday cake"],["🍰","cake"],["🍦","ice cream"],["🍭","candy"],["🍫","chocolate"],["☕","coffee"],["🧋","milk tea"],["🥤","drink"],["🍹","juice"]]},{"id":"activities","label":"Activities","icon":"⚽","items":[["⚽","soccer"],["🏀","basketball"],["🏐","volleyball"],["🎾","tennis"],["🏸","badminton"],["🎱","billiards"],["🏆","trophy"],["🥇","medal"],["🎮","game"],["🎲","dice"],["🎯","target"],["🎨","art"],["🎤","microphone"],["🎧","headphones"],["🎵","music"],["🎸","guitar"],["🎺","trumpet"],["🎉","party popper"],["🎊","confetti"],["🎈","balloon"],["🎁","gift"],["🎀","ribbon"],["🪩","disco"]]},{"id":"travel","label":"Travel","icon":"🚗","items":[["🚗","car"],["🚙","suv"],["🚕","taxi"],["🚌","bus"],["🚓","police car"],["🚲","bicycle"],["🏍️","motorcycle"],["✈️","plane"],["🚀","rocket"],["🚁","helicopter"],["🚢","ship"],["⛵","boat"],["🌏","earth asia"],["🌍","world"],["🗺️","map"],["🏠","house"],["🏡","home"],["🏢","building"],["🏖️","beach"],["🌄","sunrise"],["🌈","rainbow"],["☀️","sun"],["🌙","moon"],["🌟","bright star"],["❄️","ice"],["⛄","snowman"],["🔥","fire"],["🌻","sunflower"]]},{"id":"objects","label":"Objects","icon":"💡","items":[["💡","lightbulb idea"],["📱","phone"],["💻","laptop"],["⌚","watch"],["📷","camera"],["📸","photo"],["📺","television"],["🔑","key"],["🔒","lock"],["📦","box"],["🧸","teddy"],["🛒","shopping cart"],["💰","money bag"],["💵","cash"],["💎","diamond"],["🔔","bell"],["📣","megaphone"],["🧲","magnet"],["🪄","magic wand"],["🪞","mirror"],["🕶️","sunglasses"],["👓","glasses"],["🧠","brain"],["🦷","tooth"],["🧼","soap"]]},{"id":"symbols","label":"Symbols","icon":"♥","items":[["❤️","red heart"],["🩷","pink heart"],["🧡","orange heart"],["💛","yellow heart"],["💚","green heart"],["💙","blue heart"],["💜","purple heart"],["🖤","black heart"],["🤍","white heart"],["🤎","brown heart"],["💖","sparkle heart"],["💗","growing heart"],["💝","gift heart"],["💘","arrow heart"],["💞","revolving hearts"],["💕","two hearts"],["💯","hundred"],["✅","check"],["✔️","tick"],["❌","cross"],["⚠️","warning"],["❗","exclamation"],["❓","question"],["🔴","red circle"],["🟡","yellow circle"],["🟢","green circle"],["🔵","blue circle"],["⭐","star"],["💫","stars"],["✨","sparkles"]]}];
+const EMOJI_LIBRARY=EMOJI_CATEGORIES.flatMap(cat=>cat.items.map(([symbol,keywords])=>({symbol,keywords,category:cat.id})));
+const FACE_EMOJIS=new Set(EMOJI_LIBRARY.map(x=>x.symbol));
+let emojiCategory='faces',emojiQuery='',emojiPickerMode='add';
 function safeCovers(input) {
- return (Array.isArray(input)?input:[]).slice(0,16).filter(c=>c&&FACE_EMOJIS.includes(c.symbol)).map(c=>({
+ return (Array.isArray(input)?input:[]).slice(0,16).filter(c=>c&&FACE_EMOJIS.has(c.symbol)).map(c=>({
   symbol:c.symbol,x:clamp(Number.isFinite(Number(c.x))?Number(c.x):.5,.06,.94),
   y:clamp(Number.isFinite(Number(c.y))?Number(c.y):.43,.06,.94),
   size:clamp(Number.isFinite(Number(c.size))?Number(c.size):.28,.12,.7)
@@ -103,8 +106,8 @@ function activeCover(){const p=getPhoto();return p?.covers?.[app.activeCoverInde
 function updateEmojiControls(){
  const p=getPhoto(),cover=activeCover();
  $('addEmojiCover').disabled=!p;
- $('emojiCoverChoice').disabled=!p;
- $('emojiCoverChoice').value=cover?.symbol||'😎';
+ $('emojiPickerOpen').disabled=!p;
+ $('emojiPickerOpen').textContent=cover?'Change '+cover.symbol:'Choose emoji';
  $('emojiCoverSize').disabled=!cover;
  $('emojiCoverSize').value=String(Math.round((cover?.size||.28)*100));
  $('emojiCoverSizeValue').textContent=$('emojiCoverSize').value+'%';
@@ -113,16 +116,59 @@ function updateEmojiControls(){
   cover?'Drag the emoji over the face, then adjust the size. Tap another emoji to select it.':
   'Tap “😎 Cover face” below the preview, then drag the emoji to the face.';
 }
-function addEmojiCover(){
+function addEmojiCover(symbol='😎'){
  const p=getPhoto();if(!p)return notify('Import and select a customer photo first.');
  if(!hasPhotoShape())return notify('Choose a photo opening before placing an emoji.');
  if((p.covers||[]).length>=16)return notify('Maximum 16 emoji covers per photo.');
  saveHistory();p.covers=safeCovers(p.covers);
- p.covers.push({symbol:$('emojiCoverChoice').value||'😎',x:.5,y:.43,size:.28});
+ p.covers.push({symbol:FACE_EMOJIS.has(symbol)?symbol:'😎',x:.5,y:.43,size:.28});
  app.activeCoverIndex=p.covers.length-1;
  setLiveExportPreview(false);setMode('adjust');showPanel(4);updateEmojiControls();render();
  notify('Emoji added. Drag it over the face; use Size to adjust. Add another for another face.');
 }
+function renderEmojiPicker(){
+ const tabs=$('emojiPickerTabs'),grid=$('emojiPickerGrid');
+ tabs.replaceChildren();grid.replaceChildren();
+ for(const category of EMOJI_CATEGORIES){
+  const b=document.createElement('button');b.type='button';b.className='emojiPickerTab'+(category.id===emojiCategory?' active':'');
+  b.textContent=category.icon;b.title=category.label;b.setAttribute('aria-label',category.label);
+  b.setAttribute('aria-pressed',String(category.id===emojiCategory));
+  b.onclick=()=>{emojiCategory=category.id;renderEmojiPicker()};
+  tabs.append(b);
+ }
+ const query=emojiQuery.trim().toLocaleLowerCase();
+ const entries=EMOJI_LIBRARY.filter(e=>query
+  ? e.symbol.includes(query)||e.keywords.includes(query)||e.category.includes(query)
+  : e.category===emojiCategory);
+ $('emojiPickerCaption').textContent=query?'Results · '+entries.length:
+   (EMOJI_CATEGORIES.find(c=>c.id===emojiCategory)?.label||'Emojis')+' · '+entries.length;
+ const group=document.createDocumentFragment();
+ for(const entry of entries){
+  const b=document.createElement('button');b.type='button';b.className='emojiPickerItem';
+  b.textContent=entry.symbol;b.title=entry.keywords;b.setAttribute('aria-label',entry.keywords);
+  b.onclick=()=>chooseEmoji(entry.symbol);
+  group.append(b);
+ }
+ if(!entries.length){const p=document.createElement('p');p.className='emojiPickerEmpty';p.textContent='No matching emojis. Try another keyword.';group.append(p)}
+ grid.append(group);
+}
+function openEmojiPicker(mode='add'){
+ if(!getPhoto())return notify('Import and select a customer photo first.');
+ if(!hasPhotoShape())return notify('Choose a photo opening before placing an emoji.');
+ emojiPickerMode=mode==='replace'&&activeCover()?'replace':'add';
+ emojiQuery='';emojiCategory='faces';$('emojiPickerSearch').value='';
+ $('emojiPickerTitle').textContent=emojiPickerMode==='replace'?'Change the selected emoji':'Choose a face-cover emoji';
+ renderEmojiPicker();$('emojiPickerDialog').showModal();$('emojiPickerSearch').focus();
+}
+function closeEmojiPicker(){if($('emojiPickerDialog').open)$('emojiPickerDialog').close()}
+function chooseEmoji(symbol){
+ if(!FACE_EMOJIS.has(symbol))return;
+ closeEmojiPicker();
+ if(emojiPickerMode==='replace'&&activeCover()){
+  saveHistory();activeCover().symbol=symbol;updateEmojiControls();render();notify('Emoji changed.');
+ }else addEmojiCover(symbol);
+}
+
 function coverGeometry(cover,cell){
  const diameter=Math.min(cell.w,cell.h)*clamp(cover.size,.12,.7);
  return {x:cell.x+cell.w*cover.x,y:cell.y+cell.h*cover.y,radius:diameter*.62,diameter};
@@ -133,10 +179,9 @@ function drawFaceCovers(ctx,photo,cell,points){
  ctx.beginPath();ctx.rect(cell.x,cell.y,cell.w,cell.h);ctx.clip();
  ctx.textAlign='center';ctx.textBaseline='middle';
  for(const cover of photo.covers.slice(0,16)){
-  if(!FACE_EMOJIS.includes(cover.symbol))continue;
+  if(!FACE_EMOJIS.has(cover.symbol))continue;
   const g=coverGeometry(cover,cell);
-  // Opaque disk under the symbol ensures no face is visible through transparent emoji pixels.
-  ctx.fillStyle='#ffdb91';ctx.beginPath();ctx.arc(g.x,g.y,g.radius,0,2*Math.PI);ctx.fill();
+  // Draw just the native emoji glyph; no artificial yellow backdrop.
   ctx.font=Math.round(g.diameter)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
   ctx.fillText(cover.symbol,g.x,g.y,g.diameter*1.16);
  }
@@ -474,6 +519,129 @@ async function restoreLocalDraft(record) {
  updateShapeUI();syncAppearanceUI();updateControls();updateGallery();
  setMode(record.mode==='adjust'?'adjust':'map');render();updateLabels();
 }
+
+// Named projects are separate from the rolling auto-recovery draft. Every project
+// contains original customer photos and stays in this browser's IndexedDB.
+const PROJECT_DB_NAME='megaframe_named_projects_v1';
+let projectDbPromise;
+function projectDatabase(){
+ if(projectDbPromise)return projectDbPromise;
+ projectDbPromise=new Promise((resolve,reject)=>{
+  if(!window.indexedDB)return reject(Error('Local project storage is unavailable on this browser.'));
+  const req=indexedDB.open(PROJECT_DB_NAME,1);
+  req.onupgradeneeded=()=>{
+   if(!req.result.objectStoreNames.contains('projects'))req.result.createObjectStore('projects',{keyPath:'id'});
+   if(!req.result.objectStoreNames.contains('projectIndex'))req.result.createObjectStore('projectIndex',{keyPath:'id'});
+  };
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error||Error('Could not open saved projects'));
+ });
+ return projectDbPromise;
+}
+async function projectList(){
+ const db=await projectDatabase();
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction('projectIndex','readonly').objectStore('projectIndex').getAll();
+  req.onsuccess=()=>resolve((req.result||[]).sort((a,b)=>b.savedAt-a.savedAt));
+  req.onerror=()=>reject(req.error||Error('Saved projects could not be listed'));
+ });
+}
+async function projectRead(id){
+ const db=await projectDatabase();
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction('projects','readonly').objectStore('projects').get(id);
+  req.onsuccess=()=>resolve(req.result||null);
+  req.onerror=()=>reject(req.error||Error('Could not open project'));
+ });
+}
+async function projectWrite(record){
+ const db=await projectDatabase();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['projects','projectIndex'],'readwrite');
+  tx.objectStore('projects').put(record);
+  tx.objectStore('projectIndex').put({id:record.id,name:record.name,savedAt:record.savedAt,photoCount:record.photoCount});
+  tx.oncomplete=()=>resolve(true);
+  tx.onerror=()=>reject(tx.error||Error('Could not save project; browser storage may be full'));
+  tx.onabort=()=>reject(tx.error||Error('Project save aborted'));
+ });
+}
+async function projectRemove(id){
+ const db=await projectDatabase();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['projects','projectIndex'],'readwrite');
+  tx.objectStore('projects').delete(id);tx.objectStore('projectIndex').delete(id);
+  tx.oncomplete=()=>resolve(true);
+  tx.onerror=()=>reject(tx.error||Error('Could not delete project'));
+  tx.onabort=()=>reject(tx.error||Error('Project delete aborted'));
+ });
+}
+function projectSize(record){
+ return (record?.template?.data?.length||0)+(record?.photos||[]).reduce((n,p)=>n+(p?.data?.length||0),0);
+}
+async function saveNamedProject(){
+ const payload=serializeDraft();
+ if(!payload)return notify('Open a frame before saving a project.');
+ if(projectSize(payload)>80*1024*1024)return notify('This project is over 80 MB. Reduce its photo size before saving on this device.');
+ const name=await popupAction({title:'Save unfinished project',message:'Choose a name. Your photos, frame and edits will be saved only on this device.',value:app.template?.name||'My project',confirmLabel:'Save project'});
+ if(name===null)return;
+ const id='project_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+ const record={format:'MegaFrameProjectV1',id,name:name.slice(0,90),savedAt:Date.now(),photoCount:payload.photos.length,payload};
+ try{await projectWrite(record);notify('Project saved: '+record.name);$('projectSaveStatus').textContent='Saved '+record.name+' on this device.';}
+ catch(err){notify('Project not saved: '+err.message);$('projectSaveStatus').textContent='Save failed. Check browser storage capacity.';}
+}
+async function renderSavedProjects(){
+ const list=$('projectList');list.replaceChildren();
+ try{
+  const projects=await projectList();$('projectListStatus').textContent=projects.length?projects.length+' saved project(s) on this device.':'No saved projects yet.';
+  for(const row of projects){
+   const card=document.createElement('article');card.className='savedProjectCard';
+   const info=document.createElement('div');const title=document.createElement('strong');title.textContent=row.name;
+   const date=document.createElement('small');date.textContent=new Date(row.savedAt).toLocaleString()+' · '+row.photoCount+' photo(s)';
+   info.append(title,date);
+   const actions=document.createElement('div');actions.className='savedProjectActions';
+   const open=document.createElement('button');open.type='button';open.className='btn small primary';open.textContent='Open';
+   open.onclick=()=>openNamedProject(row.id);
+   const backup=document.createElement('button');backup.type='button';backup.className='btn small';backup.textContent='Backup';
+   backup.title='Save an editable project file with original customer photos';
+   backup.onclick=async()=>{
+    try{const record=await projectRead(row.id);if(!record)return notify('Project not found');
+     downloadBlob(new Blob([JSON.stringify(record)],{type:'application/json'}),safeName(record.name)+'_MegaFrame_Project.json');
+     notify('Project backup downloaded. It contains original customer photos; keep it private.');
+    }catch(e){notify('Backup failed: '+e.message)}
+   };
+   const remove=document.createElement('button');remove.type='button';remove.className='btn small danger';remove.textContent='Delete';
+   remove.onclick=async()=>{
+    if(!await confirmAction('Delete saved project?','Permanently delete "'+row.name+'" from this browser? This does not remove any downloaded backup.','Delete project'))return;
+    try{await projectRemove(row.id);await renderSavedProjects();notify('Saved project deleted.')}catch(e){notify('Delete failed: '+e.message)}
+   };
+   actions.append(open,backup,remove);card.append(info,actions);list.append(card);
+  }
+ }catch(err){$('projectListStatus').textContent='Project library unavailable: '+err.message;}
+}
+async function openSavedProjects(){
+ await renderSavedProjects();if(!$('savedProjectsDialog').open)$('savedProjectsDialog').showModal();
+}
+async function openNamedProject(id){
+ const saved=await projectRead(id);if(!saved?.payload)return notify('Project could not be found.');
+ if(!await confirmAction('Open saved project?','This replaces your currently open frame and photos. Save your current work first if you need it later.','Open saved project'))return;
+ try{await restoreLocalDraft(saved.payload);$('savedProjectsDialog').close();showPanel(4);
+  notify('Project restored: '+saved.name);
+ }catch(err){notify('Project could not be restored: '+err.message)}
+}
+async function importProjectBackup(file){
+ if(!file)return;
+ if(file.size>85*1024*1024)return notify('Project file is too large (85 MB maximum).');
+ try{
+  const record=JSON.parse(await file.text());
+  if(record?.format!=='MegaFrameProjectV1'||typeof record?.name!=='string'||record?.payload?.format!=='MegaFrameDraftV1')
+   throw Error('Not a MegaFrame project backup');
+  if(projectSize(record.payload)>80*1024*1024)throw Error('Project exceeds the local 80 MB limit');
+  const newRecord={format:'MegaFrameProjectV1',id:'project_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),
+   name:record.name.slice(0,90),savedAt:Date.now(),photoCount:Math.min(100,record.payload.photos?.length||0),payload:record.payload};
+  await projectWrite(newRecord);await renderSavedProjects();notify('Project backup imported: '+newRecord.name);
+ }catch(err){notify('Project import failed: '+err.message)}
+}
+
 async function initializeDraftRecovery() {
  const saved=await draftRead();
  if (saved?.format==='MegaFrameDraftV1' && saved.template) {
@@ -585,6 +753,12 @@ function setupMobileDrawer(){
 function setupPinnedNav(){const nav=$('pinNav');nav.querySelectorAll('button[data-panel]').forEach(button=>{button.addEventListener('click',()=>showPanel(Number(button.dataset.panel)))});showPanel(0)}
 
 function setupEvents(){
+ $('saveProject').onclick=saveNamedProject;
+ $('openProjects').onclick=openSavedProjects;
+ $('closeSavedProjects').onclick=()=>$('savedProjectsDialog').close();
+ $('importProjectFile').onchange=async e=>{const file=e.target.files?.[0];e.target.value='';await importProjectBackup(file)};
+ $('importProject').onclick=()=>$('importProjectFile').click();
+
  $('changeTemplate').onclick=()=>$('templateInput').click();$('templateInput').onchange=async e=>{if(e.target.files?.[0])await uploadTemplate(e.target.files[0]);e.target.value=''};
  $('templateSelect').onchange=e=>switchTemplate(e.target.value);
  $('openFrameLibrary').onclick=()=>openFrameLibrary('saved');$('openOnlineTemplates').onclick=()=>openFrameLibrary('online');$('libTabSaved').onclick=()=>showLibraryTab('saved');$('libTabOnline').onclick=()=>showLibraryTab('online');$('restoreBuiltins').onclick=()=>{hiddenSamples.clear();persistHiddenSamples();populateTemplates();renderFrameLibrary();notify('Original sample frames restored.')};$('onlineSearchForm').onsubmit=searchOnlineFrames;$('googleImageSearch').onclick=()=>externalTemplateSearch('google');$('bingImageSearch').onclick=()=>externalTemplateSearch('bing');$('canvaTemplateSearch').onclick=()=>externalTemplateSearch('canva');$('closeFrameLibrary').onclick=()=>$('frameLibrary').close();$('frameLibSearch').oninput=renderFrameLibrary;$('frameFavoritesOnly').onchange=renderFrameLibrary;$('frameLibSort').onchange=renderFrameLibrary;$('frameLibFolder').onchange=renderFrameLibrary;$('frameLibCategory').onchange=renderFrameLibrary;$('frameLibrary').addEventListener('click',e=>{if(e.target===$('frameLibrary'))$('frameLibrary').close()});
@@ -663,8 +837,12 @@ const t={id:prior||'template_'+Date.now()+'_'+Math.random().toString(36).slice(2
   ['centerPhoto',p=>{p.dx=0;p.dy=0}],
   ['resetPhotoPosition',p=>{p.zoom=1;p.rot=0;p.dx=0;p.dy=0}]
  ]) $(id).onclick=()=>{const p=getPhoto();if(!p)return;saveHistory();update(p);updateControls();render();};
- $('addEmojiCover').onclick=addEmojiCover;
- $('emojiCoverChoice').onchange=e=>{const cover=activeCover();if(!cover)return;saveHistory();cover.symbol=FACE_EMOJIS.includes(e.target.value)?e.target.value:'😎';updateEmojiControls();render()};
+ $('addEmojiCover').onclick=()=>openEmojiPicker('add');
+ $('emojiPickerOpen').onclick=()=>openEmojiPicker(activeCover()?'replace':'add');
+ $('emojiPickerClose').onclick=closeEmojiPicker;
+ $('emojiPickerSearch').oninput=e=>{emojiQuery=e.target.value;renderEmojiPicker()};
+ $('emojiPickerDialog').addEventListener('click',e=>{if(e.target===$('emojiPickerDialog'))closeEmojiPicker()});
+ $('emojiPickerDialog').addEventListener('close',()=>{emojiQuery='';$('emojiPickerSearch').value=''});
  $('emojiCoverSize').onpointerdown=()=>{if(activeCover())saveHistory()};
  $('emojiCoverSize').onkeydown=e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(e.key)&&activeCover())saveHistory()};
  $('emojiCoverSize').oninput=e=>{const cover=activeCover();if(!cover)return;cover.size=clamp(Number(e.target.value)/100,.12,.7);$('emojiCoverSizeValue').textContent=e.target.value+'%';render()};
