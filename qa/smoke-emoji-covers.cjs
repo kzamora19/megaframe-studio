@@ -53,6 +53,7 @@ const assert = require('node:assert/strict');
   await page.locator('[data-panel="0"]').click();
   await page.locator('#saveDraftNow').click();
   await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Draft saved'),{timeout:35000});
+  page.once('dialog',dialog=>dialog.accept()); // Approve the native unsaved-work close warning.
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#savedProjectsDialog[open]').waitFor({timeout:45000});
   await page.locator('#restoreRecoveryDraft').click();
