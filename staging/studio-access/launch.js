@@ -27,12 +27,15 @@
     interval = deadline = null;
     if (draftPort) draftPort.close();
     draftPort = null;
+    keyPair = null;
+    proof = null;
+    ticket = "";
     // Do not attempt to inspect iframe cookies or cross-origin draft storage.
     mount.replaceChildren();
     show(message, true);
   };
   const raw = new URLSearchParams(location.hash.startsWith("#") ? location.hash.slice(1) : "");
-  const ticket = raw.get("ptg_studio_ticket") || "";
+  let ticket = raw.get("ptg_studio_ticket") || "";
   try { history.replaceState(null, "", location.pathname + location.search); }
   catch { location.hash = ""; }
   if (!/^[A-Za-z0-9_-]{43}$/.test(ticket)) {
@@ -73,6 +76,7 @@
         !/^[A-Za-z0-9_-]{43}$/.test(result.challenge))
       throw Error("PTG authorization denied or unavailable.");
     proof = {sessionId:result.sessionId,challenge:result.challenge};
+    if(action === "load") ticket = ""; // Burn bearer in browser memory after one-time exchange.
     return result;
   }
   function deadlineAt(value) {
