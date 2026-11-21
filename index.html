@@ -263,6 +263,25 @@ button.danger:hover{background:#ffe9ec}
 #addEmojiCover{background:#fff5d6;border-color:#ffd785;color:#604300;white-space:nowrap}
 #addEmojiCover:hover:not(:disabled){background:#ffebaa;border-color:#ffbf42}
 @media(max-width:720px){.emojiCoverTools{padding:10px}.previewActions{flex-wrap:wrap}.emojiCoverRow{gap:8px}}
+
+.emojiPickerDialog{border:1px solid #3f4449;background:#222427;color:#fff;border-radius:18px;padding:0;width:min(370px,calc(100vw - 24px));max-height:min(590px,90dvh);box-shadow:0 22px 65px #0008;overflow:hidden}
+.emojiPickerDialog::backdrop{background:#0d1224a6}
+.emojiPickerHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px 3px;font-size:14px}
+.emojiPickerHeader button{background:transparent;color:#bbb;border:0;font-size:19px;cursor:pointer;padding:4px 8px}
+.emojiSearchWrap{padding:6px 11px}
+.emojiSearchWrap input{display:block;width:100%;border:0;border-radius:18px;background:#3b3d3f;color:white;height:37px;padding:0 14px;font-size:13px;outline-offset:2px}
+.emojiSearchWrap input::placeholder{color:#bababa}
+.emojiPickerCaption{font-size:11px;font-weight:650;color:#aaa;padding:3px 14px 6px}
+.emojiPickerGrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:1px;padding:2px 7px 9px;overflow:auto;height:290px;align-content:start}
+.emojiPickerItem{font:29px/1.35 "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;background:transparent;color:inherit;border:0;border-radius:7px;min-height:42px;padding:3px 0;cursor:pointer}
+.emojiPickerItem:is(:hover,:focus-visible){background:#41464d;outline:1px solid #6a727c}
+.emojiPickerTabs{border-top:1px solid #444;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));padding:6px 4px;gap:2px;background:#25272b}
+.emojiPickerTab{font-size:19px;min-height:38px;color:#bababa;background:transparent;border:0;border-radius:9px;cursor:pointer}
+.emojiPickerTab:is(.active,:hover,:focus-visible){color:#67b9ff;background:#38434d}
+.emojiPickerEmpty{grid-column:1/-1;font-size:12px;color:#aaa;text-align:center}
+.emojiPickerPrivacy{padding:7px 12px 12px;margin:0;color:#aaa;font-size:10px}
+.emojiCoverRow button#emojiPickerOpen{max-width:none;white-space:nowrap}
+@media(max-width:410px){.emojiPickerItem{font-size:26px}.emojiPickerGrid{height:270px}.emojiPickerDialog{max-height:89dvh}}
 </style>
 </head>
 <body>
@@ -383,13 +402,13 @@ button.danger:hover{background:#ffe9ec}
     <div class="filterEditorTitle"><strong>😎 Emoji privacy cover</strong><span>Selected photo only</span></div>
     <div class="inline emojiCoverRow">
      <label for="emojiCoverChoice">Emoji</label>
-     <select id="emojiCoverChoice" aria-label="Choose face cover emoji"><option value="😎">😎</option><option value="😊">😊</option><option value="😍">😍</option><option value="🤩">🤩</option><option value="🥰">🥰</option><option value="🙈">🙈</option><option value="❤️">❤️</option><option value="⭐">⭐</option></select>
+     <button type="button" class="btn small" id="emojiPickerOpen">Choose emoji</button>
      <button type="button" class="btn small" id="removeEmojiCover">Remove selected</button>
     </div>
     <div class="rangerow"><label for="emojiCoverSize">Cover size</label><span class="value" id="emojiCoverSizeValue">28%</span></div>
     <input type="range" id="emojiCoverSize" min="12" max="70" step="1" value="28" />
     <p class="help" id="emojiCoverHelp">Add an emoji below the preview, drag it over the customer's face, then resize it here. Repeat for other faces.</p>
-    <p class="help">Covers appear in saved JPG/PNG and collages; originals and local drafts still contain the original photo.</p>
+    <p class="help">Emojis have no added background. Check that each face is fully covered before sharing; originals and project backups still contain the original photo.</p>
    </div>
    <input id="replacePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
    <div class="filterEditor">
@@ -441,6 +460,14 @@ button.danger:hover{background:#ffe9ec}
  <div class="galleryWrap"><div class="galleryTop"><h2>Batch photo queue</h2><span class="counter" id="queueSummary">No photos yet</span></div><div class="gallery" id="gallery"><div class="emptyGallery" style="grid-column:1/-1">Your imported photos will appear here. Select any to edit its image or collage slot.</div></div></div>
 </section>
 </main>
+<dialog id="emojiPickerDialog" class="emojiPickerDialog" aria-labelledby="emojiPickerTitle">
+ <div class="emojiPickerHeader"><strong id="emojiPickerTitle">Choose an emoji</strong><button id="emojiPickerClose" type="button" aria-label="Close emoji picker">✕</button></div>
+ <div class="emojiSearchWrap"><input id="emojiPickerSearch" type="search" placeholder="⌕ Search emoji..." aria-label="Search emojis" autocomplete="off" /></div>
+ <div id="emojiPickerCaption" class="emojiPickerCaption">Smileys</div>
+ <div id="emojiPickerGrid" class="emojiPickerGrid" role="group" aria-label="Emoji choices"></div>
+ <div id="emojiPickerTabs" class="emojiPickerTabs" role="group" aria-label="Emoji categories"></div>
+ <p class="emojiPickerPrivacy">Transparent emoji overlay. Check face coverage before sharing.</p>
+</dialog>
 <dialog id="frameLibrary" class="frameLibrary" aria-labelledby="frameLibTitle">
  <div class="frameLibHead"><div><h2 id="frameLibTitle">Frame Library</h2><p>Open a saved frame or reuse its photo-opening shape</p></div><button id="closeFrameLibrary" class="btn small" type="button">✕ Close</button></div>
  <div class="frameLibBody">
