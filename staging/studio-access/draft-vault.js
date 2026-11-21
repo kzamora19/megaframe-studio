@@ -9,7 +9,13 @@
   const encoder=new TextEncoder(), decoder=new TextDecoder();
   const maxBytes=80*1024*1024;
   const valid=value=>typeof value==="string"&&/^[A-Za-z0-9_-]{43}$/.test(value);
-  const validProjectId=id=>typeof id==="string"&&/^project_[A-Za-z0-9_-]{2,100}$/.test(id);
+  // MegaFrame v2.7 archives automatic recovery as recovery_<savedAt>.
+  // Those records are named projects too, but the previous private vault
+  // rejected every "recovery_" ID, silently disabling auto-save on relaunch.
+  // Never accept arbitrary object-store keys or another account's scope.
+  const validProjectId=id=>typeof id==="string"&&
+    (/^project_[A-Za-z0-9_-]{2,100}$/.test(id)||
+     /^recovery_(?:[0-9]{10,16}|unknown)$/.test(id));
   const decodeKey=encoded=>{
     if(!valid(encoded))throw Error("Invalid account-specific recovery key.");
     const binary=atob(encoded.replace(/-/g,"+").replace(/_/g,"/")+"=");
