@@ -14,6 +14,23 @@ const assert = require('node:assert/strict');
   assert.equal(response.status(),200);
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:45000});
   await page.locator('#createNewProject').click();
+  // The published app lives at /megaframe-studio/, not the repository root.
+  // Verify this exact route loads both navigation assets and replaces the old grid.
+  await page.locator('#mfRailToggle').waitFor({state:'visible'});
+  assert.equal(await page.locator('#mfChatTitle').textContent(),'Frame template');
+  assert.equal(await page.locator('#mfChatItems button').count(),4,'Contextual navigation entries loaded');
+  assert.equal(await page.locator('#pinNav .pinNavGrid [data-panel]').count(),7);
+  assert.equal(await page.locator('#pinNav .mfName').first().isVisible(),false);
+  await page.locator('#mfRailToggle').click();
+  assert.equal(await page.locator('#pinNav .mfName').first().isVisible(),true,'Expanded icon rail shows labels');
+  await page.locator('#mfRailToggle').click();
+  assert.equal(await page.locator('#pinNav .mfName').first().isVisible(),false,'Collapsed icon rail hides labels');
+  const navAssets=await page.evaluate(()=>({
+    script:!!document.querySelector('script[src*="chat-sidebar.js"]'),
+    css:!!document.querySelector('link[href*="chat-sidebar.css"]'),
+    layout:document.body.classList.contains('frameChatLayout')
+  }));
+  assert.deepEqual(navAssets,{script:true,css:true,layout:true});
   assert.match(await page.title(),/MegaFrame Studio v2\.7/);
   const paths=await page.evaluate(async()=>{
    const manifestNode=document.querySelector('link[rel="manifest"]');
@@ -60,6 +77,7 @@ const assert = require('node:assert/strict');
   for(const pathname of [
     '/megaframe-studio/','/megaframe-studio/manifest.webmanifest',
     '/megaframe-studio/editor.js','/megaframe-studio/shared.js',
+    '/megaframe-studio/chat-sidebar.js','/megaframe-studio/chat-sidebar.css',
     '/megaframe-studio/icons/icon-192.png'
   ])assert.ok(sw.cached.includes(pathname),'Missing offline resource '+pathname);
 
@@ -67,6 +85,8 @@ const assert = require('node:assert/strict');
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:45000});
   await page.locator('#createNewProject').click();
+  await page.locator('#mfRailToggle').waitFor({state:'visible'});
+  assert.equal(await page.locator('#mfChatTitle').textContent(),'Frame template','Offline project-route sidebar works');
   assert.match(await page.locator('#pwa-status').textContent(),/Offline/i);
   assert.deepEqual(errors,[],'Uncaught browser errors: '+errors.join(' | '));
   console.log('PASS: GitHub Pages project base path, logo, cloud controls, PWA manifest/scope and offline reload.');
