@@ -122,6 +122,22 @@ try {
     await new Promise(resolve=>setTimeout(resolve,300));
   }
   assert.match(photoLabel,/1 photo/i,"Protected editor should import a real user image");
+  const exportVisible=await frame.locator("#exportType").isVisible();
+  if(!exportVisible){
+    const chain=await frame.locator("#exportType").evaluate(element=>{
+      const rows=[];let node=element;
+      while(node&&rows.length<9){
+        const style=getComputedStyle(node),rect=node.getBoundingClientRect();
+        rows.push({tag:node.tagName,id:node.id,cls:String(node.className||"").slice(0,45),
+          display:style.display,visibility:style.visibility,width:Math.round(rect.width),
+          height:Math.round(rect.height)});
+        node=node.parentElement;
+      }
+      return rows;
+    });
+    console.log("STAGED_EXPORT_VISIBILITY:",JSON.stringify(chain));
+  }
+  assert.equal(exportVisible,true,"Export selector should be visible after importing a photo");
   await frame.locator("#exportType").selectOption("image/png");
   const [download]=await Promise.all([
     page.waitForEvent("download",{timeout:90000}),
