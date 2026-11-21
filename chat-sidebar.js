@@ -18,7 +18,7 @@
   const grid=nav?.querySelector('.pinNavGrid');
   const sections=sidebar?[...sidebar.querySelectorAll(':scope > .section')]:[];
   if(!sidebar||!grid||sections.length!==MENUS.length||document.body.classList.contains('frameChatLayout'))return;
-  const style=document.createElement('link');style.rel='stylesheet';style.href='./chat-sidebar.css';document.head.append(style);
+  // CSS is loaded explicitly in index.html, avoiding dynamic asset races.
   const navTitle=nav.querySelector('.pinNavTitle');
   const toggle=document.createElement('button');
   toggle.type='button';toggle.id='mfRailToggle';toggle.textContent='☰';
