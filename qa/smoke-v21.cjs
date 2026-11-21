@@ -22,6 +22,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#fitMode').inputValue(),'cover');
   await page.locator('#zoom').evaluate(el=>{el.value='75';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.waitForFunction(() => document.getElementById('draftStatus')?.textContent?.includes('Draft saved'),{timeout:35000});
+  page.once('dialog',dialog=>dialog.accept()); // Approve the native unsaved-work close warning.
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#savedProjectsDialog[open]').waitFor({timeout:45000});
   await page.locator('#restoreRecoveryDraft').click();
