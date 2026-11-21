@@ -150,6 +150,16 @@ try {
     await new Promise(resolve=>setTimeout(resolve,300));
   }
   assert.match(photoLabel,/1 photo/i,"Protected editor should import a real user image");
+  // Regression: live MegaFrame emoji privacy covers must also work in the
+  // private opaque-origin editor, not only on the public GitHub Pages site.
+  assert.equal(await frame.locator("#addEmojiCover").isDisabled(), false,
+    "Privacy cover button must be available after importing a photo");
+  await frame.locator("#addEmojiCover").click();
+  await frame.locator("#emojiCoverChoice").selectOption("🙈");
+  const protectedCover = await frame.locator("#previewCanvas").evaluate(() =>
+    app.photos[0]?.covers?.[0]);
+  assert.equal(protectedCover?.symbol, "🙈",
+    "Privacy cover must be applied inside the protected editor");
   await frame.locator('#pinNav button[data-panel="5"]').click({timeout:10000});
   const exportVisible=await frame.locator("#exportType").isVisible();
   if(!exportVisible){
@@ -204,6 +214,10 @@ try {
   assert.match(await restored.locator("#photoCount").textContent(),/1 photo/i,
     "Encrypted photo draft must restore even while the Import section is collapsed.");
   assert.match(await restored.locator("#draftStatus").textContent(),/Draft saved|Auto-save|Restored/i);
+  const recoveredCover = await restored.locator("#previewCanvas").evaluate(() =>
+    app.photos[0]?.covers?.[0]);
+  assert.equal(recoveredCover?.symbol, "🙈",
+    "Encrypted PTG-account-scoped draft recovery must preserve emoji privacy covers");
 
   // Changing the PTG account's server-issued recovery scope MUST NOT display
   // another account's unfinished photos, even with the same test crypto key.
