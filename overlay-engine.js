@@ -36,6 +36,7 @@ function overlaySanitize(src){
 }
 function overlayCloneForStorage(){return app.overlays.map(o=>JSON.parse(JSON.stringify(o)))}
 function overlayRestore(data){
+ overlayImages.clear();
  app.overlays=(Array.isArray(data)?data:[]).slice(0,80).map(overlaySanitize).filter(Boolean);
  app.activeOverlayId=null;app.overlayPointer=null;
  for(const o of app.overlays)if(o.kind==='image')overlayCacheImage(o);
@@ -49,7 +50,7 @@ function overlayCacheImage(o){
  image.src=o.data;
 }
 function overlaySelected(){return app.overlays.find(o=>o.id===app.activeOverlayId)||null}
-function overlayTargetPhoto(o){return o.scope==='canvas'?null:app.photos[app.selected]||null}
+function overlayTargetPhoto(o){if(o.scope==='canvas')return null;const p=app.photos[app.selected]||null;return o.scope==='photo'&&p?.id!==o.photoId?null:p}
 function overlayTransform(o,photo){
  return (o.scope==='all'&&photo&&o.overrides[photo.id])||o.base;
 }
@@ -178,8 +179,10 @@ function overlayPointerDown(p){
    }
   }
  }
+ let foundHit=false;
  if(!type){
   const hit=overlayHitTarget(p);
+  foundHit=!!hit;
   if(hit){
    if(hit.index>=0&&hit.index!==app.selected)selectPhoto(hit.index);
    if(hit.overlay.id!==app.activeOverlayId)overlaySelect(hit.overlay.id);
@@ -191,7 +194,7 @@ function overlayPointerDown(p){
   t=overlayTransform(sel,photo);g=overlayGeo(t,cell);
   saveHistory();
   app.overlayPointer={type,corner,start:p,initial:{...t},cell,photoId:photo?.id||null,geo:g};
- }else if(!type){app.activeOverlayId=null;overlayRefreshList();overlayRefreshEditor();render()}
+ }else if(!type&&!foundHit){app.activeOverlayId=null;overlayRefreshList();overlayRefreshEditor();render()}
  return true;
 }
 function overlayPointerMove(p){
@@ -239,7 +242,8 @@ function overlayRefreshEditor(){
    o.scope==='canvas'?'This layer has one canvas-wide layout.':'This overlay belongs to the selected photo.';
 }
 function overlaySelect(id){
- if(!app.overlays.find(o=>o.id===id))return;
+ const o=app.overlays.find(o=>o.id===id);if(!o)return;
+ if(o.scope==='photo'&&o.photoId!==app.photos[app.selected]?.id){const i=app.photos.findIndex(p=>p.id===o.photoId);if(i>=0)selectPhoto(i)}
  app.activeOverlayId=id;app.overlayEditing=true;overlayRefreshList();overlayRefreshEditor();render();
 }
 function overlayRefreshAfterPhoto(){overlayRefreshEditor();if(app.overlayEditing)render()}
