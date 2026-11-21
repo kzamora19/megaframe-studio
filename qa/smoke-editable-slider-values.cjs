@@ -19,7 +19,7 @@ const assert=require('node:assert/strict');
     assert.equal(await page.locator('#'+id+'Value').isHidden(),true,id+' old badge is hidden');
     assert.equal(await page.locator('#'+id+'Number').inputValue(),await page.locator('#'+id).inputValue());
     const limits=await page.locator('#'+id+'Number').evaluate(el=>[el.min,el.max,el.step]);
-    const base=await page.locator('#'+id).evaluate(el=>[el.min,el.max,el.step]);
+    const base=await page.locator('#'+id).evaluate(el=>[el.min,el.max,el.step||'1']);
     assert.deepEqual(limits,base,id+' inherits allowed values');
    }
    assert.equal(await page.locator('#zoomNumber').isDisabled(),true,'Zoom cannot be changed without photo');
