@@ -83,9 +83,36 @@ async function review(browser,device){
   assert.ok(layout.button.width>=70,'Add Caption button has tap-sized width');
   const touchHeight=await page.locator('#addTextOverlay').evaluate(el=>el.getBoundingClientRect().height);
   assert.ok(touchHeight>=26,'Overlay action not too small');
+
+  // Device review of the actual rendered canvas, not just sidebar controls.
+  await page.locator('#overlayLayerList').selectOption(await page.evaluate(()=>app.overlays[0].id));
+  await page.evaluate(()=>selectPhoto(0));
+  await page.locator('.previewCard').scrollIntoViewIfNeeded();
+  if(isMobile){
+   const coordinates=await page.evaluate(()=>{
+    const o=app.overlays[0],photo=app.photos[0],t=overlayTransform(o,photo);
+    const g=overlayGeo(t,overlayCurrentCell(o));
+    const canvas=document.getElementById('previewCanvas'),r=canvas.getBoundingClientRect();
+    return {x:r.left+g.cx/app.frame.width*r.width,
+      y:r.top+g.cy/app.frame.height*r.height};
+   });
+   const oldX=await page.evaluate(()=>overlayTransform(app.overlays[0],app.photos[0]).x);
+   const otherX=await page.evaluate(()=>overlayTransform(app.overlays[0],app.photos[1]).x);
+   const eventProps={pointerId:22,pointerType:'touch',isPrimary:true,button:0};
+   await page.dispatchEvent('#previewCanvas','pointerdown',{...eventProps,clientX:coordinates.x,clientY:coordinates.y});
+   await page.dispatchEvent('#previewCanvas','pointermove',{...eventProps,clientX:coordinates.x+14,clientY:coordinates.y+5});
+   await page.dispatchEvent('#previewCanvas','pointerup',{...eventProps,clientX:coordinates.x+14,clientY:coordinates.y+5});
+   assert.notEqual(await page.evaluate(()=>overlayTransform(app.overlays[0],app.photos[0]).x),oldX,'Touch drag should move the selected overlay');
+   assert.equal(await page.evaluate(()=>overlayTransform(app.overlays[0],app.photos[1]).x),otherX,'Touch drag must not move overlay on another photo');
+  }
+  const canvasBuffer=await page.locator('.previewCard').screenshot({type:'jpeg',quality:55,animations:'disabled'});
+  console.log('VISUAL_CANVAS_'+device.toUpperCase()+'='+canvasBuffer.toString('base64'));
+
   assert.deepEqual(errors,[],'No browser errors '+device);
 
   // Synthetic image only; no customer records or personal data.
+  await page.locator('#overlayPanel').scrollIntoViewIfNeeded();
+  await page.locator('#overlayOpacity').evaluate(el=>el.blur());
   const buffer=await page.screenshot({type:'jpeg',quality:48,animations:'disabled'});
   console.log('VISUAL_SCREENSHOT_'+device.toUpperCase()+'='+buffer.toString('base64'));
   console.log('PASS: '+device+' overlays visible, transform controls usable, 3 layers, no horizontal overflow, per-photo independence');
