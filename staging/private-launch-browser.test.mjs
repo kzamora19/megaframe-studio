@@ -166,7 +166,7 @@ try {
   assert.ok(requests.some(x=>x.action==="check"));
   // A new valid PTG launch under the same account restores the real photo.
   mode="authorized";
-  await page.goto(origin+"/#ptg_studio_ticket="+"C".repeat(43),
+  await page.goto(origin+"/index.html#ptg_studio_ticket="+"C".repeat(43),
     {waitUntil:"domcontentloaded"});
   await page.locator("#studio-editor-frame").waitFor({timeout:90000});
   const restored=page.frameLocator("#studio-editor-frame");
@@ -180,6 +180,8 @@ try {
   // Changing the PTG account's server-issued recovery scope MUST NOT display
   // another account's unfinished photos, even with the same test crypto key.
   draftScope="X".repeat(43);
+  // Switch from /index.html to / to force a real navigation, not just a
+  // same-document hash change that cannot restart a locked launcher.
   await page.goto(origin+"/#ptg_studio_ticket="+"D".repeat(43),
     {waitUntil:"domcontentloaded"});
   await page.locator("#studio-editor-frame").waitFor({timeout:90000});
