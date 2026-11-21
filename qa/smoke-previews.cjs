@@ -40,6 +40,7 @@ const assert = require('node:assert/strict');
   try {
     await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:30000});
+    await page.locator('#createNewProject').click();
     await page.locator('#mf-open').click();
     const sharedImage = page.locator('#mf-list .frameLibCard > img');
     await sharedImage.waitFor({state:'visible',timeout:20000});
