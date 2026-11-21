@@ -273,6 +273,20 @@ try {
   assert.match(oldBackupRecord.payload.photos[0].data,/^data:image\/png;base64,/,
     "Portable legacy backup contains original customer photo; warn users to secure the JSON");
   await frame.locator("#closeSavedProjects").click();
+  // Saving a named project deliberately clears the rolling auto-recovery copy.
+  // Re-create an UNFINISHED change after Save Project: only that draft should
+  // be offered for recovery on a subsequent authorized relaunch.
+  const unsavedAfterNamed=await frame.locator("#previewCanvas").evaluate(()=>{
+    const p=app.photos[0];
+    p.dx=Math.min(.5,(Number(p.dx)||0)+.14);
+    updateControls();render();
+    return hasUnsavedChanges();
+  });
+  assert.equal(unsavedAfterNamed,true,
+    "A change after named Save must be recognized as unfinished work");
+  await frame.locator("#saveDraftNow").click();
+  await frame.locator("#draftStatus").getByText(/Draft saved on this device/i)
+    .waitFor({timeout:20000});
   mode="revoked";
   await page.waitForFunction(()=>document.getElementById("studio-editor-frame")===null,
     {timeout:90000});
