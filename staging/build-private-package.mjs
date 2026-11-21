@@ -22,13 +22,26 @@ const scriptNames = [
 ];
 let html = readFileSync(join(root, "index.html"), "utf8");
 const inlined = [];
+const scriptHashes = [];
 for (const name of scriptNames) {
   const tag = '<script src="./' + name + '" defer></script>';
   if (html.split(tag).length !== 2) throw Error("Missing or duplicate editor script: " + name);
   const code = readFileSync(join(root, name), "utf8").replace(/<\/script/gi, "<\\/script");
   html = html.replace(tag, "<script>" + code + "</script>");
+  // Preserve the original restrictive CSP while authorizing ONLY these exact
+  // immutable inline script bytes. No script-src unsafe-inline wildcard.
+  scriptHashes.push("'sha256-" + createHash("sha256").update(code).digest("base64") + "'");
   inlined.push(name);
 }
+// Source CSP permits external scripts from self, but the private bundle
+// contains inlined code. Hash-only script exceptions keep the existing policy
+// restrictive, rather than bypassing it with unsafe-inline.
+const scriptDirective = "script-src 'self' https://accounts.google.com https://www.gstatic.com;";
+if (html.split(scriptDirective).length !== 2)
+  throw Error("Unexpected source Content Security Policy; review before packaging.");
+html = html.replace(scriptDirective,
+  "script-src 'self' https://accounts.google.com https://www.gstatic.com " +
+  scriptHashes.join(" ") + ";");
 // PWA installation and service-worker caches are incompatible with the private
 // source-delivery proof. The existing public app is NOT altered by this tool.
 const pwa = '<script src="./pwa-client.js" defer></script>';
@@ -54,7 +67,8 @@ writeFileSync(join(output, "public", "index.html"), stub);
 const manifest = {
   type: "MegaFramePrivateEditorProof", revision: 1,
   sha256: sha256(html), bytes: Buffer.byteLength(html),
-  inlined, publicSha256: sha256(stub), publicBytes: Buffer.byteLength(stub),
+  inlined, inlineScriptHashes: scriptHashes.length,
+  publicSha256: sha256(stub), publicBytes: Buffer.byteLength(stub),
 };
 writeFileSync(join(output, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 console.log("Staging-only MegaFrame private editor bytes:", manifest.bytes,
