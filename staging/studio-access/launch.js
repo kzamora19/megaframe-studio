@@ -136,7 +136,10 @@
       // Intentionally omit allow-same-origin: private editor code must not be
       // able to read PTG/Branchline localStorage on the shared github.io origin.
       // Cloud OAuth/storage functionality must pass compatibility testing before release.
-      frame.sandbox = "allow-scripts allow-downloads";
+      // Native <dialog>.showModal() is used for the v2.7 New/Retrieve
+      // startup picker, Save Project and emoji chooser. allow-modals
+      // enables those dialogs, but NEVER grant allow-same-origin.
+      frame.sandbox = "allow-scripts allow-downloads allow-modals";
       const channel = new MessageChannel();
       draftPort = channel.port1;
       channel.port1.onmessage = async ({data:message}) => {
