@@ -57,5 +57,6 @@ jobs:
         run: |
           node staging/private-launch-browser.test.mjs
           node staging/cloud-backup-browser.test.mjs
+          node staging/cloud-launcher-browser.test.mjs
       - name: Rehearse old installed PWA cache retirement and local data preservation
         run: node staging/cutover-browser.test.mjs
