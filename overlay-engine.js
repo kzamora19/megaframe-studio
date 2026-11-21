@@ -3,6 +3,21 @@
  * All coordinates are normalized to the target photo cell (or whole canvas).
  */
 const overlayImages=new Map();
+// Offline-friendly system font catalog. Displayed samples and canvas exports use
+// the same family stacks; unavailable device fonts fall back by category.
+const OVERLAY_FONT_GROUPS=[
+ {name:'Popular & modern',fallback:'sans-serif',fonts:['Arial','Aptos','Calibri','Segoe UI','Verdana','Trebuchet MS','Tahoma','Century Gothic','Arial Black','Corbel','Candara']},
+ {name:'Classic & serif',fallback:'serif',fonts:['Georgia','Times New Roman','Cambria','Garamond','Palatino Linotype','Book Antiqua','Constantia','Baskerville','Bodoni MT','Didot','Rockwell']},
+ {name:'Bold & display',fallback:'sans-serif',fonts:['Impact','Franklin Gothic Medium','Bahnschrift','Copperplate Gothic Bold','Cooper Black','Haettenschweiler','Agency FB','Broadway','Showcard Gothic','Stencil']},
+ {name:'Handwriting & script',fallback:'cursive',fonts:['Comic Sans MS','Segoe Script','Segoe Print','Brush Script MT','Lucida Handwriting','Monotype Corsiva','Kristen ITC','Bradley Hand ITC']},
+ {name:'Monospaced',fallback:'monospace',fonts:['Consolas','Courier New','Lucida Console','Cascadia Code']}
+];
+const OVERLAY_FONT_LOOKUP=new Map(OVERLAY_FONT_GROUPS.flatMap(group=>group.fonts.map(font=>[font,group.fallback])));
+function overlayFontFamily(font){
+ const name=OVERLAY_FONT_LOOKUP.has(font)?font:'Arial';
+ return '"'+name+'",'+OVERLAY_FONT_LOOKUP.get(name);
+}
+
 function overlayInitialState(){
  app.overlays=[];app.activeOverlayId=null;app.overlayEditing=false;app.overlayPointer=null;
 }
@@ -25,7 +40,7 @@ function overlaySanitize(src){
   base:overlaySanitizeTransform(src.base),
   overrides:{},locked:!!src.locked,
   aspectLock:src.aspectLock!==false,
-  style:{font:['Arial','Georgia','Verdana','Impact','Trebuchet MS','Tahoma'].includes(src.style?.font)?src.style.font:'Arial',
+  style:{font:OVERLAY_FONT_LOOKUP.has(src.style?.font)?src.style.font:'Arial',
    color:/^#[\da-f]{6}$/i.test(src.style?.color||'')?src.style.color:'#ffffff',
    fontSize:clamp(Number(src.style?.fontSize)||10,2,45),bold:src.style?.bold!==false,
    outline:!!src.style?.outline,shadow:src.style?.shadow!==false}};
@@ -86,7 +101,7 @@ function overlayDrawText(ctx,o,g,cell){
  const maxWidth=Math.max(1,g.w*.94);
  let size=Math.max(9,cell.h*o.style.fontSize/100),lines=content.split('\n').slice(0,18);
  ctx.textAlign='center';ctx.textBaseline='middle';
- const font=()=>((o.style.bold?'bold ':'')+size+'px "'+o.style.font+'",sans-serif');
+ const font=()=>((o.style.bold?'bold ':'')+size+'px '+overlayFontFamily(o.style.font));
  ctx.font=font();
  // Fit long lines to the overlay rectangle, without cropping whole words.
  const words=[];
@@ -224,6 +239,117 @@ function overlayPointerMove(p){
  return true;
 }
 function overlayPointerUp(){if(!app.overlayPointer)return false;app.overlayPointer=null;return true}
+function overlayFontPickerSync(){
+ const select=$('overlayFont'),button=$('overlayFontButton');
+ if(!select||!button)return;
+ const name=OVERLAY_FONT_LOOKUP.has(select.value)?select.value:'Arial';
+ const label=$('overlayFontSelected');
+ label.textContent=name;label.style.fontFamily=overlayFontFamily(name);
+ button.disabled=select.disabled;
+ for(const option of $('overlayFontList').querySelectorAll('[data-font]'))
+  option.setAttribute('aria-selected',String(option.dataset.font===name));
+ if(button.disabled)overlayFontPickerClose(false);
+}
+function overlayFontPickerClose(restoreFocus){
+ const menu=$('overlayFontMenu'),button=$('overlayFontButton');
+ if(!menu||menu.hidden)return;
+ menu.hidden=true;button.setAttribute('aria-expanded','false');
+ if(restoreFocus)button.focus();
+}
+function overlayFontPickerInit(){
+ const picker=$('overlayFontPicker'),legacy=$('overlayFont'),button=$('overlayFontButton');
+ const menu=$('overlayFontMenu'),list=$('overlayFontList'),search=$('overlayFontSearch'),empty=$('overlayFontEmpty');
+ legacy.replaceChildren();list.replaceChildren();
+ const groups=[];
+ const options=[];
+ for(const group of OVERLAY_FONT_GROUPS){
+  const heading=document.createElement('div');heading.className='overlayFontGroup';heading.textContent=group.name;heading.setAttribute('role','presentation');list.append(heading);
+  const buttons=[];
+  for(const font of group.fonts){
+   legacy.add(new Option(font,font));
+   const option=document.createElement('button');option.type='button';option.className='overlayFontOption';
+   option.setAttribute('role','option');option.setAttribute('aria-selected','false');
+   option.dataset.font=font;option.tabIndex=-1;option.style.fontFamily=overlayFontFamily(font);
+   const title=document.createElement('span');title.textContent=font;
+   const sample=document.createElement('span');sample.className='fontSample';sample.setAttribute('aria-hidden','true');sample.textContent='Aa';
+   option.append(title,sample);list.append(option);
+   option.addEventListener('click',()=>{
+    legacy.value=font;
+    legacy.dispatchEvent(new Event('change',{bubbles:true}));
+    overlayFontPickerClose(true);
+   });
+   buttons.push(option);options.push(option);
+  }
+  groups.push({heading,buttons});
+ }
+ legacy.value='Arial';
+ const visibleOptions=()=>options.filter(option=>!option.hidden);
+ const filter=()=>{
+  const q=search.value.trim().toLowerCase();
+  let count=0;
+  for(const group of groups){
+   let visible=0;
+   for(const option of group.buttons){
+    option.hidden=!!q&&!option.dataset.font.toLowerCase().includes(q);
+    if(!option.hidden){count++;visible++}
+   }
+   group.heading.hidden=!visible;
+  }
+  empty.hidden=count!==0;
+  list.scrollTop=0;
+ };
+ const position=()=>{
+  const anchor=button.getBoundingClientRect(),viewportWidth=document.documentElement.clientWidth;
+  const width=Math.min(350,Math.max(200,viewportWidth-16));
+  const maxHeight=Math.min(420,window.innerHeight-16);
+  const availableBelow=window.innerHeight-anchor.bottom-9,availableAbove=anchor.top-9;
+  const above=availableBelow<245&&availableAbove>availableBelow;
+  const room=above?availableAbove:availableBelow;
+  const height=Math.max(150,Math.min(maxHeight,room-5));
+  menu.style.width=width+'px';menu.style.height=height+'px';
+  menu.style.left=Math.max(8,Math.min(anchor.left,viewportWidth-width-8))+'px';
+  menu.style.top=Math.max(8,above?anchor.top-height-5:Math.min(window.innerHeight-height-8,anchor.bottom+5))+'px';
+ };
+ const open=()=>{
+  if(button.disabled)return;
+  search.value='';filter();position();
+  menu.hidden=false;button.setAttribute('aria-expanded','true');
+  overlayFontPickerSync();
+  search.focus();
+ };
+ button.addEventListener('click',()=>menu.hidden?open():overlayFontPickerClose(true));
+ $('overlayFontClose').addEventListener('click',()=>overlayFontPickerClose(true));
+ document.addEventListener('pointerdown',e=>{if(!menu.hidden&&!picker.contains(e.target))overlayFontPickerClose(false)});
+ const selectVisible=(index)=>{
+  const entries=visibleOptions();if(!entries.length)return;
+  const option=entries[Math.max(0,Math.min(entries.length-1,index))];
+  option.focus();option.scrollIntoView({block:'nearest'});
+ };
+ button.addEventListener('keydown',e=>{
+  if(['ArrowDown','ArrowUp','Enter',' '].includes(e.key)){
+   e.preventDefault();open();
+   if(e.key==='ArrowUp')selectVisible(visibleOptions().length-1);
+   else if(e.key==='ArrowDown')selectVisible(0);
+  }
+ });
+ menu.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();overlayFontPickerClose(true);return;}
+  if(e.key==='Tab'){overlayFontPickerClose(false);return;}
+  const entries=visibleOptions(),focused=entries.findIndex(option=>option===document.activeElement);
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+   e.preventDefault();
+   selectVisible(focused<0?(e.key==='ArrowUp'?entries.length-1:0):(focused+(e.key==='ArrowDown'?1:-1)+entries.length)%entries.length);
+  }else if(e.key==='Home'&&focused>=0){e.preventDefault();selectVisible(0)}
+  else if(e.key==='End'&&focused>=0){e.preventDefault();selectVisible(entries.length-1)}
+  else if(e.key==='Enter'&&document.activeElement===search&&entries.length){e.preventDefault();entries[0].click()}
+ });
+ search.addEventListener('input',filter);
+ const sidebar=document.querySelector('.sidebar');
+ sidebar?.addEventListener('scroll',()=>overlayFontPickerClose(false),{passive:true});
+ window.addEventListener('resize',()=>{if(!menu.hidden)position()});
+ overlayFontPickerSync();
+}
+
 function overlayRefreshList(){
  const list=$('overlayLayerList');if(!list)return;
  list.replaceChildren();
@@ -235,14 +361,14 @@ function overlayRefreshList(){
 }
 function overlayRefreshEditor(){
  const o=overlaySelected(),box=$('overlayEditor');if(!box)return;
- box.hidden=!o;if(!o)return;
+ box.hidden=!o;if(!o){$('overlayFont').disabled=true;overlayFontPickerSync();return;}
  const t=overlayTransform(o,overlayTargetPhoto(o));
  const values={overlayContent:o.text,overlayFont:o.style.font,overlayColor:o.style.color,
   overlayFontSize:o.style.fontSize,overlayX:Math.round(t.x*100),overlayY:Math.round(t.y*100),
   overlayWidth:Math.round(t.w*100),overlayHeight:Math.round(t.h*100),overlayRotation:Math.round(t.rotation),
   overlayOpacity:Math.round(t.opacity*100)};
  for(const [id,value]of Object.entries(values))$(id).value=value;
- $('overlayContent').disabled=o.kind!=='text';$('overlayFont').disabled=o.kind!=='text';
+ $('overlayContent').disabled=o.kind!=='text';$('overlayFont').disabled=o.kind!=='text';overlayFontPickerSync();
  $('overlayColor').disabled=o.kind!=='text';$('overlayFontSize').disabled=o.kind!=='text';
  for(const [id,value]of Object.entries({overlayBold:o.style.bold,overlayShadow:o.style.shadow,
    overlayOutline:o.style.outline,overlayAspectLock:o.aspectLock,overlayVisible:t.visible,overlayLocked:o.locked}))$(id).checked=!!value;
@@ -271,6 +397,7 @@ function overlayModify(callback){
  saveHistory();callback(o,overlayTargetPhoto(o));overlayRefreshList();overlayRefreshEditor();render();
 }
 function overlayInit(){
+ overlayFontPickerInit();
  const bind=(id,event,fn)=>$(id).addEventListener(event,fn);
  bind('addTextOverlay','click',()=>overlayAdd('text'));
  bind('addImageOverlay','click',()=>$('overlayImageInput').click());

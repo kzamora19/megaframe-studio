@@ -316,6 +316,31 @@ button.danger:hover{background:#ffe9ec}
 #overlayPanel .field input[type="number"]{width:100%;min-width:0}
 #overlayPanel .draftActions{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
 #overlayPanel .check{font-size:12px}
+/* Accessible Word-style font menu; native <option> elements cannot reliably display
+   different typefaces in Windows browsers. The hidden select supports older projects. */
+.overlayFontPicker{position:relative;min-width:0}
+.overlayFontLegacy{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;border:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
+.overlayFontButton{width:100%;min-width:0;min-height:43px;background:#fff;border:1px solid #dce2f2;border-radius:10px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#172343;font-size:17px;text-align:left}
+.overlayFontButton:hover{border-color:#9cb0e9;background:#fafbff}
+.overlayFontButton:focus-visible,.overlayFontButton[aria-expanded="true"]{border-color:#4167ff;outline:2px solid #c5d3ff80;outline-offset:1px}
+#overlayFontSelected{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.overlayFontChevron{font-family:Arial,sans-serif;font-size:18px;color:#62769f;line-height:1}
+.overlayFontMenu{position:fixed;z-index:1100;background:#fff;color:#19254a;border:1px solid #c7d5f4;border-radius:13px;box-shadow:0 12px 42px #172b5460;display:flex;flex-direction:column;max-height:calc(100dvh - 24px);padding:8px;gap:5px}
+.overlayFontMenu[hidden]{display:none!important}
+.overlayFontSearchRow{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+#overlayFontSearch{width:100%;min-width:0;min-height:39px;padding:8px 10px;font-size:13px;background:#f8faff;border:1px solid #cdd8ee;border-radius:9px}
+#overlayFontSearch:focus-visible{outline:2px solid #8aa9ff}
+#overlayFontClose{flex:0 0 34px;width:34px;height:34px;background:#f4f6fb;border:0;border-radius:8px;color:#425779;font-size:22px;line-height:1}
+.overlayFontList{overflow-y:auto;overscroll-behavior:contain;flex:1;min-height:90px;padding:2px 0}
+.overlayFontGroup{font:750 10px Arial,sans-serif;text-transform:uppercase;letter-spacing:.09em;color:#8190a9;padding:11px 10px 4px}
+.overlayFontOption{width:100%;min-height:40px;padding:7px 11px;border:0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;color:#16264a;text-align:left;font-size:19px;line-height:1.35;white-space:nowrap}
+.overlayFontOption span:first-child{overflow:hidden;text-overflow:ellipsis}
+.overlayFontOption .fontSample{flex:0 0 auto;color:#8290aa;font-size:15px;opacity:.8}
+.overlayFontOption:hover,.overlayFontOption:focus-visible{background:#edf3ff;outline:none}
+.overlayFontOption[aria-selected="true"]{background:#e8efff;box-shadow:inset 3px 0 #315ded;color:#173ba3}
+.overlayFontEmpty{padding:16px 10px;color:#697c9b;font-size:13px}
+.overlayFontNote{font:11px/1.4 Arial,sans-serif;color:#7d8da5;margin:0;padding:5px 7px;border-top:1px solid #edf0f7;flex:0 0 auto}
+@media(max-width:720px){.overlayFontOption{min-height:45px}.overlayFontMenu{border-radius:12px}.overlayFontButton{min-height:45px}}
 </style>
 </head>
 <body>
@@ -493,7 +518,19 @@ button.danger:hover{background:#ffe9ec}
    <div class="field"><label for="overlayLayerList">Overlay layers</label><select id="overlayLayerList" size="4" aria-label="Select overlay"></select></div>
    <div id="overlayEditor" hidden>
     <div class="field"><label for="overlayContent">Text / Word art</label><textarea id="overlayContent" rows="3" maxlength="600"></textarea></div>
-    <div class="inline"><div class="field" style="flex:1"><label for="overlayFont">Font</label><select id="overlayFont"><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Impact</option><option>Trebuchet MS</option><option>Tahoma</option></select></div><div class="field" style="flex:1"><label for="overlayColor">Text color</label><input id="overlayColor" type="color" value="#ffffff" /></div></div>
+    <div class="inline"><div class="field" style="flex:1">
+     <label for="overlayFontButton">Font style</label>
+     <div id="overlayFontPicker" class="overlayFontPicker">
+      <button id="overlayFontButton" class="overlayFontButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="overlayFontList" aria-label="Choose font"><span id="overlayFontSelected">Arial</span><span aria-hidden="true" class="overlayFontChevron">⌄</span></button>
+      <div id="overlayFontMenu" class="overlayFontMenu" hidden>
+       <div class="overlayFontSearchRow"><input id="overlayFontSearch" type="search" placeholder="Search fonts…" aria-label="Search font styles" autocomplete="off" /><button id="overlayFontClose" type="button" aria-label="Close font menu">×</button></div>
+       <div id="overlayFontList" class="overlayFontList" role="listbox" aria-label="Fonts shown in their own style"></div>
+       <p id="overlayFontEmpty" class="overlayFontEmpty" hidden>No matching fonts found.</p>
+       <p class="overlayFontNote">Fonts use your device's installed typefaces. Missing fonts may display a substitute.</p>
+      </div>
+      <select id="overlayFont" class="overlayFontLegacy" tabindex="-1" aria-hidden="true"><option>Arial</option></select>
+     </div>
+    </div><div class="field" style="flex:1"><label for="overlayColor">Text color</label><input id="overlayColor" type="color" value="#ffffff" /></div></div>
     <div class="inline"><label class="check"><input id="overlayBold" type="checkbox" checked /> Bold</label><label class="check"><input id="overlayOutline" type="checkbox" /> Outline</label><label class="check"><input id="overlayShadow" type="checkbox" checked /> Shadow</label></div>
     <div class="field"><label for="overlayFontSize">Font size (% of photo height)</label><input id="overlayFontSize" type="number" min="2" max="45" value="10" /></div>
     <div class="inline"><div class="field" style="flex:1"><label for="overlayX">Position X (%)</label><input id="overlayX" type="number" min="-50" max="150" value="50" /></div><div class="field" style="flex:1"><label for="overlayY">Position Y (%)</label><input id="overlayY" type="number" min="-50" max="150" value="75" /></div></div>
