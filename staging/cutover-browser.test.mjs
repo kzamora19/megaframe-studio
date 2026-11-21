@@ -104,6 +104,13 @@ try{
  assert.ok(result.names.includes("branchline-shell-preserve-me"),"Another app's shell stays untouched");
  assert.equal(result.project?.name,"Local backup should be preserved",
    "Cutover must never erase pre-existing project data without explicit migration");
+ await page.goto(base+"studio/index.html",{waitUntil:"domcontentloaded"});
+ await page.getByText("A valid PTG authorization is required.").waitFor({timeout:20000});
+ assert.equal(await page.locator("iframe").count(),0,
+   "A direct Studio URL must not load editor code without PTG authorization");
+ const protectedHtml=await context.request.get(base+"studio/index.html");
+ assert.equal(protectedHtml.status(),200);
+ assert.doesNotMatch(await protectedHtml.text(),/PRIVATE MEGAFRAME EDITOR BUNDLE|id="photosInput"/);
  console.log("PASS: actual Chromium SW upgrade retires old cached editor, preserves unrelated cache and IndexedDB, replaces mobile entry with PTG sign-in.");
 }finally{
  await browser?.close();
