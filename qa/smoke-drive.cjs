@@ -62,6 +62,7 @@ const assert = require('node:assert/strict');
  try{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'));
+  await page.locator('#createNewProject').click();
   await page.locator('#openFrameLibrary').click();
   await page.locator('#drive-from-frame-library').click();
   await page.locator('#drive-dialog[open]').waitFor();

@@ -13,6 +13,7 @@ const assert = require('node:assert/strict');
   const response=await page.goto(base,{waitUntil:'domcontentloaded'});
   assert.equal(response.status(),200);
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:45000});
+  await page.locator('#createNewProject').click();
   assert.match(await page.title(),/MegaFrame Studio v2\.7/);
   const paths=await page.evaluate(async()=>{
    const manifestNode=document.querySelector('link[rel="manifest"]');
@@ -65,6 +66,7 @@ const assert = require('node:assert/strict');
   await context.setOffline(true);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:45000});
+  await page.locator('#createNewProject').click();
   assert.match(await page.locator('#pwa-status').textContent(),/Offline/i);
   assert.deepEqual(errors,[],'Uncaught browser errors: '+errors.join(' | '));
   console.log('PASS: GitHub Pages project base path, logo, cloud controls, PWA manifest/scope and offline reload.');

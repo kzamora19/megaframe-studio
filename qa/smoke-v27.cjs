@@ -9,6 +9,9 @@ const pixel=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQ
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'));
+  await page.locator('#createNewProject').click();
+  await page.locator('[data-panel="1"]').click();
+  await page.locator('#shapePreset').selectOption('rect');
   await page.locator('#photosInput').setInputFiles([{name:'photo-a.png',mimeType:'image/png',buffer:pixel},{name:'photo-b.png',mimeType:'image/png',buffer:pixel}]);
   await page.waitForFunction(()=>document.querySelector('#photoCount')?.textContent?.includes('2 photos'));
   await page.locator('[data-panel="4"]').click();
@@ -43,6 +46,7 @@ const pixel=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQ
   phone.on('pageerror',error=>errors.push(error.message));
   await phone.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await phone.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'));
+  await phone.locator('#createNewProject').click();
   await phone.locator('#mobileDrawerToggle').click();
   assert.equal(await phone.locator('#mobileDrawerToggle').getAttribute('aria-expanded'),'false');
   assert.equal(await phone.locator('#pinNav').isVisible(),false);
