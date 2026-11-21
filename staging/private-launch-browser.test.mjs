@@ -217,6 +217,19 @@ try {
   await frame.locator("#savedProjectsDialog[open]").waitFor();
   await frame.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:20000});
   assert.equal(await frame.locator(".savedProjectCard").count(),1);
+  // Simulate migrating a portable project saved by the old public MegaFrame:
+  // same JSON format, with unencrypted original customer photo in the export.
+  const [backupDownload]=await Promise.all([
+    page.waitForEvent("download",{timeout:30000}),
+    frame.locator(".savedProjectCard").first().getByRole("button",{name:"Backup"}).click(),
+  ]);
+  const oldProjectBackup=readFileSync(await backupDownload.path());
+  const oldBackupRecord=JSON.parse(oldProjectBackup.toString("utf8"));
+  assert.equal(oldBackupRecord.format,"MegaFrameProjectV1");
+  assert.equal(oldBackupRecord.payload.photos.length,1);
+  assert.equal(oldBackupRecord.payload.photos[0].covers[0].symbol,"🙈");
+  assert.match(oldBackupRecord.payload.photos[0].data,/^data:image\/png;base64,/,
+    "Portable legacy backup contains original customer photo; warn users to secure the JSON");
   await frame.locator("#closeSavedProjects").click();
   mode="revoked";
   await page.waitForFunction(()=>document.getElementById("studio-editor-frame")===null,
@@ -273,6 +286,46 @@ try {
   await other.locator("#projectListStatus").getByText(/No saved projects yet/i).waitFor({timeout:25000});
   assert.equal(await other.locator(".savedProjectCard").count(),0,
     "Another PTG account must not see saved customer projects.");
+  // User-directed migration is different from unauthorized account access:
+  // a consciously imported portable JSON backup must become newly encrypted
+  // in the current PTG account's private project vault, not inherited silently.
+  await other.locator("#importProjectFile").setInputFiles({
+    name:"legacy-megaframe-backup.json",mimeType:"application/json",buffer:oldProjectBackup
+  });
+  await other.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"})
+    .waitFor({timeout:30000});
+  assert.equal(await other.locator(".savedProjectCard").count(),1,
+    "Legacy portable project backup imports to new authorized account.");
+  const newlyEncrypted=await page.evaluate(async()=>{
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open("megaframe-protected-draft-v1");
+      req.onerror=()=>reject(Error("Account-scoped project vault missing"));
+      req.onsuccess=()=>{
+        const tx=req.result.transaction("drafts","readonly"),store=tx.objectStore("drafts");
+        const keyReq=store.getAllKeys();
+        keyReq.onerror=()=>reject(Error("Project keys missing"));
+        keyReq.onsuccess=()=>{
+          const key=keyReq.result.find(k=>typeof k==="string"&&k.startsWith("X".repeat(43)+":project:"));
+          if(!key){resolve(false);return}
+          const read=store.get(key);
+          read.onerror=()=>reject(Error("Project ciphertext missing"));
+          read.onsuccess=()=>resolve(read.result?.format==="AES-GCM-v1"&&
+            read.result.encrypted instanceof ArrayBuffer &&
+            read.result.iv instanceof Uint8Array &&
+            !Object.hasOwn(read.result,"photos"));
+        };
+      };
+    });
+  });
+  assert.equal(newlyEncrypted,true,"Imported old portable project must be re-encrypted to new PTG account.");
+  await other.locator(".savedProjectCard").first().getByRole("button",{name:"Open"}).click();
+  await other.locator("#actionModalConfirm").click();
+  await other.locator("#savedProjectsDialog").waitFor({state:"hidden",timeout:20000});
+  const migrated=await other.locator("#previewCanvas").evaluate(() => ({
+    count:app.photos.length,symbol:app.photos[0]?.covers?.[0]?.symbol
+  }));
+  assert.deepEqual(migrated,{count:1,symbol:"🙈"},
+    "Legacy customer photo and privacy cover are restored through the new encrypted vault.");
   // Stored bytes must be opaque ciphertext rather than a plaintext photo record.
   const encrypted=await page.evaluate(async () => {
     return new Promise((resolve,reject)=>{
