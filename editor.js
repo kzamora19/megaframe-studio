@@ -1030,7 +1030,7 @@ function projectFingerprint(){
  return JSON.stringify([
   t.id,t.name,t.data?.length||0,t.data?.slice(-64)||'',
   app.rect,app.shape,app.frameOpening,app.appearance,app.collage,
-  app.photos.map(p=>[p.id,p.name,p.data?.length||0,p.data?.slice(-40)||'',p.zoom,p.rot,p.dx,p.dy,p.fit,p.filters,p.enhancement,p.covers]),overlayCloneForStorage(),
+  app.photos.map(p=>[p.id,p.name,p.data?.length||0,p.data?.slice(-40)||'',p.zoom,p.rot,p.dx,p.dy,p.fit,p.filters,p.enhancement,p.covers]),overlayFingerprint(),
   $('prefix')?.value||'',$('exportType')?.value||'',$('exportSize')?.value||''
  ]);
 }
