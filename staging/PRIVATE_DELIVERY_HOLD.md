@@ -48,3 +48,17 @@ Existing draft PR #16 protects requests with a Vercel proxy, conflicting with th
 - **[Passing private package + Chromium browser CI](https://github.com/kzamora19/megaframe-studio/actions/runs/44876506308)**, staging commit `83de09d611cf047230bc08ffcaa845fb77a195a6`. This is mocked PTG/cloud authorization; it does NOT prove real Google Drive backups, cloud templates, separate-device synchronization, account revocation against deployed Edge services, or PWA/old-source cutover.
 - Downloaded MegaFrame project JSON backup files intentionally contain the original customer photos **in plaintext**; users must keep those exports private. Automatic cross-device upload is not enabled.
 - PTG #40 additionally passed local real Supabase Auth/PostgREST, PostgreSQL concurrency, and per-account atomic launch rate limiting. Do not confuse those PTG-local results with a deployed MegaFrame integration. **NO merge or production deployment approved.**
+
+
+## November 21 — v2.7 startup choice, Save-before-New, and encrypted recovery reconciliation
+
+After the live standalone MegaFrame app gained a mandatory startup choice and **New Project** save-first behavior, the private PTG integration branch was synchronized to the current `main` HTML, `editor.js`, service worker, and QA scripts. Branchline navy branding remains in the private editor; no live app was overwritten.
+
+- On every protected launch, users must explicitly choose **Create New Project** or **Retrieve Saved Project**. A fresh new project starts blank, with no preselected template or photo opening.
+- The private builder replaces only plaintext IndexedDB-backed draft/named-project CRUD. It now **preserves** the live `recoveryArchiveId` and `deleteLinkedRecovery` helpers. Omitting those functions had prevented initialization of the v2.7 chooser.
+- The PTG-scoped AES-GCM vault now accepts both tightly validated `project_...` IDs and deterministic `recovery_<savedAt>` archive IDs, with all ciphertext names/photos still isolated under each account scope.
+- Native `<dialog>` controls for startup, saved projects and emoji picker are permitted inside the sandbox using `allow-modals`, but **`allow-same-origin` remains forbidden**.
+- The protected browser test now selects an actual frame after blank startup before exercising photo/emoji controls. It separately checks named Save, then an additional unsaved edit and recovery after revocation; a named Save legitimately clears the older automatic recovery copy.
+- The standalone MegaFrame runtime retains its own tested behavior; these changes are still **draft only**, not production-approved.
+
+Remaining mandatory release gates: complete private browser CI, actual hosted PTG and account revocation, cross-device and Drive/cloud behavior, protected printing, real project migration, PWA/cache cutover and rollback, and full four-app integration. No new Supabase project, account, hosting provider or costs were created.
