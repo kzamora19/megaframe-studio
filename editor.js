@@ -672,6 +672,7 @@ async function initializeDraftRecovery() {
  $('restoreRecoveryDraft').onclick=async()=>{
   const record=await draftRead();
   if(!record?.template)return notify('No automatic recovery copy found.');
+  if(hasUnsavedChanges()&&!await confirmAction('Restore recovery copy?','You have changes that have not been saved as a named project. Save Project first if you want to keep them, or confirm replacement.','Restore recovery'))return;
   try{await restoreLocalDraft(record);$('savedProjectsDialog').close();showPanel(4);notify('Unfinished editing session restored.');}
   catch(err){draftStatus('Saved draft could not be restored: '+err.message);notify('Could not restore recovery copy.');}
  };
