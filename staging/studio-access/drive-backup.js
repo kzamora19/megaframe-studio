@@ -14,18 +14,18 @@
   const CLIENT=/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/;
   const OWNER=/^[A-Za-z0-9_-]{43}$/;
   let context=null,token="",tokenUntil=0,controller=null,connectClient=null;
-  let driveFiles=[],folderId="";
+  let driveFiles=[],folderId="",busy=false;
   const el=id=>document.getElementById(id);
   const note=value=>{if(el("driveMessage"))el("driveMessage").textContent=String(value);};
   const enabled=()=>!!context&&!!token&&Date.now()<tokenUntil;
   function paint(){
     const connected=enabled();
     for(const name of ["driveBackup","driveRestore","driveRefresh"])
-      if(el(name))el(name).disabled=!connected;
+      if(el(name))el(name).disabled=!connected||busy;
     if(el("driveConnect"))el("driveConnect").hidden=connected;
     if(el("driveDisconnect"))el("driveDisconnect").hidden=!connected;
-    if(el("driveDisconnect"))el("driveDisconnect").disabled=false;
-    if(el("driveConnect"))el("driveConnect").disabled=false;
+    if(el("driveDisconnect"))el("driveDisconnect").disabled=busy;
+    if(el("driveConnect"))el("driveConnect").disabled=busy;
   }
   function clear(){
     if(controller)controller.abort();
@@ -83,6 +83,13 @@
   }
   async function request(url,options={}){
     ensure();
+    // Defense in depth: never attach a Google OAuth bearer to a non-Drive host
+    // or a URL supplied by untrusted project metadata or a forged redirect.
+    const target=new URL(url);
+    if(target.origin!=="https://www.googleapis.com"||
+       !(/^\/drive\/v3\/files(?:\/|$)/.test(target.pathname)||
+         /^\/upload\/drive\/v3\/files(?:\/|$)/.test(target.pathname)))
+      throw Error("Refusing Google Drive authorization to an untrusted destination.");
     const headers={Authorization:"Bearer "+token,...options.headers};
     let response;
     try{
@@ -128,13 +135,29 @@
       " and appProperties has {key='branchline' and value='studio-backup-v1'}"+
       " and appProperties has {key='studio' and value='"+context.studio+"'}"+
       " and appProperties has {key='ownerScope' and value='"+context.ownerScope+"'}";
-    const listing=await(await request(path({q,fields:"nextPageToken,files(id,name,size,modifiedTime,mimeType,appProperties)",
-      orderBy:"modifiedTime desc",pageSize:"100"}))).json();
-    driveFiles=(listing.files||[]).filter(f=>ID.test(f.id||"")&&
-      f.appProperties?.branchline==="studio-backup-v1"&&
-      f.appProperties?.studio===context.studio&&
-      f.appProperties?.ownerScope===context.ownerScope);
-    if(listing.nextPageToken)note("Showing the latest 100 Google Drive backups.");
+    // Google Drive may return partial pages. Read bounded subsequent pages,
+    // so older recoverable projects are not silently hidden.
+    const found=[],seen=new Set();
+    let cursor="",pageCount=0;
+    do {
+      const query={q,fields:"nextPageToken,files(id,name,size,modifiedTime,mimeType,appProperties)",
+        orderBy:"modifiedTime desc",pageSize:"100"};
+      if(cursor)query.pageToken=cursor;
+      const listing=await(await request(path(query))).json();
+      for(const f of listing.files||[]){
+        if(ID.test(f.id||"")&&!seen.has(f.id)&&
+           f.appProperties?.branchline==="studio-backup-v1"&&
+           f.appProperties?.studio===context.studio&&
+           f.appProperties?.ownerScope===context.ownerScope){
+          seen.add(f.id);found.push(f);
+        }
+      }
+      const next=typeof listing.nextPageToken==="string"?listing.nextPageToken:"";
+      if(next===cursor)throw Error("Drive returned a repeating result page.");
+      cursor=next;pageCount++;
+    } while(cursor&&pageCount<10);
+    driveFiles=found;
+    if(cursor)note("More than 1,000 Drive backups: displaying the newest matching results.");
     return driveFiles;
   }
   function localId(){
@@ -236,10 +259,32 @@
     const response=await request(API+"/"+encodeURIComponent(fileId)+"?alt=media");
     if(Number(response.headers.get("content-length")||0)>MAX_FILE_BYTES)
       throw Error("Google Drive backup is too large.");
-    const blob=await response.blob();
-    if(blob.size>MAX_FILE_BYTES)throw Error("Google Drive backup exceeds 150 MB.");
+    // Stream with a hard cap: a malicious/incorrect Content-Length cannot
+    // cause the browser to allocate an unlimited response before validation.
+    let raw;
+    if(response.body?.getReader){
+      const reader=response.body.getReader(),chunks=[];
+      let bytes=0;
+      try{
+        while(true){
+          const part=await reader.read();
+          if(part.done)break;
+          bytes+=part.value.byteLength;
+          if(bytes>MAX_FILE_BYTES){
+            await reader.cancel();
+            throw Error("Google Drive backup exceeds 150 MB.");
+          }
+          chunks.push(part.value);
+        }
+      }finally{reader.releaseLock();}
+      raw=await new Blob(chunks).text();
+    }else{
+      const blob=await response.blob();
+      if(blob.size>MAX_FILE_BYTES)throw Error("Google Drive backup exceeds 150 MB.");
+      raw=await blob.text();
+    }
     let payload;
-    try{payload=JSON.parse(await blob.text());}catch{throw Error("Google Drive backup JSON is invalid.");}
+    try{payload=JSON.parse(raw);}catch{throw Error("Google Drive backup JSON is invalid.");}
     if(payload?.format!==FORMAT||payload.studio!==context.studio||
        payload.ownerScope!==context.ownerScope||payload.recordKey!==recordKey||
        typeof payload.iv!=="string"||typeof payload.encrypted!=="string")
@@ -249,9 +294,10 @@
     note("Encrypted backup restored to local projects. Reopen the project in the Studio editor.");
   }
   async function action(fn){
-    for(const b of el("drivePanel")?.querySelectorAll("button")||[])b.disabled=true;
+    if(busy||!context)return;
+    busy=true;paint();
     try{await fn();}catch(error){note(error?.message||"Google Drive operation failed.");}
-    finally{paint();}
+    finally{busy=false;paint();}
   }
   async function setup(input){
     if(!input||!["megaframe","flyer"].includes(input.studio)||
