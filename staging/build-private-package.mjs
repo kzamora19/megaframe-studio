@@ -56,11 +56,16 @@ for (const name of scriptNames) {
       "",
     ].join("\n");
     code=code.slice(0,namedBegin)+namedBridge+code.slice(namedEnd);
-    const restoredNote = "notify('Restored your unfinished editing session from this device.');";
-    if (code.split(restoredNote).length !== 2)
-      throw Error("MegaFrame restore UI changed; review the private bundle.");
-    code = code.replace(restoredNote,
-      restoredNote + " draftStatus('Draft restored on this device.');");
+    // Current production v2.7 starts on a blank workspace, prompts for
+    // New Project / Open Projects, and archives an older recovery copy.
+    // Preserve this whole flow inside the private frame; its projectRead/
+    // projectWrite and draftRead/draftWrite calls are replaced above by
+    // the account-scoped encrypted launcher bridge, not raw IndexedDB.
+    if (!code.includes("async function initializeDraftRecovery() {") ||
+        !code.includes("async function beginNewProject()") ||
+        !code.includes("Previous session protected in Open Projects.") ||
+        !code.includes("await openBlankWorkspace();"))
+      throw Error("MegaFrame current startup/recovery flow changed; review before packaging.");
     const bridge = readFileSync(join(root, "staging/editor-draft-bridge.js"), "utf8")
       .replace(/<\/script/gi, "<\\/script");
     injected = "<script>" + bridge + "</script>";
