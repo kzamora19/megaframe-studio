@@ -166,6 +166,20 @@ try {
     width:el.width,height:el.height
   }));
   assert.ok(canvas.width>1000&&canvas.height>1000,"Actual editor canvas is present");
+  // Current v2.7 intentionally starts NEW projects with an empty frame and no
+  // photo opening. Select an existing frame through its actual library UI
+  // before testing face-cover placement (which requires a valid opening).
+  const initialShape=await frame.locator("#previewCanvas").evaluate(()=>app.shape?.type);
+  assert.equal(initialShape,"none","New Project must begin without a preselected photo opening");
+  await frame.locator("#openFrameLibrary").click();
+  await frame.locator("#frameLibrary[open]").waitFor({timeout:15000});
+  await frame.locator("#frameLibGrid .frameLibCard").first()
+    .getByRole("button",{name:"Open frame"}).click();
+  await frame.locator("#frameLibrary").waitFor({state:"hidden",timeout:15000});
+  const selectedOpening=await frame.locator("#previewCanvas").evaluate(
+    ()=>({type:app.shape?.type,points:app.shape?.points?.length||0}));
+  assert.ok(selectedOpening.points>=3,
+    "QA requires a frame with a saved photo opening before adding a face-cover emoji");
   // Exercise real editor photo loading and PNG export, not just DOM mounting.
   const encoded=await page.evaluate(()=>{
     const image=document.createElement("canvas");
