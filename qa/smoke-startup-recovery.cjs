@@ -44,6 +44,7 @@ const assert=require('node:assert/strict');
   assert.equal(await page.evaluate(()=>hasUnsavedChanges()),false,'Opening a saved project establishes a clean state');
   await page.locator('#zoom').evaluate(el=>{el.value='115';el.dispatchEvent(new Event('input',{bubbles:true}));});
   assert.equal(await page.evaluate(()=>hasUnsavedChanges()),true,'Editing after restore becomes unsaved');
+  await page.locator('[data-panel="0"]').click();
   await page.locator('#saveProject').click();
   await page.locator('#actionModalInput').fill('Final project');
   await page.locator('#actionModalConfirm').click();
