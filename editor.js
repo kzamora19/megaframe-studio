@@ -978,13 +978,33 @@ function renderOnlineResults(items){const grid=$('onlineResults');grid.replaceCh
 async function importOnlineFrame(item,button){button.disabled=true;button.textContent='Importing…';$('onlineSearchStatus').textContent='Importing image. If the source blocks browser downloads, use its source page to download manually.';try{const url=(['image/png','image/jpeg','image/webp'].includes(item.mime)&&item.size>0&&item.size<=18*1024*1024)?item.original:item.thumbnail;const res=await fetch(url,{mode:'cors'});if(!res.ok)throw Error('Image request returned HTTP '+res.status);const blob=await res.blob();const mime=blob.type.split(';')[0].toLowerCase();const supported=['image/jpeg','image/png','image/webp'].includes(mime);if(!supported)throw Error('This image type is not supported; download a PNG or JPG from its source page');if(blob.size>35*1024*1024)throw Error('Image too large; download a smaller PNG or JPG instead');const ext=mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg';const filename=(item.title.replace(/[^a-z0-9_.-]+/gi,'_').replace(/\.[^.]+$/,'').slice(0,70)||'Online_Frame')+'.'+ext;const oldFrame=app.template;await uploadTemplate(new File([blob],filename,{type:mime}));if(app.template===oldFrame)throw Error('Could not decode image');$('frameLibrary').close();showPanel(0);notify('Imported online image. Choose a photo-opening shape, then save the template.')}catch(err){$('onlineSearchStatus').textContent='Import failed: '+err.message+'. Open the source and download a JPG/PNG/WebP, then use Upload frame.'}finally{button.disabled=false;button.textContent='Import as frame'}}
 function showPanel(index){app.overlayEditing=index===6;if($('modeTag'))$('modeTag').textContent=app.overlayEditing?'Overlay editing':app.mode==='map'?'Shape editing':'Photo / collage adjusting';const nav=$('pinNav'),sidebar=document.querySelector('.sidebar'),sections=[...sidebar.querySelectorAll(':scope > .section')];const active=sections[index];if(!active)return;if(sidebar.classList.contains('mobileDrawerClosed'))setMobileDrawerOpen(true);sections.forEach((section,i)=>{section.classList.toggle('activePanel',i===index)});nav.querySelectorAll('button[data-panel]').forEach(button=>{const selected=Number(button.dataset.panel)===index;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected))});if(active.classList.contains('is-collapsed'))active.querySelector(':scope > .sectionHead').click();sidebar.scrollTop=0;setLiveExportPreview(index===5)}
 function setMobileDrawerOpen(open){
- const sidebar=document.querySelector('.sidebar'),btn=$('mobileDrawerToggle');
+ const sidebar=document.querySelector('.sidebar'),btn=$('mobileDrawerToggle'),mobileBtn=$('mobileEditToggle');
  sidebar.classList.toggle('mobileDrawerClosed',!open);
  btn.setAttribute('aria-expanded',String(open));
  btn.textContent=open?'Hide editing controls ▴':'Show editing controls ▾';
+ mobileBtn.setAttribute('aria-expanded',String(open));
+ mobileBtn.textContent=open?'☰ Hide controls ▴':'☰ Editing controls ▾';
+ if(open&&window.matchMedia('(max-width:720px)').matches&&
+    !document.querySelector('.photoQueueSidebar').classList.contains('photoQueueClosed')){
+  setMobileSlidesOpen(false);
+ }
+}
+function setMobileSlidesOpen(open){
+ const slides=document.querySelector('.photoQueueSidebar'),btn=$('mobileSlidesToggle');
+ slides.classList.toggle('photoQueueClosed',!open);
+ btn.setAttribute('aria-expanded',String(open));
+ btn.textContent=open?'▤ Hide slides ▴':'▤ Photo slides ▾';
+ if(open&&window.matchMedia('(max-width:720px)').matches&&
+    !document.querySelector('.sidebar').classList.contains('mobileDrawerClosed')){
+  setMobileDrawerOpen(false);
+ }
 }
 function setupMobileDrawer(){
  $('mobileDrawerToggle').onclick=()=>setMobileDrawerOpen(document.querySelector('.sidebar').classList.contains('mobileDrawerClosed'));
+ $('mobileEditToggle').onclick=()=>setMobileDrawerOpen(document.querySelector('.sidebar').classList.contains('mobileDrawerClosed'));
+ $('mobileSlidesToggle').onclick=()=>setMobileSlidesOpen(document.querySelector('.photoQueueSidebar').classList.contains('photoQueueClosed'));
+ setMobileDrawerOpen(false);
+ setMobileSlidesOpen(false);
 }
 function setupPinnedNav(){const nav=$('pinNav');nav.querySelectorAll('button[data-panel]').forEach(button=>{button.addEventListener('click',()=>showPanel(Number(button.dataset.panel)))});showPanel(0)}
 
