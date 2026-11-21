@@ -19,6 +19,8 @@ test("private MegaFrame build leaves the public output editor-free", () => {
     assert.ok(editor.length>75000);
     assert.ok(editor.startsWith("<!-- PRIVATE MEGAFRAME EDITOR BUNDLE."));
     assert.match(editor,/<script>/);
+    assert.doesNotMatch(editor,/megaframe_named_projects_v1/, "The public named-project IndexedDB must be replaced in the private bundle");
+    assert.match(editor,/project-list/, "Named projects use a protected parent vault bridge");
     assert.doesNotMatch(editor,/<script\s+src=["']\.\//);
     assert.doesNotMatch(editor,/<img[^>]+src=["']\.\//);
     assert.ok(publicEntry.length<1400);

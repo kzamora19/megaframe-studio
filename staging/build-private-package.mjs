@@ -40,6 +40,22 @@ for (const name of scriptNames) {
       "",
     ].join("\n");
     code = code.slice(0, begin) + replacement + code.slice(finish);
+    // New live Save Project / Open Projects uses a second IndexedDB database.
+    // It cannot work in the opaque sandbox and must never store plaintext
+    // customer photos on a shared github.io origin. Replace ALL named-project
+    // database functions with the encrypted account-scoped launcher bridge.
+    const namedBegin = code.indexOf("// Named projects are separate from");
+    const namedEnd = code.indexOf("function projectSize(record){",namedBegin);
+    if(namedBegin<0 || namedEnd<namedBegin)
+      throw Error("MegaFrame named-project storage changed; security review required.");
+    const namedBridge = [
+      "async function projectList(){return window.__MEGAFRAME_PRIVATE_DRAFT__.request('project-list');}",
+      "async function projectRead(id){return window.__MEGAFRAME_PRIVATE_DRAFT__.request('project-read',id);}",
+      "async function projectWrite(record){return window.__MEGAFRAME_PRIVATE_DRAFT__.request('project-write',record);}",
+      "async function projectRemove(id){return window.__MEGAFRAME_PRIVATE_DRAFT__.request('project-delete',id);}",
+      "",
+    ].join("\n");
+    code=code.slice(0,namedBegin)+namedBridge+code.slice(namedEnd);
     const restoredNote = "notify('Restored your unfinished editing session from this device.');";
     if (code.split(restoredNote).length !== 2)
       throw Error("MegaFrame restore UI changed; review the private bundle.");

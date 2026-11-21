@@ -155,7 +155,11 @@ try {
   assert.equal(await frame.locator("#addEmojiCover").isDisabled(), false,
     "Privacy cover button must be available after importing a photo");
   await frame.locator("#addEmojiCover").click();
-  await frame.locator("#emojiCoverChoice").selectOption("🙈");
+  await frame.locator("#emojiPickerDialog[open]").waitFor();
+  await frame.locator("#emojiPickerSearch").fill("monkey hide");
+  assert.equal(await frame.locator("#emojiPickerGrid button").count(),1,
+    "Updated private editor includes searchable live emoji picker");
+  await frame.locator("#emojiPickerGrid button").first().click();
   const protectedCover = await frame.locator("#previewCanvas").evaluate(() =>
     app.photos[0]?.covers?.[0]);
   assert.equal(protectedCover?.symbol, "🙈",
@@ -194,6 +198,17 @@ try {
   console.log("STAGED_DRAFT_STATUS:",String(draftText||"").slice(0,350));
   assert.match(String(draftText||""),/Draft saved on this device/i,
     "Protected-editor photo drafts must survive a closed/revoked session. Do not release without secure persistence.");
+  // The latest LIVE Save Project library must use the same encrypted parent
+  // vault, not a second plaintext IndexedDB in the opaque iframe.
+  await frame.locator("#saveProject").click({timeout:15000});
+  await frame.locator("#actionModalInput").fill("Protected Customer Project");
+  await frame.locator("#actionModalConfirm").click();
+  await frame.locator("#projectSaveStatus").getByText(/Protected Customer Project/).waitFor({timeout:30000});
+  await frame.locator("#openProjects").click();
+  await frame.locator("#savedProjectsDialog[open]").waitFor();
+  await frame.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:20000});
+  assert.equal(await frame.locator(".savedProjectCard").count(),1);
+  await frame.locator("#closeSavedProjects").click();
   mode="revoked";
   await page.waitForFunction(()=>document.getElementById("studio-editor-frame")===null,
     {timeout:90000});
@@ -214,6 +229,17 @@ try {
   assert.match(await restored.locator("#photoCount").textContent(),/1 photo/i,
     "Encrypted photo draft must restore even while the Import section is collapsed.");
   assert.match(await restored.locator("#draftStatus").textContent(),/Draft saved|Auto-save|Restored/i);
+  await restored.locator("#openProjects").click();
+  await restored.locator("#savedProjectsDialog[open]").waitFor();
+  await restored.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:25000});
+  assert.equal(await restored.locator(".savedProjectCard").count(),1,
+    "Named projects must survive PTG revocation and new authorized launch.");
+  await restored.locator(".savedProjectCard").first().getByRole("button",{name:"Open"}).click();
+  await restored.locator("#actionModalConfirm").click();
+  await restored.locator("#photoCount").getByText(/1 photo/i).waitFor({timeout:20000});
+  const namedCover=await restored.locator("#previewCanvas").evaluate(()=>
+    app.photos[0]?.covers?.[0]?.symbol);
+  assert.equal(namedCover,"🙈","Opening encrypted named project restores customer photo edits.");
   const recoveredCover = await restored.locator("#previewCanvas").evaluate(() =>
     app.photos[0]?.covers?.[0]);
   assert.equal(recoveredCover?.symbol, "🙈",
@@ -231,6 +257,11 @@ try {
   await other.locator("#photoCount").waitFor({state:"attached",timeout:30000});
   assert.match(await other.locator("#photoCount").textContent(),/0 photos/i);
   assert.equal(await other.locator("#actionModal").isVisible(),false);
+  await other.locator("#openProjects").click();
+  await other.locator("#savedProjectsDialog[open]").waitFor();
+  await other.locator("#projectListStatus").getByText(/No saved projects yet/i).waitFor({timeout:25000});
+  assert.equal(await other.locator(".savedProjectCard").count(),0,
+    "Another PTG account must not see saved customer projects.");
   // Stored bytes must be opaque ciphertext rather than a plaintext photo record.
   const encrypted=await page.evaluate(async () => {
     return new Promise((resolve,reject)=>{
@@ -250,6 +281,33 @@ try {
     });
   });
   assert.equal(encrypted,true,"All locally stored photo drafts must be AES-GCM ciphertext");
+  const namedEncrypted=await page.evaluate(async()=>{
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open("megaframe-protected-draft-v1");
+      req.onerror=()=>reject(Error("Encrypted named-project vault unavailable"));
+      req.onsuccess=()=>{
+        const tx=req.result.transaction("drafts","readonly"),store=tx.objectStore("drafts");
+        const keys=store.getAllKeys();
+        keys.onerror=()=>reject(Error("Encrypted project index unavailable"));
+        keys.onsuccess=()=>{
+          const key=keys.result.find(x=>typeof x==="string"&&
+            x.startsWith("S".repeat(43)+":project:"));
+          if(!key){resolve(false);return;}
+          const read=store.get(key);
+          read.onerror=()=>reject(Error("Encrypted project record unavailable"));
+          read.onsuccess=()=>{
+            const rec=read.result;
+            resolve(rec?.format==="AES-GCM-v1"&&
+              rec.encrypted instanceof ArrayBuffer&&
+              rec.iv instanceof Uint8Array&&
+              !Object.hasOwn(rec,"photos")&&!Object.hasOwn(rec,"name"));
+          };
+        };
+      };
+    });
+  });
+  assert.equal(namedEncrypted,true,"Saved project photo and name must be AES-GCM ciphertext.");
+
   assert.ok(requests.filter(x=>x.action==="load")
     .every(x=>/^[ABCD]{43}$/.test(x.ticket)));
   assert.ok(requests.filter(x=>x.action==="check")
