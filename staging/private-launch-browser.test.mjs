@@ -311,6 +311,9 @@ try {
     "Encrypted photo draft must restore even while the Import section is collapsed.");
   assert.match(await restored.locator("#draftStatus").textContent(),/Draft saved|Auto-save|Restored|Previous session protected in Open Projects/i,
     "v2.7 should archive the old draft safely and allow fresh auto-saving");
+  // Restoring a draft intentionally opens the editor's Review panel.
+  // Switch back to the Import panel where the named-project controls live.
+  await restored.locator('#pinNav button[data-panel="0"]').click({timeout:10000});
   await restored.locator("#openProjects").click();
   await restored.locator("#savedProjectsDialog[open]").waitFor();
   await restored.locator("#projectList .savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:25000});
