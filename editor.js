@@ -170,7 +170,7 @@ function pointerMove(e){if(!app.frame)return;const p=getPoint(e);app.cursor=p;if
 function pointerUp(){app.pointer=null;$('canvasShell').classList.remove('grabbing');resetScaleUI()}
 function isPhotoFile(f){return f&&(/image\/(png|jpeg|webp)/.test(f.type)||/\.(png|jpe?g|webp)$/i.test(f.name))}
 async function importPhotos(list){const files=Array.from(list).filter(isPhotoFile);if(!files.length)return notify('Select JPG, PNG or WebP photos.');saveHistory();let count=0;for(const file of files){try{const data=await dataUrlOf(file),image=await decodedImage(data);const photo={id:'p'+Date.now()+Math.random(),name:file.name,data,image,zoom:1,rot:0,dx:0,dy:0,fit:'cover',filters:{...FILTER_DEFAULTS},filterPreset:'none'};app.photos.push(photo);count++}catch(err){console.warn('Skipped unreadable image',file.name,err)}}if(count){selectPhoto(app.photos.length-count);setMode('adjust');updateGallery();notify(count+' photo'+(count!==1?'s':'')+' imported and ready for framing or collage.')}else notify('No valid photos could be imported.')}
-function selectPhoto(i){if(!app.photos.length){app.selected=-1;updateControls();render();updateLabels();return}app.selected=(i+app.photos.length)%app.photos.length;updateControls();updateGallery();render();updateLabels()}
+function selectPhoto(i){if(!app.photos.length){app.selected=-1;app.activeCoverIndex=-1;updateControls();render();updateLabels();return}app.selected=(i+app.photos.length)%app.photos.length;app.activeCoverIndex=(getPhoto()?.covers?.length||0)-1;updateControls();updateGallery();render();updateLabels()}
 function updateLabels(){const p=getPhoto(),count=app.collage.count,pages=Math.ceil(app.photos.length/count),page=currentPage(),hasShape=hasPhotoShape();$('previewLabel').textContent=!hasShape?(p?'Preview only · Choose a photo opening in section 2 before exporting':'No photo opening selected · Choose a shape or reuse one from Frame Library'):p?count===1?`${app.selected+1} of ${app.photos.length} · ${p.name}`:`Collage ${page+1} of ${pages} · Slot ${app.selected%count+1} · ${p.name}`:'Frame ready · upload photos to get started';$('photoCount').textContent=`${app.photos.length} photo${app.photos.length===1?'':'s'} uploaded`;$('queueSummary').textContent=app.photos.length?`${pages} frame${pages===1?'':'s'} · ${count} photo${count===1?'':'s'} per frame${hasShape?'':' · preview only'}`:'No photos yet';$('previous').disabled=pages<2;$('next').disabled=pages<2;$('downloadOne').disabled=!p||app.exporting||!hasShape;$('downloadZip').disabled=!app.photos.length||app.exporting||!hasShape;$('prepareAll').disabled=!app.photos.length||app.exporting||!hasShape;for(const id of ['quickReplacePhoto','quickDeletePhoto','replaceSelectedPhoto','deleteSelectedPhoto'])if($(id))$(id).disabled=!p;updateCollageInfo()}
 // v2.3: source-resolution check for the chosen output size and collage cell.
 // This is a warning, not AI upscaling; it never alters customer photos.
@@ -212,7 +212,7 @@ function updatePhotoQuality() {
  box.append(heading,detail);
 }
 
-function updateControls(){const p=getPhoto();$('zoom').value=Math.round((p?.zoom||1)*100);$('zoomValue').textContent=$('zoom').value+'%';$('rotate').value=p?.rot||0;$('rotateValue').textContent=$('rotate').value+'°';$('fitMode').value=p?.fit||'cover';for(const id of ['zoom','rotate','fitMode','resetPhoto','applyAll','replaceSelectedPhoto','deleteSelectedPhoto','quickReplacePhoto','quickDeletePhoto','fitFullPhoto','fillPhotoFrame','centerPhoto','resetPhotoPosition'])$(id).disabled=!p;const f=filtersOf(p);$('filterPreset').value=p?.filterPreset||'none';for(const [key,suffix] of [['Brightness','brightness'],['Contrast','contrast'],['Saturation','saturation'],['Grayscale','grayscale'],['Sepia','sepia']]){$('filter'+key).value=f[suffix];$('filter'+key+'Value').textContent=f[suffix]+'%';$('filter'+key).disabled=!p}for(const id of ['filterPreset','resetPhotoFilters','autoLighting'])$(id).disabled=!p;const enh=enhanceSettings(p);for(const [id,key] of [['enhanceSharpness','sharpness'],['enhanceDenoise','denoise']]){$(id).value=enh[key];$(id+'Value').textContent=enh[key]+'%';$(id).disabled=!p}$('resetEnhancement').disabled=!p}
+function updateControls(){const p=getPhoto();$('zoom').value=Math.round((p?.zoom||1)*100);$('zoomValue').textContent=$('zoom').value+'%';$('rotate').value=p?.rot||0;$('rotateValue').textContent=$('rotate').value+'°';$('fitMode').value=p?.fit||'cover';for(const id of ['zoom','rotate','fitMode','resetPhoto','applyAll','replaceSelectedPhoto','deleteSelectedPhoto','quickReplacePhoto','quickDeletePhoto','fitFullPhoto','fillPhotoFrame','centerPhoto','resetPhotoPosition'])$(id).disabled=!p;const f=filtersOf(p);$('filterPreset').value=p?.filterPreset||'none';for(const [key,suffix] of [['Brightness','brightness'],['Contrast','contrast'],['Saturation','saturation'],['Grayscale','grayscale'],['Sepia','sepia']]){$('filter'+key).value=f[suffix];$('filter'+key+'Value').textContent=f[suffix]+'%';$('filter'+key).disabled=!p}for(const id of ['filterPreset','resetPhotoFilters','autoLighting'])$(id).disabled=!p;const enh=enhanceSettings(p);for(const [id,key] of [['enhanceSharpness','sharpness'],['enhanceDenoise','denoise']]){$(id).value=enh[key];$(id+'Value').textContent=enh[key]+'%';$(id).disabled=!p}$('resetEnhancement').disabled=!p;updateEmojiControls()}
 function updateGallery(){const g=$('gallery');g.innerHTML='';if(!app.photos.length){g.innerHTML='<div class="emptyGallery" style="grid-column:1/-1">Your imported photos will appear here. Drag thumbnails to rearrange collage slots.</div>';updateLabels();return}const frag=document.createDocumentFragment();app.photos.forEach((p,i)=>{const b=document.createElement('div');b.className='thumb'+(i===app.selected?' active':'');b.title=p.name+' — drag to swap positions';b.tabIndex=0;b.draggable=true;b.setAttribute('role','button');b.setAttribute('aria-label',`Select photo ${i+1}: ${p.name}`);const img=document.createElement('img');img.src=p.data;img.alt='';img.style.filter=photoFilterCSS(p);const n=document.createElement('div');n.className='name';n.textContent=p.name;const num=document.createElement('span');num.className='num';num.textContent=String(i+1).padStart(2,'0');const head=document.createElement('div');head.className='thumbTopActions';
 const replaceBtn=document.createElement('button');replaceBtn.type='button';replaceBtn.className='thumbReplace';replaceBtn.textContent='↻ Replace';replaceBtn.title='Replace this photo in the same collage slot';replaceBtn.setAttribute('aria-label','Replace '+p.name);
 replaceBtn.draggable=false;replaceBtn.onclick=e=>{e.preventDefault();e.stopPropagation();selectPhoto(i);$('replacePhotoInput').click()};
@@ -404,7 +404,7 @@ function serializeDraft() {
   photos:app.photos.map(p=>({
    id:p.id,name:p.name,data:p.data,zoom:p.zoom,rot:p.rot,
    dx:p.dx,dy:p.dy,fit:p.fit,filters:{...filtersOf(p)},
-   filterPreset:p.filterPreset||'none',enhancement:{...enhanceSettings(p)}
+   filterPreset:p.filterPreset||'none',enhancement:{...enhanceSettings(p)},covers:safeCovers(p.covers)
   })),
   selected:app.selected,mode:app.mode,
   prefix:$('prefix')?.value||'',exportType:$('exportType')?.value||'image/jpeg',
@@ -462,12 +462,12 @@ async function restoreLocalDraft(record) {
     dx:clamp(Number(item.dx)||0,-5,5),dy:clamp(Number(item.dy)||0,-5,5),
     fit:item.fit==='contain'?'contain':'cover',
     filters:{...FILTER_DEFAULTS,...(item.filters||{})},
-    filterPreset:item.filterPreset||'none',enhancement:{...enhanceSettings(item)}
+    filterPreset:item.filterPreset||'none',enhancement:{...enhanceSettings(item)},covers:safeCovers(item.covers)
    });
   }catch(err){console.warn('Skipping a damaged recovered photo',err)}
  }
  app.photos=photos;
- app.selected=photos.length?clamp(Number(record.selected)||0,0,photos.length-1):-1;
+ app.selected=photos.length?clamp(Number(record.selected)||0,0,photos.length-1):-1;app.activeCoverIndex=(getPhoto()?.covers?.length||0)-1;
  if (['image/jpeg','image/png'].includes(record.exportType)) $('exportType').value=record.exportType;
  if (['original','2x','1080','1350'].includes(record.exportSize)) $('exportSize').value=record.exportSize;
  if (typeof record.prefix==='string') $('prefix').value=record.prefix.slice(0,50);
@@ -508,8 +508,8 @@ async function initializeDraftRecovery() {
  });
 }
 
-function snapshot(){return{shape:cloneShape(app.shape),rect:{...app.rect},photos:app.photos.map(p=>({...p})),selected:app.selected,collage:{...app.collage},appearance:{...app.appearance}}}
-function restoreSnapshot(v){app.shape=cloneShape(v.shape);app.rect=hasPhotoShape()?shapeBounds(app.shape.points):{...(v.rect||app.rect)};app.photos=v.photos.map(p=>({...p}));app.selected=app.photos.length?clamp(v.selected,0,app.photos.length-1):-1;app.collage={...v.collage};app.appearance={...app.appearance,...(v.appearance||{})};$('collageCount').value=String(app.collage.count);$('collageLayout').value=app.collage.layout;$('collageGap').value=String(app.collage.gap);$('collageGapValue').textContent=app.collage.gap+'%';syncAppearanceUI();resetScaleUI();updateShapeUI();updateControls();updateGallery();render()}
+function snapshot(){return{shape:cloneShape(app.shape),rect:{...app.rect},photos:app.photos.map(p=>({...p,covers:(p.covers||[]).map(x=>({...x}))})),selected:app.selected,collage:{...app.collage},appearance:{...app.appearance}}}
+function restoreSnapshot(v){app.shape=cloneShape(v.shape);app.rect=hasPhotoShape()?shapeBounds(app.shape.points):{...(v.rect||app.rect)};app.photos=v.photos.map(p=>({...p,covers:(p.covers||[]).map(x=>({...x}))}));app.selected=app.photos.length?clamp(v.selected,0,app.photos.length-1):-1;app.activeCoverIndex=(getPhoto()?.covers?.length||0)-1;app.collage={...v.collage};app.appearance={...app.appearance,...(v.appearance||{})};$('collageCount').value=String(app.collage.count);$('collageLayout').value=app.collage.layout;$('collageGap').value=String(app.collage.gap);$('collageGapValue').textContent=app.collage.gap+'%';syncAppearanceUI();resetScaleUI();updateShapeUI();updateControls();updateGallery();render()}
 function saveHistory(){if(!app.frame)return;app.undoStack.push(snapshot());if(app.undoStack.length>65)app.undoStack.shift();app.redoStack=[];updateHistoryButtons()}
 function undo(){if(!app.undoStack.length)return;app.redoStack.push(snapshot());restoreSnapshot(app.undoStack.pop());updateHistoryButtons();notify('Undid the last change.')}
 function redo(){if(!app.redoStack.length)return;app.undoStack.push(snapshot());restoreSnapshot(app.redoStack.pop());updateHistoryButtons();notify('Restored the last undone change.')}
@@ -663,6 +663,12 @@ const t={id:prior||'template_'+Date.now()+'_'+Math.random().toString(36).slice(2
   ['centerPhoto',p=>{p.dx=0;p.dy=0}],
   ['resetPhotoPosition',p=>{p.zoom=1;p.rot=0;p.dx=0;p.dy=0}]
  ]) $(id).onclick=()=>{const p=getPhoto();if(!p)return;saveHistory();update(p);updateControls();render();};
+ $('addEmojiCover').onclick=addEmojiCover;
+ $('emojiCoverChoice').onchange=e=>{const cover=activeCover();if(!cover)return;saveHistory();cover.symbol=FACE_EMOJIS.includes(e.target.value)?e.target.value:'😎';updateEmojiControls();render()};
+ $('emojiCoverSize').onpointerdown=()=>{if(activeCover())saveHistory()};
+ $('emojiCoverSize').onkeydown=e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(e.key)&&activeCover())saveHistory()};
+ $('emojiCoverSize').oninput=e=>{const cover=activeCover();if(!cover)return;cover.size=clamp(Number(e.target.value)/100,.12,.7);$('emojiCoverSizeValue').textContent=e.target.value+'%';render()};
+ $('removeEmojiCover').onclick=()=>{const p=getPhoto();if(!p?.covers?.[app.activeCoverIndex])return;saveHistory();p.covers.splice(app.activeCoverIndex,1);app.activeCoverIndex=p.covers.length-1;updateEmojiControls();render();notify('Emoji removed from this photo.')};
  $('quickReplacePhoto').onclick=()=>$('replacePhotoInput').click();$('replaceSelectedPhoto').onclick=()=>$('replacePhotoInput').click();
  $('replacePhotoInput').onchange=async e=>{const file=e.target.files?.[0];e.target.value='';if(file)await replaceCurrentPhoto(file)};
  $('quickDeletePhoto').onclick=()=>deletePhotoAt(app.selected);$('deleteSelectedPhoto').onclick=()=>deletePhotoAt(app.selected);
