@@ -12,6 +12,7 @@ async function testFonts(browser,mobile){
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.locator('#startupChoiceDialog[open]').waitFor();
   await page.locator('#createNewProject').click();
+  if(mobile)await page.locator('#mobileEditToggle').click();
   await page.locator('[data-panel="6"]').click();
   await page.locator('#overlayScope').selectOption('canvas');
   await page.locator('#addTextOverlay').click();

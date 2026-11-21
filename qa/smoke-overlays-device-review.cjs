@@ -13,6 +13,7 @@ async function review(browser,device){
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.locator('#startupChoiceDialog[open]').waitFor();
   await page.locator('#createNewProject').click();
+  if(isMobile)await page.locator('#mobileEditToggle').click();
   await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
   await page.evaluate(async()=>{
