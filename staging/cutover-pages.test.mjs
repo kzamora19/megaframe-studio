@@ -17,7 +17,7 @@ test("Retirement Pages artifact excludes editor source, preserves icon, and incl
  try{
   run("1");
   const names=readdirSync(target).sort();
-  assert.deepEqual(names,[".nojekyll","icons","index.html","manifest.webmanifest","retire-client.js","service-worker.js"]);
+  assert.deepEqual(names,[".nojekyll","icons","index.html","manifest.webmanifest","retire-client.js","service-worker.js","studio"]);
   const html=readFileSync(join(target,"index.html"),"utf8");
   const sw=readFileSync(join(target,"service-worker.js"),"utf8");
   const client=readFileSync(join(target,"retire-client.js"),"utf8");
@@ -31,6 +31,19 @@ test("Retirement Pages artifact excludes editor source, preserves icon, and incl
   assert.doesNotMatch(sw,/caches\.match|caches\.open|indexedDB|localStorage/);
   assert.doesNotMatch(client,/indexedDB\.(?:deleteDatabase|open)|localStorage\.(?:clear|removeItem)|caches\.delete|unregister\(/);
   assert.equal(readdirSync(join(target,"icons")).length,3);
+  assert.deepEqual(readdirSync(join(target,"studio")).sort(),["draft-vault.js","index.html","launch.js"]);
+  const entry=readFileSync(join(target,"studio","index.html"),"utf8");
+  assert.match(entry,/MegaFrame Studio — Branchline protected editor/);
+  assert.match(entry,/megaframe-editor-delivery/);
+  assert.match(entry,/\.\/launch\.js/);
+  assert.doesNotMatch(entry,/PRIVATE MEGAFRAME EDITOR BUNDLE|id="photosInput"|<canvas/);
+  assert.match(readFileSync(join(target,"studio","launch.js"),"utf8"),/ptg_studio_ticket/);
+  assert.match(readFileSync(join(target,"studio","draft-vault.js"),"utf8"),/AES-GCM/);
+  assert.throws(()=>execFileSync(process.execPath,[path,target],{cwd:root,
+   env:{...process.env,PTG_STUDIO_CUTOVER_PREVIEW:"1",PTG_STUDIO_PRODUCTION_RELEASE:"1",
+     MEGAFRAME_STUDIO_PUBLISHABLE_KEY:""},
+   stdio:"pipe",timeout:20000}),{name:"Error"});
+
   const workflow=readFileSync(join(root,".github/workflows/pages.yml"),"utf8");
   assert.match(workflow,/vars\.MEGAFRAME_CUTOVER_APPROVED == 'true'/,
     "Main-branch Pages publishing must require explicit release approval");

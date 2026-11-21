@@ -114,7 +114,10 @@ jobs:
         run: |
           node --check staging/build-cutover-pages.mjs
           node --test staging/cutover-pages.test.mjs
-      - name: Prepare approved editor-free public Pages artifact ONLY
+      - name: Prepare approved editor-free public Pages artifact with PTG protected launcher
+        env:
+          PTG_STUDIO_PRODUCTION_RELEASE: "1"
+          MEGAFRAME_STUDIO_PUBLISHABLE_KEY: ${{ vars.MEGAFRAME_STUDIO_PUBLISHABLE_KEY }}
         run: PTG_STUDIO_CUTOVER_PREVIEW=1 node staging/build-cutover-pages.mjs staging/.cutover-release
       - uses: actions/upload-pages-artifact@v3
         with:

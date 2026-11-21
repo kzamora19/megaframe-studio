@@ -1,5 +1,5 @@
 // Development-only, editor-free preview. The approved production release is separate.
-import {mkdirSync,rmSync,writeFileSync,copyFileSync} from "node:fs";
+import {mkdirSync,rmSync,writeFileSync,copyFileSync,readFileSync} from "node:fs";
 import {resolve,relative,join,dirname,sep} from "node:path";
 import {fileURLToPath} from "node:url";
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"..");
@@ -63,4 +63,22 @@ for(const [name,contents] of [["index.html",html],["service-worker.js",worker],[
 }
 for(const name of ["icon-192.png","icon-512.png","apple-touch-icon.png"])
  copyFileSync(join(root,"icons",name),join(target,"icons",name));
+// Public ticket-only launcher at /megaframe-studio/studio/ (never editor HTML).
+const publishableKey=process.env.MEGAFRAME_STUDIO_PUBLISHABLE_KEY||"";
+if(process.env.PTG_STUDIO_PRODUCTION_RELEASE==="1" &&
+   !/^sb_publishable_[A-Za-z0-9_-]{20,}$/.test(publishableKey))
+ throw Error("Missing explicit production MegaFrame publishable key");
+const source=readFileSync(join(root,"staging","studio-access","index.html"),"utf8");
+if(!source.includes('publishableKey: ""'))throw Error("Launcher config drift");
+const launcher=source
+ .replace("— PTG Protected Launch (STAGING ONLY)","— Branchline protected access")
+ .replace("MegaFrame Studio — development preview","MegaFrame Studio — Branchline protected editor")
+ .replace('publishableKey: ""',"publishableKey: "+JSON.stringify(publishableKey));
+if(/PRIVATE MEGAFRAME EDITOR BUNDLE|id="photosInput"|<canvas/.test(launcher))
+ throw Error("Editor bytes are not allowed in public launcher");
+mkdirSync(join(target,"studio"),{recursive:true});
+writeFileSync(join(target,"studio","index.html"),launcher);
+for(const asset of ["launch.js","draft-vault.js"])
+ copyFileSync(join(root,"staging","studio-access",asset),join(target,"studio",asset));
+
 console.log("Created DEVELOPMENT cutover preview only; Pages production untouched.");
