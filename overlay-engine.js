@@ -35,6 +35,13 @@ function overlaySanitize(src){
  return o;
 }
 function overlayCloneForStorage(){return app.overlays.map(o=>JSON.parse(JSON.stringify(o)))}
+function overlayFingerprint(){
+ // Track transformations and content changes without re-stringifying large base64
+ // images on every preview frame or pointer movement.
+ return app.overlays.map(o=>[o.id,o.kind,o.scope,o.photoId,o.text,o.name,
+  o.data?.length||0,o.data?.slice(0,40)||'',o.data?.slice(-40)||'',
+  o.base,o.overrides,o.style,o.aspectLock,o.locked]);
+}
 function overlayRestore(data){
  overlayImages.clear();
  app.overlays=(Array.isArray(data)?data:[]).slice(0,80).map(overlaySanitize).filter(Boolean);
