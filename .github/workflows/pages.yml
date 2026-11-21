@@ -14,6 +14,7 @@ on:
       - 'qa/smoke-public-library-error.cjs'
       - 'qa/smoke-emoji-covers.cjs'
       - 'qa/smoke-saved-projects.cjs'
+      - 'qa/smoke-startup-recovery.cjs'
       - 'qa/smoke-drive.cjs'
       - '.github/workflows/pages.yml'
   push:
@@ -29,6 +30,7 @@ on:
       - 'qa/smoke-public-library-error.cjs'
       - 'qa/smoke-emoji-covers.cjs'
       - 'qa/smoke-saved-projects.cjs'
+      - 'qa/smoke-startup-recovery.cjs'
       - 'qa/smoke-drive.cjs'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -59,6 +61,7 @@ jobs:
           node --check qa/smoke-public-library-error.cjs
           node --check qa/smoke-emoji-covers.cjs
           node --check qa/smoke-saved-projects.cjs
+          node --check qa/smoke-startup-recovery.cjs
           node --check google-drive.js
           node --check google-drive-config.js
           node --check qa/smoke-drive.cjs
@@ -86,6 +89,7 @@ jobs:
           node qa/smoke-public-library-error.cjs
           node qa/smoke-emoji-covers.cjs
           node qa/smoke-saved-projects.cjs
+          node qa/smoke-startup-recovery.cjs
           node qa/smoke-drive.cjs
 
   publish:
