@@ -127,6 +127,12 @@ try {
     "Protected MegaFrame uses the Branchline navy header.");
   assert.equal(headerChrome.subtitle,"rgb(220, 230, 255)");
   await frame.locator("#previewCanvas").waitFor({timeout:90000});
+  // Latest production startup choice must also work inside the private editor.
+  await frame.locator("#startupChoiceDialog[open]").waitFor({timeout:30000});
+  assert.equal(await frame.locator("#createNewProject").isVisible(),true);
+  assert.equal(await frame.locator("#retrieveStartupProject").isVisible(),true);
+  await frame.locator("#createNewProject").click();
+  await frame.locator("#startupChoiceDialog").waitFor({state:"hidden"});
   await frame.locator("#frameLibrary").waitFor({state:"attached",timeout:30000});
   assert.equal(await frame.locator("#frameLibrary").isHidden(),true);
   assert.match(await frame.locator("title").textContent(),/MegaFrame Studio/);
@@ -243,10 +249,13 @@ try {
     {waitUntil:"domcontentloaded"});
   await page.locator("#studio-editor-frame").waitFor({timeout:90000});
   const restored=page.frameLocator("#studio-editor-frame");
-  await restored.locator("#actionModal").waitFor({state:"visible",timeout:30000});
-  assert.match(await restored.locator("#actionModalTitle").textContent(),
-    /Restore unfinished editing session/);
-  await restored.locator("#actionModalConfirm").click();
+  await restored.locator("#startupChoiceDialog[open]").waitFor({timeout:30000});
+  await restored.locator("#retrieveStartupProject").click();
+  await restored.locator("#savedProjectsDialog[open]").waitFor({timeout:30000});
+  assert.equal(await restored.locator("#automaticRecoveryCard").isHidden(),false,
+    "Previous recovery must be offered rather than silently opened.");
+  await restored.locator("#restoreRecoveryDraft").click();
+  await restored.locator("#savedProjectsDialog").waitFor({state:"hidden",timeout:20000});
   await restored.locator("#photoCount").waitFor({state:"attached",timeout:20000});
   assert.match(await restored.locator("#photoCount").textContent(),/1 photo/i,
     "Encrypted photo draft must restore even while the Import section is collapsed.");
@@ -254,9 +263,10 @@ try {
   await restored.locator("#openProjects").click();
   await restored.locator("#savedProjectsDialog[open]").waitFor();
   await restored.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:25000});
-  assert.equal(await restored.locator(".savedProjectCard").count(),1,
-    "Named projects must survive PTG revocation and new authorized launch.");
-  await restored.locator(".savedProjectCard").first().getByRole("button",{name:"Open"}).click();
+  assert.ok(await restored.locator(".savedProjectCard").count()>=1,
+    "Named projects and archived recovery must survive PTG revocation and relaunch.");
+  await restored.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"})
+    .getByRole("button",{name:"Open"}).click();
   await restored.locator("#actionModalConfirm").click();
   await restored.locator("#savedProjectsDialog").waitFor({state:"hidden",timeout:20000});
   assert.match(await restored.locator("#photoCount").textContent(),/1 photo/i,
@@ -278,11 +288,12 @@ try {
     {waitUntil:"domcontentloaded"});
   await page.locator("#studio-editor-frame").waitFor({timeout:90000});
   const other=page.frameLocator("#studio-editor-frame");
+  await other.locator("#startupChoiceDialog[open]").waitFor({timeout:30000});
+  await other.locator("#retrieveStartupProject").click();
+  await other.locator("#savedProjectsDialog[open]").waitFor({timeout:30000});
   await other.locator("#photoCount").waitFor({state:"attached",timeout:30000});
   assert.match(await other.locator("#photoCount").textContent(),/0 photos/i);
   assert.equal(await other.locator("#actionModal").isVisible(),false);
-  await other.locator("#openProjects").click();
-  await other.locator("#savedProjectsDialog[open]").waitFor();
   await other.locator("#projectListStatus").getByText(/No saved projects yet/i).waitFor({timeout:25000});
   assert.equal(await other.locator(".savedProjectCard").count(),0,
     "Another PTG account must not see saved customer projects.");
