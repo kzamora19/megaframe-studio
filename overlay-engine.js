@@ -44,7 +44,9 @@ function overlayFingerprint(){
 }
 function overlayRestore(data){
  overlayImages.clear();
- app.overlays=(Array.isArray(data)?data:[]).slice(0,80).map(overlaySanitize).filter(Boolean);
+ // Never silently discard captions or graphics while restoring a project.
+ // The number of layers is chosen by the user; practical storage/device limits apply.
+ app.overlays=(Array.isArray(data)?data:[]).map(overlaySanitize).filter(Boolean);
  app.activeOverlayId=null;app.overlayPointer=null;
  for(const o of app.overlays)if(o.kind==='image')overlayCacheImage(o);
  overlayRefreshList();overlayRefreshEditor();
