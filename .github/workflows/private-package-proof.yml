@@ -53,3 +53,5 @@ jobs:
           npx playwright install chromium --only-shell
       - name: Verify protected MegaFrame editor mount, tampered bundles and revocation
         run: node staging/private-launch-browser.test.mjs
+      - name: Rehearse old installed PWA cache retirement and local data preservation
+        run: node staging/cutover-browser.test.mjs
