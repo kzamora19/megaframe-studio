@@ -85,6 +85,70 @@ function autoCorrectLighting(photo){
  return true;
 }
 function popupAction({title,message,confirmLabel='Confirm',danger=false,value=null}){return new Promise(resolve=>{const dialog=$('actionModal'),input=$('actionModalInput'),error=$('actionModalError'),yes=$('actionModalConfirm'),no=$('actionModalCancel');if(dialog.open)dialog.close();$('actionModalTitle').textContent=title;$('actionModalMessage').textContent=message||'';input.hidden=value===null;input.value=value===null?'':String(value);error.hidden=true;yes.textContent=confirmLabel;yes.classList.toggle('dangerConfirm',danger);let resolved=false;const finish=(v)=>{if(resolved)return;resolved=true;dialog.close();resolve(v)};yes.onclick=()=>{if(value!==null&&!input.value.trim()){error.hidden=false;input.focus();return}finish(value!==null?input.value.trim():true)};no.onclick=()=>finish(null);input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();yes.click()}};dialog.oncancel=e=>{e.preventDefault();finish(null)};dialog.showModal();if(value!==null){input.focus();input.select()}else no.focus()})}
+// The installed PWA's close button is owned by the browser. Offer a deliberate
+// in-app exit flow, retaining native refresh/window-close protection.
+let explicitStudioExit=false, exitStudioBusy=false;
+function openExitStudioDialog(){
+ const unsaved=hasUnsavedChanges();
+ $('exitStudioWarning').textContent=unsaved
+  ?'You have changes that have not been saved as a named project. Save before leaving to keep your photos, layout and overlays.'
+  :'There are no unsaved changes in the current project. You can safely leave the editor.';
+ $('exitStudioSave').hidden=!unsaved;
+ $('exitStudioLeave').textContent=unsaved?'Leave without saving':'Exit Studio';
+ if(!$('exitStudioDialog').open)$('exitStudioDialog').showModal();
+ $('exitStudioCancel').focus();
+}
+function closeStudioWindow(){
+ explicitStudioExit=true;
+ // Script-initiated close is restricted in ordinary tabs; never promise to force-close.
+ window.close();
+ setTimeout(()=>{
+  explicitStudioExit=false;
+  if(document.visibilityState==='visible')notify('Your browser blocked automatic closing. Use the window X button; a native unsaved-changes warning may appear.');
+ },650);
+}
+async function saveAndExitStudio(){
+ if(exitStudioBusy)return;
+ exitStudioBusy=true;
+ $('exitStudioSave').disabled=true;
+ $('exitStudioDialog').close();
+ try{if(await saveNamedProject())closeStudioWindow();}
+ finally{exitStudioBusy=false;$('exitStudioSave').disabled=false;}
+}
+
+let reloadStudioBusy=false;
+function openReloadStudioDialog(){
+ if($('startupChoiceDialog').open)return; // Complete startup choice first.
+ const unsaved=hasUnsavedChanges();
+ $('reloadStudioWarning').textContent=unsaved
+  ?'You have unsaved changes to your photos or layout. Save this project before reloading to keep those edits in your named projects.'
+  :'Your current project has no unsaved changes. Reloading will reopen MegaFrame Studio.';
+ $('reloadStudioSave').hidden=!unsaved;
+ $('reloadStudioDiscard').textContent=unsaved?'Reload without saving':'Reload Studio';
+ if(!$('reloadStudioDialog').open)$('reloadStudioDialog').showModal();
+ $('reloadStudioCancel').focus();
+}
+function reloadStudioNow(){
+ // Explicit user confirmation bypasses beforeunload; arbitrary browser refresh
+ // remains protected by its native warning.
+ explicitStudioExit=true;
+ window.location.reload();
+}
+async function saveAndReloadStudio(){
+ if(reloadStudioBusy)return;
+ reloadStudioBusy=true;
+ $('reloadStudioSave').disabled=true;
+ $('reloadStudioDialog').close();
+ try{if(await saveNamedProject())reloadStudioNow();}
+ finally{reloadStudioBusy=false;$('reloadStudioSave').disabled=false;}
+}
+function handleReloadShortcut(event){
+ if(event.defaultPrevented||event.altKey||event.shiftKey||document.querySelector('dialog[open]'))return;
+ const reloadKey=event.key==='F5'||((event.ctrlKey||event.metaKey)&&String(event.key).toLowerCase()==='r');
+ if(!reloadKey)return;
+ event.preventDefault();
+ openReloadStudioDialog();
+}
 function confirmAction(title,message,label='Delete'){return popupAction({title,message,confirmLabel:label,danger:/delete|remove|clear/i.test(label)}).then(Boolean)}
 function resetPhotoFilterState(photo){photo.filters={...FILTER_DEFAULTS};photo.filterPreset='none'}
 async function deletePhotoAt(index){if(!Number.isInteger(index)||index<0||index>=app.photos.length)return;const target=app.photos[index];if(!await confirmAction('Delete imported photo?',`Remove “${target.name}” from this batch?\nOther photos will stay in the queue. You can use Undo to restore it.`,'Delete photo'))return;const currentId=getPhoto()?.id;saveHistory();app.photos.splice(index,1);const next=app.photos.findIndex(p=>p.id===currentId);selectPhoto(next>=0?next:Math.min(index,app.photos.length-1));updateGallery();notify('Photo deleted. Undo can restore it.')}
@@ -906,6 +970,15 @@ function setupEvents(){
  };
  $('startupChoiceDialog').addEventListener('cancel',event=>event.preventDefault());
  $('saveProject').onclick=()=>saveNamedProject();
+ $('exitStudio').onclick=openExitStudioDialog;
+ $('exitStudioCancel').onclick=()=>$('exitStudioDialog').close();
+ $('exitStudioLeave').onclick=()=>{$('exitStudioDialog').close();closeStudioWindow();};
+ $('exitStudioSave').onclick=saveAndExitStudio;
+ $('reloadStudio').onclick=openReloadStudioDialog;
+ $('reloadStudioCancel').onclick=()=>$('reloadStudioDialog').close();
+ $('reloadStudioDiscard').onclick=()=>{$('reloadStudioDialog').close();reloadStudioNow();};
+ $('reloadStudioSave').onclick=saveAndReloadStudio;
+ window.addEventListener('keydown',handleReloadShortcut);
  $('newProject').onclick=beginNewProject;
  $('newProjectPanel').onclick=beginNewProject;
  $('openProjects').onclick=()=>openSavedProjects();
@@ -1042,7 +1115,7 @@ function updateUnsavedIndicator(){
  else if(node.textContent.startsWith('Unsaved edits'))node.textContent='All changes saved or workspace ready.';
 }
 window.addEventListener('beforeunload',event=>{
- if(!hasUnsavedChanges())return;
+ if(explicitStudioExit||!hasUnsavedChanges())return;
  event.preventDefault();
  event.returnValue='';
 });
