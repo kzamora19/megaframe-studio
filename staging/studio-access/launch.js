@@ -7,7 +7,7 @@
   const portal = "https://kzamora19.github.io/first-megasaver-ptg/studios/";
   let active = false, checking = false, expired = false, expiry = 0;
   let interval = null, deadline = null, warned = false;
-  let draftPort = null;
+  let draftPort = null, keyPair = null, proof = null;
   const show = (message, addPortal = false) => {
     status.replaceChildren(document.createTextNode(message));
     if (addPortal) {
@@ -42,21 +42,43 @@
       !String(config.publishableKey || "").trim()) {
     stop("Protected MegaFrame delivery is not configured."); return;
   }
+  const b64url = buffer => btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    .replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
   async function gateway(action) {
+    let payload;
+    if (action === "load") {
+      // Private key is non-extractable and stays in this browser document.
+      keyPair = await crypto.subtle.generateKey(
+        {name:"ECDSA",namedCurve:"P-256"},false,["sign","verify"]);
+      const publicKey = await crypto.subtle.exportKey("jwk",keyPair.publicKey);
+      payload = {action,ticket,publicKey};
+    } else {
+      if (!keyPair || !proof) throw Error("Signed PTG Studio session is unavailable.");
+      const statement = new TextEncoder().encode(
+        "ptg-studio-v1|megaframe|" + proof.sessionId + "|" + proof.challenge);
+      const signature = b64url(await crypto.subtle.sign(
+        {name:"ECDSA",hash:"SHA-256"},keyPair.privateKey,statement));
+      payload = {action,sessionId:proof.sessionId,challenge:proof.challenge,signature};
+    }
     const response = await fetch(config.endpoint, {
       method: "POST", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer",
       headers: {"Content-Type": "application/json", apikey: config.publishableKey},
-      body: JSON.stringify({action, ticket}),
+      body: JSON.stringify(payload),
     });
     const result = await response.json().catch(() => null);
-    if (!response.ok || !result || result.ok !== true)
+    if (!response.ok || !result || result.ok !== true ||
+        typeof result.sessionId !== "string" ||
+        !/^[0-9a-f-]{36}$/i.test(result.sessionId) ||
+        typeof result.challenge !== "string" ||
+        !/^[A-Za-z0-9_-]{43}$/.test(result.challenge))
       throw Error("PTG authorization denied or unavailable.");
+    proof = {sessionId:result.sessionId,challenge:result.challenge};
     return result;
   }
   function deadlineAt(value) {
     const at = Date.parse(value);
     const diff = at - Date.now();
-    if (!Number.isFinite(at) || diff <= 0 || diff > 12 * 60_000)
+    if (!Number.isFinite(at) || diff <= 0 || diff > 125 * 60_000)
       throw Error("Invalid or expired PTG ticket.");
     expiry = expiry ? Math.min(expiry, at) : at;
     if (deadline) clearTimeout(deadline);
