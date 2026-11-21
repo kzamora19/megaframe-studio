@@ -153,7 +153,7 @@
         }
       }
       const next=typeof listing.nextPageToken==="string"?listing.nextPageToken:"";
-      if(next===cursor)throw Error("Drive returned a repeating result page.");
+      if(next&&next===cursor)throw Error("Drive returned a repeating result page.");
       cursor=next;pageCount++;
     } while(cursor&&pageCount<10);
     driveFiles=found;
