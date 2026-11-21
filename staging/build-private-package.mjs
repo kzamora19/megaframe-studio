@@ -26,10 +26,27 @@ const scriptHashes = [];
 for (const name of scriptNames) {
   const tag = '<script src="./' + name + '" defer></script>';
   if (html.split(tag).length !== 2) throw Error("Missing or duplicate editor script: " + name);
-  const code = readFileSync(join(root, name), "utf8").replace(/<\/script/gi, "<\\/script");
-  html = html.replace(tag, "<script>" + code + "</script>");
-  // Preserve the original restrictive CSP while authorizing ONLY these exact
-  // immutable inline script bytes. No script-src unsafe-inline wildcard.
+  let code = readFileSync(join(root, name), "utf8").replace(/<\/script/gi, "<\\/script");
+  let injected = "";
+  if (name === "editor.js") {
+    const begin = code.indexOf("async function draftRead() {");
+    const finish = code.indexOf("function serializeDraft() {", begin);
+    if (begin < 0 || finish < begin)
+      throw Error("MegaFrame draft functions changed; review before private packaging.");
+    const replacement = [
+      "async function draftRead() { return window.__MEGAFRAME_PRIVATE_DRAFT__.request('read'); }",
+      "async function draftWrite(record) { return window.__MEGAFRAME_PRIVATE_DRAFT__.request('write',record); }",
+      "async function draftDelete() { return window.__MEGAFRAME_PRIVATE_DRAFT__.request('delete'); }",
+      "",
+    ].join("\n");
+    code = code.slice(0, begin) + replacement + code.slice(finish);
+    const bridge = readFileSync(join(root, "staging/editor-draft-bridge.js"), "utf8")
+      .replace(/<\/script/gi, "<\\/script");
+    injected = "<script>" + bridge + "</script>";
+    scriptHashes.push("'sha256-" + createHash("sha256").update(bridge).digest("base64") + "'");
+  }
+  html = html.replace(tag, injected + "<script>" + code + "</script>");
+  // Preserve hash-only authorization for every inlined editor script.
   scriptHashes.push("'sha256-" + createHash("sha256").update(code).digest("base64") + "'");
   inlined.push(name);
 }
