@@ -8,6 +8,8 @@ const assert=require('node:assert/strict');
  try{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'));
+  await page.locator('[data-panel="1"]').click();
+  await page.locator('#shapePreset').selectOption('rect');
   await page.locator('#photosInput').setInputFiles({name:'customer-photo.png',mimeType:'image/png',buffer:png});
   await page.waitForFunction(()=>app.photos?.length===1);
   await page.locator('#addEmojiCover').click();
