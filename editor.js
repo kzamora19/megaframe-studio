@@ -519,6 +519,129 @@ async function restoreLocalDraft(record) {
  updateShapeUI();syncAppearanceUI();updateControls();updateGallery();
  setMode(record.mode==='adjust'?'adjust':'map');render();updateLabels();
 }
+
+// Named projects are separate from the rolling auto-recovery draft. Every project
+// contains original customer photos and stays in this browser's IndexedDB.
+const PROJECT_DB_NAME='megaframe_named_projects_v1';
+let projectDbPromise;
+function projectDatabase(){
+ if(projectDbPromise)return projectDbPromise;
+ projectDbPromise=new Promise((resolve,reject)=>{
+  if(!window.indexedDB)return reject(Error('Local project storage is unavailable on this browser.'));
+  const req=indexedDB.open(PROJECT_DB_NAME,1);
+  req.onupgradeneeded=()=>{
+   if(!req.result.objectStoreNames.contains('projects'))req.result.createObjectStore('projects',{keyPath:'id'});
+   if(!req.result.objectStoreNames.contains('projectIndex'))req.result.createObjectStore('projectIndex',{keyPath:'id'});
+  };
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error||Error('Could not open saved projects'));
+ });
+ return projectDbPromise;
+}
+async function projectList(){
+ const db=await projectDatabase();
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction('projectIndex','readonly').objectStore('projectIndex').getAll();
+  req.onsuccess=()=>resolve((req.result||[]).sort((a,b)=>b.savedAt-a.savedAt));
+  req.onerror=()=>reject(req.error||Error('Saved projects could not be listed'));
+ });
+}
+async function projectRead(id){
+ const db=await projectDatabase();
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction('projects','readonly').objectStore('projects').get(id);
+  req.onsuccess=()=>resolve(req.result||null);
+  req.onerror=()=>reject(req.error||Error('Could not open project'));
+ });
+}
+async function projectWrite(record){
+ const db=await projectDatabase();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['projects','projectIndex'],'readwrite');
+  tx.objectStore('projects').put(record);
+  tx.objectStore('projectIndex').put({id:record.id,name:record.name,savedAt:record.savedAt,photoCount:record.photoCount});
+  tx.oncomplete=()=>resolve(true);
+  tx.onerror=()=>reject(tx.error||Error('Could not save project; browser storage may be full'));
+  tx.onabort=()=>reject(tx.error||Error('Project save aborted'));
+ });
+}
+async function projectRemove(id){
+ const db=await projectDatabase();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['projects','projectIndex'],'readwrite');
+  tx.objectStore('projects').delete(id);tx.objectStore('projectIndex').delete(id);
+  tx.oncomplete=()=>resolve(true);
+  tx.onerror=()=>reject(tx.error||Error('Could not delete project'));
+  tx.onabort=()=>reject(tx.error||Error('Project delete aborted'));
+ });
+}
+function projectSize(record){
+ return (record?.template?.data?.length||0)+(record?.photos||[]).reduce((n,p)=>n+(p?.data?.length||0),0);
+}
+async function saveNamedProject(){
+ const payload=serializeDraft();
+ if(!payload)return notify('Open a frame before saving a project.');
+ if(projectSize(payload)>80*1024*1024)return notify('This project is over 80 MB. Reduce its photo size before saving on this device.');
+ const name=await popupAction({title:'Save unfinished project',message:'Choose a name. Your photos, frame and edits will be saved only on this device.',value:app.template?.name||'My project',confirmLabel:'Save project'});
+ if(name===null)return;
+ const id='project_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+ const record={format:'MegaFrameProjectV1',id,name:name.slice(0,90),savedAt:Date.now(),photoCount:payload.photos.length,payload};
+ try{await projectWrite(record);notify('Project saved: '+record.name);$('projectSaveStatus').textContent='Saved '+record.name+' on this device.';}
+ catch(err){notify('Project not saved: '+err.message);$('projectSaveStatus').textContent='Save failed. Check browser storage capacity.';}
+}
+async function renderSavedProjects(){
+ const list=$('projectList');list.replaceChildren();
+ try{
+  const projects=await projectList();$('projectListStatus').textContent=projects.length?projects.length+' saved project(s) on this device.':'No saved projects yet.';
+  for(const row of projects){
+   const card=document.createElement('article');card.className='savedProjectCard';
+   const info=document.createElement('div');const title=document.createElement('strong');title.textContent=row.name;
+   const date=document.createElement('small');date.textContent=new Date(row.savedAt).toLocaleString()+' · '+row.photoCount+' photo(s)';
+   info.append(title,date);
+   const actions=document.createElement('div');actions.className='savedProjectActions';
+   const open=document.createElement('button');open.type='button';open.className='btn small primary';open.textContent='Open';
+   open.onclick=()=>openNamedProject(row.id);
+   const backup=document.createElement('button');backup.type='button';backup.className='btn small';backup.textContent='Backup';
+   backup.title='Save an editable project file with original customer photos';
+   backup.onclick=async()=>{
+    try{const record=await projectRead(row.id);if(!record)return notify('Project not found');
+     downloadBlob(new Blob([JSON.stringify(record)],{type:'application/json'}),safeName(record.name)+'_MegaFrame_Project.json');
+     notify('Project backup downloaded. It contains original customer photos; keep it private.');
+    }catch(e){notify('Backup failed: '+e.message)}
+   };
+   const remove=document.createElement('button');remove.type='button';remove.className='btn small danger';remove.textContent='Delete';
+   remove.onclick=async()=>{
+    if(!await confirmAction('Delete saved project?','Permanently delete "'+row.name+'" from this browser? This does not remove any downloaded backup.','Delete project'))return;
+    try{await projectRemove(row.id);await renderSavedProjects();notify('Saved project deleted.')}catch(e){notify('Delete failed: '+e.message)}
+   };
+   actions.append(open,backup,remove);card.append(info,actions);list.append(card);
+  }
+ }catch(err){$('projectListStatus').textContent='Project library unavailable: '+err.message;}
+}
+async function openSavedProjects(){
+ await renderSavedProjects();if(!$('savedProjectsDialog').open)$('savedProjectsDialog').showModal();
+}
+async function openNamedProject(id){
+ const saved=await projectRead(id);if(!saved?.payload)return notify('Project could not be found.');
+ if(!await confirmAction('Open saved project?','This replaces your currently open frame and photos. Save your current work first if you need it later.','Open saved project'))return;
+ try{await restoreLocalDraft(saved.payload);$('savedProjectsDialog').close();showPanel(4);
+  notify('Project restored: '+saved.name);
+ }catch(err){notify('Project could not be restored: '+err.message)}
+}
+async function importProjectBackup(file){
+ if(!file)return;
+ if(file.size>85*1024*1024)return notify('Project file is too large (85 MB maximum).');
+ try{
+  const record=JSON.parse(await file.text());
+  if(record?.format!=='MegaFrameProjectV1'||typeof record?.name!=='string'||record?.payload?.format!=='MegaFrameDraftV1')
+   throw Error('Not a MegaFrame project backup');
+  if(projectSize(record.payload)>80*1024*1024)throw Error('Project exceeds the local 80 MB limit');
+  const newRecord={format:'MegaFrameProjectV1',id:'project_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),
+   name:record.name.slice(0,90),savedAt:Date.now(),photoCount:Math.min(100,record.payload.photos?.length||0),payload:record.payload};
+  await projectWrite(newRecord);await renderSavedProjects();notify('Project backup imported: '+newRecord.name);
+ }catch(err){notify('Project import failed: '+err.message)}
+}
+
 async function initializeDraftRecovery() {
  const saved=await draftRead();
  if (saved?.format==='MegaFrameDraftV1' && saved.template) {
@@ -630,6 +753,12 @@ function setupMobileDrawer(){
 function setupPinnedNav(){const nav=$('pinNav');nav.querySelectorAll('button[data-panel]').forEach(button=>{button.addEventListener('click',()=>showPanel(Number(button.dataset.panel)))});showPanel(0)}
 
 function setupEvents(){
+ $('saveProject').onclick=saveNamedProject;
+ $('openProjects').onclick=openSavedProjects;
+ $('closeSavedProjects').onclick=()=>$('savedProjectsDialog').close();
+ $('importProjectFile').onchange=async e=>{const file=e.target.files?.[0];e.target.value='';await importProjectBackup(file)};
+ $('importProject').onclick=()=>$('importProjectFile').click();
+
  $('changeTemplate').onclick=()=>$('templateInput').click();$('templateInput').onchange=async e=>{if(e.target.files?.[0])await uploadTemplate(e.target.files[0]);e.target.value=''};
  $('templateSelect').onchange=e=>switchTemplate(e.target.value);
  $('openFrameLibrary').onclick=()=>openFrameLibrary('saved');$('openOnlineTemplates').onclick=()=>openFrameLibrary('online');$('libTabSaved').onclick=()=>showLibraryTab('saved');$('libTabOnline').onclick=()=>showLibraryTab('online');$('restoreBuiltins').onclick=()=>{hiddenSamples.clear();persistHiddenSamples();populateTemplates();renderFrameLibrary();notify('Original sample frames restored.')};$('onlineSearchForm').onsubmit=searchOnlineFrames;$('googleImageSearch').onclick=()=>externalTemplateSearch('google');$('bingImageSearch').onclick=()=>externalTemplateSearch('bing');$('canvaTemplateSearch').onclick=()=>externalTemplateSearch('canva');$('closeFrameLibrary').onclick=()=>$('frameLibrary').close();$('frameLibSearch').oninput=renderFrameLibrary;$('frameFavoritesOnly').onchange=renderFrameLibrary;$('frameLibSort').onchange=renderFrameLibrary;$('frameLibFolder').onchange=renderFrameLibrary;$('frameLibCategory').onchange=renderFrameLibrary;$('frameLibrary').addEventListener('click',e=>{if(e.target===$('frameLibrary'))$('frameLibrary').close()});
