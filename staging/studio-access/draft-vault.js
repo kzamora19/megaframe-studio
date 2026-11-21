@@ -92,20 +92,20 @@
       const raw=atob(value.replaceAll("-","+").replaceAll("_","/")+"=".repeat((4-value.length%4)%4));
       return Uint8Array.from(raw,c=>c.charCodeAt(0));
     };
-    async function cloudExport(id){
+    async function cloudExport(id,options={}){
       const record=await operation("readonly","read",projectKey(id));
       if(!record)return null;
       if(record.format!=="AES-GCM-v1"||!(record.iv instanceof Uint8Array)||
          record.iv.byteLength!==12||!(record.encrypted instanceof ArrayBuffer))
         throw Error("Invalid local encrypted project.");
       const encrypted=b64(record.encrypted);
-      if(encrypted.length>1_200_000)throw Error("Cloud archive limit exceeded: keep this project local or export a backup file.");
+      if(encrypted.length>(options.drive===true?145_000_000:1_200_000))throw Error("Backup exceeds the selected encrypted archive size limit.");
       return {iv:b64(record.iv),encrypted};
     }
-    async function cloudImport(id,record){
+    async function cloudImport(id,record,options={}){
       const key=projectKey(id);
       if(!record||typeof record!=="object"||typeof record.iv!=="string"||record.iv.length!==16||
-         typeof record.encrypted!=="string"||record.encrypted.length>1_200_000)
+         typeof record.encrypted!=="string"||record.encrypted.length>(options.drive===true?145_000_000:1_200_000))
         throw Error("Invalid encrypted cloud project.");
       const iv=unb64(record.iv),encrypted=unb64(record.encrypted);
       if(iv.byteLength!==12||encrypted.byteLength<16)throw Error("Invalid cloud AES-GCM data.");
