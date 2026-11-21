@@ -17,6 +17,7 @@ on:
       - 'qa/smoke-startup-recovery.cjs'
       - 'qa/smoke-recovery-discard.cjs'
       - 'qa/smoke-startup-choice.cjs'
+      - 'qa/smoke-new-project.cjs'
       - 'qa/smoke-drive.cjs'
       - '.github/workflows/pages.yml'
   push:
@@ -35,6 +36,7 @@ on:
       - 'qa/smoke-startup-recovery.cjs'
       - 'qa/smoke-recovery-discard.cjs'
       - 'qa/smoke-startup-choice.cjs'
+      - 'qa/smoke-new-project.cjs'
       - 'qa/smoke-drive.cjs'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -68,6 +70,7 @@ jobs:
           node --check qa/smoke-startup-recovery.cjs
           node --check qa/smoke-recovery-discard.cjs
           node --check qa/smoke-startup-choice.cjs
+          node --check qa/smoke-new-project.cjs
           node --check google-drive.js
           node --check google-drive-config.js
           node --check qa/smoke-drive.cjs
@@ -98,6 +101,7 @@ jobs:
           node qa/smoke-startup-recovery.cjs
           node qa/smoke-recovery-discard.cjs
           node qa/smoke-startup-choice.cjs
+          node qa/smoke-new-project.cjs
           node qa/smoke-drive.cjs
 
   publish:

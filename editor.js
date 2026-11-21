@@ -602,16 +602,79 @@ async function deleteLinkedRecovery(id){
 function projectSize(record){
  return (record?.template?.data?.length||0)+(record?.photos||[]).reduce((n,p)=>n+(p?.data?.length||0),0);
 }
-async function saveNamedProject(){
+// A named project is the only safe hand-off point before clearing the editor.
+// Return true only once the project is confirmed persisted in IndexedDB.
+let activeNamedProjectId=null, activeNamedProjectName=null, newProjectBusy=false;
+async function saveNamedProject({forNewProject=false}={}){
  const payload=serializeDraft();
- if(!payload)return notify('Open a frame before saving a project.');
- if(projectSize(payload)>80*1024*1024)return notify('This project is over 80 MB. Reduce its photo size before saving on this device.');
- const name=await popupAction({title:'Save unfinished project',message:'Choose a name. Your photos, frame and edits will be saved only on this device.',value:app.template?.name||'My project',confirmLabel:'Save project'});
- if(name===null)return;
+ if(!payload){notify('Open a frame before saving a project.');return false;}
+ if(projectSize(payload)>80*1024*1024){
+  notify('Project exceeds 80 MB. Reduce the photos before starting another project.');
+  return false;
+ }
+ const defaultName=activeNamedProjectName||(app.template?.name?.startsWith('Blank workspace')?'My project':app.template?.name)||'My project';
+ const name=await popupAction({
+  title:forNewProject?'Save current project before starting new':'Save unfinished project',
+  message:forNewProject
+   ?'Your current frame, photos, filters and layouts must be saved before opening a new blank workspace. Cancel will keep the current project open.'
+   :'Choose a name. Your photos, frame and edits will be saved only on this device.',
+  value:defaultName,
+  confirmLabel:forNewProject?'Save & create new':'Save project'
+ });
+ if(name===null)return false;
+ const trimmed=name.trim().slice(0,90);
+ if(!trimmed){notify('Enter a project name before saving.');return false;}
  const id='project_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
- const record={format:'MegaFrameProjectV1',id,name:name.slice(0,90),savedAt:Date.now(),photoCount:payload.photos.length,payload};
- try{await projectWrite(record);cleanProjectFingerprint=projectFingerprint();clearTimeout(draftTimer);if(draftEnabled)await draftDelete();notify('Project saved: '+record.name);$('projectSaveStatus').textContent='Saved '+record.name+' on this device.';}
- catch(err){notify('Project not saved: '+err.message);$('projectSaveStatus').textContent='Save failed. Check browser storage capacity.';}
+ const record={format:'MegaFrameProjectV1',id,name:trimmed,savedAt:Date.now(),photoCount:payload.photos.length,payload};
+ try{
+  // Keep the editor unchanged until storage positively confirms the write.
+  await projectWrite(record);
+  activeNamedProjectId=id;
+  activeNamedProjectName=record.name;
+  cleanProjectFingerprint=projectFingerprint();
+  clearTimeout(draftTimer);
+  // An in-flight automatic save must not recreate a stale recovery after clear.
+  if(draftWritePromise)await draftWritePromise.catch(()=>{});
+  if(draftEnabled)await draftDelete();
+  notify('Project saved: '+record.name);
+  $('projectSaveStatus').textContent='Saved '+record.name+' on this device.';
+  return true;
+ }catch(err){
+  notify('Project not saved: '+err.message);
+  $('projectSaveStatus').textContent='Save failed. Current project kept open. Check browser storage capacity.';
+  return false;
+ }
+}
+async function beginNewProject(){
+ if(newProjectBusy||$('startupChoiceDialog').open)return;
+ newProjectBusy=true;
+ const buttons=[$('newProject'),$('newProjectPanel')];
+ buttons.forEach(button=>button.disabled=true);
+ try{
+  // If the workspace has edits, a named save is mandatory, not optional.
+  // An untouched blank workspace or unchanged named project can switch safely.
+  if(hasUnsavedChanges()&&!await saveNamedProject({forNewProject:true}))return;
+  const wasDraftEnabled=draftEnabled;
+  draftEnabled=false;
+  clearTimeout(draftTimer);
+  if(draftWritePromise)await draftWritePromise.catch(()=>{});
+  // Reset must never mark a blank starter as an edited project or auto-save it.
+  cleanProjectFingerprint=null;
+  try{
+   await openBlankWorkspace();
+   activeNamedProjectId=null;activeNamedProjectName=null;
+   cleanProjectFingerprint=projectFingerprint();
+   updateUnsavedIndicator();
+   $('projectSaveStatus').textContent='New blank project. Save Project when you have work to keep.';
+   showPanel(0);
+   notify('New project ready. Previously saved work is available in Open Projects.');
+  }finally{draftEnabled=wasDraftEnabled;}
+ }catch(err){
+  notify('Unable to start a new project: '+err.message);
+ }finally{
+  newProjectBusy=false;
+  buttons.forEach(button=>button.disabled=false);
+ }
 }
 async function renderSavedProjects(){
  const list=$('projectList');list.replaceChildren();
@@ -661,7 +724,7 @@ async function openSavedProjects(onStartup=false){
 async function openNamedProject(id){
  const saved=await projectRead(id);if(!saved?.payload)return notify('Project could not be found.');
  if(!await confirmAction('Open saved project?','This replaces your currently open frame and photos. Save your current work first if you need it later.','Open saved project'))return;
- try{await restoreLocalDraft(saved.payload);cleanProjectFingerprint=projectFingerprint();$('savedProjectsDialog').close();showPanel(4);
+ try{await restoreLocalDraft(saved.payload);cleanProjectFingerprint=projectFingerprint();activeNamedProjectId=saved.id;activeNamedProjectName=saved.name;$('savedProjectsDialog').close();showPanel(4);
   notify('Project restored: '+saved.name);
  }catch(err){notify('Project could not be restored: '+err.message)}
 }
@@ -705,7 +768,7 @@ async function initializeDraftRecovery() {
   const record=await draftRead();
   if(!record?.template)return notify('No automatic recovery copy found.');
   if(hasUnsavedChanges()&&!await confirmAction('Restore recovery copy?','You have changes that have not been saved as a named project. Save Project first if you want to keep them, or confirm replacement.','Restore recovery'))return;
-  try{await restoreLocalDraft(record);$('savedProjectsDialog').close();showPanel(4);notify('Unfinished editing session restored.');}
+  try{await restoreLocalDraft(record);activeNamedProjectId=await projectRead(recoveryArchiveId(record))?recoveryArchiveId(record):null;activeNamedProjectName=activeNamedProjectId?'Recovered session':null;$('savedProjectsDialog').close();showPanel(4);notify('Unfinished editing session restored.');}
   catch(err){draftStatus('Saved draft could not be restored: '+err.message);notify('Could not restore recovery copy.');}
  };
  $('discardRecoveryDraft').onclick=async()=>{
@@ -840,7 +903,9 @@ function setupEvents(){
   await openSavedProjects(true);
  };
  $('startupChoiceDialog').addEventListener('cancel',event=>event.preventDefault());
- $('saveProject').onclick=saveNamedProject;
+ $('saveProject').onclick=()=>saveNamedProject();
+ $('newProject').onclick=beginNewProject;
+ $('newProjectPanel').onclick=beginNewProject;
  $('openProjects').onclick=()=>openSavedProjects();
  $('closeSavedProjects').onclick=()=>$('savedProjectsDialog').close();
  $('importProjectFile').onchange=async e=>{const file=e.target.files?.[0];e.target.value='';await importProjectBackup(file)};
