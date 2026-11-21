@@ -37,6 +37,7 @@
     // Do not attempt to inspect iframe cookies or cross-origin draft storage.
     mount.replaceChildren();
     if(cloudPanel)cloudPanel.hidden=true;
+    window.BRANCHLINE_GOOGLE_DRIVE_BACKUP?.lock();
     show(message, true);
   };
   const raw = new URLSearchParams(location.hash.startsWith("#") ? location.hash.slice(1) : "");
@@ -247,6 +248,21 @@
       active = true;
       status.hidden = true;
       setupCloud(vault);
+      if(window.BRANCHLINE_GOOGLE_DRIVE_BACKUP){
+        void window.BRANCHLINE_GOOGLE_DRIVE_BACKUP.setup({
+          studio:"megaframe",scope:data.draftScope,
+          clientId:config.googleDriveClientId||"",vault,
+          verify:async()=>{
+            if(!active||expired||Date.now()>=expiry)throw Error("PTG Studio session expired.");
+            try{
+              const result=await withProof(()=>gateway("check"));
+              if(!active||expired)throw Error("PTG Studio access ended.");
+              deadlineAt(result.expiresAt);
+            }catch(error){stop("PTG access could not be verified for Google Drive.");throw error;}
+          }
+        }).catch(()=>{const n=document.getElementById("driveMessage");
+          if(n)n.textContent="Google Drive backup could not initialize.";});
+      }
       const every = Number.isInteger(config.checkIntervalMs) && config.checkIntervalMs >= 500
         ? config.checkIntervalMs : 30000;
       interval = setInterval(() => { void check(); }, every);
