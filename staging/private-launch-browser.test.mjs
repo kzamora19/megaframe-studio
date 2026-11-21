@@ -115,7 +115,9 @@ try {
   await page.locator("#studio-editor-frame").waitFor({timeout:90000});
   assert.equal(new URL(page.url()).hash,"");
   assert.equal(await page.locator("#studio-editor-frame").getAttribute("sandbox"),
-    "allow-scripts allow-downloads");
+    "allow-scripts allow-downloads allow-modals");
+  assert.doesNotMatch(await page.locator("#studio-editor-frame").getAttribute("sandbox"),/allow-same-origin/,
+    "The protected frame must stay opaque even with native modal support.");
   const frame=page.frameLocator("#studio-editor-frame");
   assert.equal((await frame.locator(".brandtag").textContent()).trim(),
     "Social Media Photo Frame Generator");
