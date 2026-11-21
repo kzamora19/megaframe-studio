@@ -6,7 +6,7 @@ import {tmpdir} from "node:os";
 import {join, dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {execFileSync} from "node:child_process";
-import {createHash} from "node:crypto";
+import {createHash,randomUUID,randomBytes,webcrypto} from "node:crypto";
 import {chromium} from "playwright";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -43,6 +43,7 @@ try {
   browser=await chromium.launch({headless:true,args:["--disable-dev-shm-usage"]});
   const context=await browser.newContext({viewport:{width:1440,height:900}});
   let mode="authorized",errors=[],requests=[];
+  const mockProofSessions=new Map();
   await context.route("**/*",async route=>{
     const url=new URL(route.request().url());
     if(url.origin===origin)return route.continue();
@@ -58,13 +59,38 @@ try {
       if(mode==="revoked")return route.fulfill({status:403,contentType:"application/json",headers,
         body:JSON.stringify({ok:false,error:"Revoked"})});
       if(body.action==="load"){
-        const payload=mode==="bad-hash"
-          ? {ok:true,html:privateHtml,sha256:"f".repeat(64),draftScope,draftKey,expiresAt:new Date(Date.now()+600000).toISOString()}
-          : {ok:true,html:privateHtml,sha256:manifest.sha256,draftScope,draftKey,expiresAt:new Date(Date.now()+600000).toISOString()};
+        assert.match(body.ticket,/^[A-Z]{43}$/);
+        assert.equal(body.publicKey?.kty,"EC");
+        assert.equal(body.publicKey?.crv,"P-256");
+        assert.equal(body.publicKey?.d,undefined,"Browser must never export private key");
+        const sessionId=randomUUID(),challenge=randomBytes(32).toString("base64url");
+        mockProofSessions.set(sessionId,{challenge,publicKey:body.publicKey});
+        const payload={
+          ok:true,html:privateHtml,sessionId,challenge,sha256:mode==="bad-hash"?"f".repeat(64):manifest.sha256,
+          draftScope,draftKey,expiresAt:new Date(Date.now()+600000).toISOString()
+        };
         return route.fulfill({status:200,contentType:"application/json",headers,body:JSON.stringify(payload)});
       }
-      return route.fulfill({status:200,contentType:"application/json",headers,
-        body:JSON.stringify({ok:true,expiresAt:new Date(Date.now()+600000).toISOString()})});
+      if(body.action==="check"){
+        assert.equal(body.ticket,undefined,"Redeemed bearer ticket must not be replayed on checks");
+        const old=mockProofSessions.get(body.sessionId);
+        if(!old||body.challenge!==old.challenge)
+          return route.fulfill({status:403,contentType:"application/json",headers,
+            body:JSON.stringify({ok:false,error:"Replayed or invalid challenge"})});
+        const key=await webcrypto.subtle.importKey("jwk",old.publicKey,
+          {name:"ECDSA",namedCurve:"P-256"},false,["verify"]);
+        const statement=new TextEncoder().encode(
+          "ptg-studio-v1|megaframe|"+body.sessionId+"|"+body.challenge);
+        const signature=Buffer.from(body.signature||"","base64url");
+        const valid=await webcrypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},
+          key,signature,statement);
+        if(!valid)return route.fulfill({status:403,contentType:"application/json",headers,
+          body:JSON.stringify({ok:false,error:"Invalid signature"})});
+        old.challenge=randomBytes(32).toString("base64url");
+        return route.fulfill({status:200,contentType:"application/json",headers,
+          body:JSON.stringify({ok:true,sessionId:body.sessionId,challenge:old.challenge,
+            expiresAt:new Date(Date.now()+600000).toISOString()})});
+      }
     }
     return route.fulfill({status:404,body:"External service disabled in staging"});
   });
@@ -208,7 +234,10 @@ try {
     });
   });
   assert.equal(encrypted,true,"All locally stored photo drafts must be AES-GCM ciphertext");
-  assert.ok(requests.every(x=>/^[ABCD]{43}$/.test(x.ticket)));
+  assert.ok(requests.filter(x=>x.action==="load")
+    .every(x=>/^[ABCD]{43}$/.test(x.ticket)));
+  assert.ok(requests.filter(x=>x.action==="check")
+    .every(x=>!Object.hasOwn(x,"ticket") && /^[A-Za-z0-9_-]{80,96}$/.test(x.signature)));
   // Collect errors explicitly; these expose compatibility problems with
   // opaque-origin localStorage, OAuth, or the original editor scripts.
   if(errors.length)console.log("STAGED_EDITOR_ERRORS:",JSON.stringify(errors.slice(0,12)));
