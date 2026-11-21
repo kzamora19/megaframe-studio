@@ -30,14 +30,19 @@ function configReady(){
   path:BUNDLE_PATH,sha:BUNDLE_SHA,bucket:BUNDLE_BUCKET
  });
 }
-async function verified(ticket:string):Promise<string|null>{
- const check=await fetch(PTG_VERIFY_URL,{method:"POST",cache:"no-store",headers:{
-   "Content-Type":"application/json","x-ptg-studio-secret":VERIFY_SECRET,
- },body:JSON.stringify({action:"verify",studio:"megaframe",ticket}),signal:AbortSignal.timeout(8000)});
- if(!check.ok)return null;
- const data=await check.json().catch(()=>null);
- return data?.ok===true&&typeof data.expiresAt==="string"&&
-   Number.isFinite(Date.parse(data.expiresAt))&&Date.parse(data.expiresAt)>Date.now()?data.expiresAt:null;
+// A PTG launch ticket is exchanged ONCE for a proof-bound session.
+// Every subsequent check requires a P-256 signature on a fresh challenge.
+async function trustedPtg(action:"exchange"|"prove",body:Record<string,unknown>){
+ const response=await fetch(PTG_VERIFY_URL,{method:"POST",cache:"no-store",redirect:"error",
+  headers:{"Content-Type":"application/json","x-ptg-studio-secret":VERIFY_SECRET},
+  body:JSON.stringify({action,studio:"megaframe",...body}),signal:AbortSignal.timeout(8000)});
+ if(!response.ok)return null;
+ const data=await response.json().catch(()=>null);
+ if(!data||data.ok!==true||typeof data.expiresAt!=="string"||
+    !Number.isFinite(Date.parse(data.expiresAt))||Date.parse(data.expiresAt)<=Date.now()||
+    typeof data.sessionId!=="string"||!/^[0-9a-f-]{36}$/i.test(data.sessionId)||
+    !studioTicketOk(data.challenge))return null;
+ return data;
 }
 Deno.serve(async req=>{
  const origin=req.headers.get("origin")||"";
@@ -53,11 +58,25 @@ Deno.serve(async req=>{
   const raw=await req.text();
   if(raw.length>1024)return json(origin,{ok:false,error:"Request too large."},413);
   const body=JSON.parse(raw);
-  if(!body||typeof body!=="object"||Array.isArray(body)||!studioTicketOk(body.ticket)||
+  if(!body||typeof body!=="object"||Array.isArray(body)||
      !["load","check"].includes(body.action))return json(origin,{ok:false,error:"Invalid request."},400);
-  const expiresAt=await verified(body.ticket);
-  if(!expiresAt)return json(origin,{ok:false,error:"PTG Studio authorization required."},403);
-  if(body.action==="check")return json(origin,{ok:true,expiresAt});
+  if(body.action==="check"){
+   if(typeof body.sessionId!=="string"||!/^[0-9a-f-]{36}$/i.test(body.sessionId)||
+      !studioTicketOk(body.challenge)||typeof body.signature!=="string"||
+      !/^[A-Za-z0-9_-]{80,96}$/.test(body.signature))
+     return json(origin,{ok:false,error:"Invalid signed session proof."},400);
+   const verified=await trustedPtg("prove",{sessionId:body.sessionId,
+      challenge:body.challenge,signature:body.signature});
+   if(!verified)return json(origin,{ok:false,error:"PTG Studio authorization required."},403);
+   return json(origin,{ok:true,sessionId:verified.sessionId,challenge:verified.challenge,
+      expiresAt:verified.expiresAt});
+  }
+  if(!studioTicketOk(body.ticket)||!body.publicKey||typeof body.publicKey!=="object")
+    return json(origin,{ok:false,error:"Invalid launch ticket or proof key."},400);
+  const exchanged=await trustedPtg("exchange",{ticket:body.ticket,publicKey:body.publicKey});
+  if(!exchanged||!studioTicketOk(exchanged.draftScope)||!studioTicketOk(exchanged.draftKey))
+    return json(origin,{ok:false,error:"PTG Studio authorization required."},403);
+  const {expiresAt,sessionId,challenge,draftScope,draftKey}=exchanged;
   const admin=createClient(MEGAFRAME_URL,MEGAFRAME_SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data,error}=await admin.storage.from(BUNDLE_BUCKET).download(BUNDLE_PATH);
   if(error||!data)throw Error("Private release object unavailable");
@@ -67,7 +86,7 @@ Deno.serve(async req=>{
   const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(html))),
     b=>b.toString(16).padStart(2,"0")).join("");
   if(hash!==BUNDLE_SHA)throw Error("Private editor bundle hash mismatch");
-  return json(origin,{ok:true,html,expiresAt,sha256:hash});
+  return json(origin,{ok:true,html,expiresAt,sessionId,challenge,draftScope,draftKey,sha256:hash});
  }catch(error){
   console.error("Private Studio delivery blocked:",error instanceof Error?error.name:"unknown");
   return json(origin,{ok:false,error:"Private editor delivery unavailable."},503);
