@@ -381,6 +381,52 @@ button.danger:hover{background:#ffe9ec}
  .photoQueueSidebar .galleryWrap{overflow:visible;max-height:none}
  .photoQueueSidebar .gallery{grid-template-columns:repeat(auto-fill,minmax(135px,1fr))}
 }
+/* Narrow-screen panel controls: collapsed by default and in document flow.
+   No persistent panels or floating overlays may obscure the photo canvas. */
+.mobilePanelBar{display:none}
+@media(max-width:720px){
+ .appbody{display:flex;flex-direction:column;align-items:stretch}
+ .mobilePanelBar{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+  order:0;position:sticky;top:0;z-index:6;padding:7px 10px;
+  background:#fff;border-bottom:1px solid #dce5f3;
+  box-shadow:0 3px 11px #20355f14;
+ }
+ .mobilePanelButton{
+  min-width:0;min-height:42px;white-space:normal;line-height:1.3;
+  font-size:12px;background:#eef3ff;color:#2451a9;border:1px solid #ccdaf7;
+ }
+ .mobilePanelButton[aria-expanded="true"]{
+  background:#2454eb;color:#fff;border-color:#2454eb;
+ }
+ .appbody>.sidebar{order:1;min-width:0;max-width:none}
+ .appbody>.photoQueueSidebar{order:1;min-width:0;max-width:none}
+ .appbody>.workspace{order:2;min-width:0}
+ .appbody>.sidebar.mobileDrawerClosed,
+ .appbody>.photoQueueSidebar.photoQueueClosed{display:none!important}
+ .appbody>.sidebar:not(.mobileDrawerClosed){
+  display:block;position:relative;top:auto;height:auto;max-height:min(62dvh,540px);
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;
+  box-shadow:none;padding:12px;border-bottom:1px solid #dfe7f4;
+ }
+ .appbody>.sidebar .mobileDrawerToggle{display:none!important}
+ .appbody>.sidebar .pinNav{position:relative!important;top:auto!important}
+ .appbody>.photoQueueSidebar:not(.photoQueueClosed){
+  display:flex;position:relative;top:auto;z-index:1;align-self:stretch;
+  height:min(64dvh,520px);min-height:220px;overflow:hidden;
+  border-left:0;border-bottom:1px solid #dfe7f4;box-shadow:none;
+ }
+ .appbody>.photoQueueSidebar .photoQueuePinned{
+  position:relative;top:auto;z-index:1;padding:11px 12px 9px
+ }
+ .appbody>.photoQueueSidebar .galleryWrap{
+  flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;
+  overscroll-behavior:contain;padding:12px;
+ }
+ .appbody>.photoQueueSidebar .gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .appbody>.workspace{padding:12px 10px 28px}
+ .appbody>.workspace .previewBody{padding:10px}
+}
 </style>
 </head>
 <body>
@@ -393,8 +439,12 @@ button.danger:hover{background:#ffe9ec}
   <button id="pwa-update-reload" class="btn small" type="button">Update &amp; reload</button>
 </div>
 <main class="appbody">
-<aside class="sidebar">
-<button id="mobileDrawerToggle" class="btn mobileDrawerToggle" type="button" aria-expanded="true" aria-controls="pinNav">Hide editing controls ▴</button>
+<div class="mobilePanelBar" role="group" aria-label="Mobile workspace panels">
+  <button id="mobileEditToggle" class="btn mobilePanelButton" type="button" aria-controls="editingSidebar" aria-expanded="false">☰ Editing controls ▾</button>
+  <button id="mobileSlidesToggle" class="btn mobilePanelButton" type="button" aria-controls="photoQueueSidebar" aria-expanded="false">▤ Photo slides ▾</button>
+</div>
+<aside id="editingSidebar" class="sidebar mobileDrawerClosed">
+<button id="mobileDrawerToggle" class="btn mobileDrawerToggle" type="button" aria-expanded="false" aria-controls="pinNav">Show editing controls ▾</button>
 <nav id="pinNav" class="pinNav" aria-label="Section navigation">
  <div class="pinNavTitle"><span>SECTIONS</span><span>Select one panel</span></div>
  <div class="pinNavGrid">
@@ -593,7 +643,7 @@ button.danger:hover{background:#ffe9ec}
   <div class="previewBody"><div class="canvasShell" id="canvasShell"><canvas id="previewCanvas" width="2018" height="2048" aria-label="Photo frame preview and editor"></canvas><canvas id="exportPreviewCanvas" hidden aria-label="Live preview at selected export resolution"></canvas></div></div>
  </div>
 </section>
-<aside class="photoQueueSidebar" aria-label="Photo slides and selected photo controls">
+<aside id="photoQueueSidebar" class="photoQueueSidebar photoQueueClosed" aria-label="Photo slides and selected photo controls">
  <div class="photoQueuePinned">
   <h2>Selected photo</h2>
   <div class="previewFoot"><span id="previewLabel">Sample frame · upload photos to get started</span><div class="inline previewActions"><button id="addEmojiCover" class="btn small" type="button" title="Add an emoji over a customer's face">😎 Cover face</button><button id="quickReplacePhoto" class="btn small" type="button">↻ Replace photo</button><button id="quickDeletePhoto" class="btn small danger" type="button">✕ Delete photo</button><button id="previous" class="btn small">‹ Previous</button><button id="next" class="btn small">Next ›</button></div></div>
