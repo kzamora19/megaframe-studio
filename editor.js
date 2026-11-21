@@ -193,7 +193,7 @@ function setMode(mode){app.mode=mode;$('mapBtn').classList.toggle('active',mode=
 function applyTemplate(template,source,frame){app.template=template;app.frame=frame;app.drawingPolygon=false;app.draftPoints=[];app.undoStack=[];app.redoStack=[];const c=template.collage||{count:1,layout:'grid',gap:1};app.collage={count:clamp(+c.count||1,1,9),layout:[...$('collageLayout').options].some(o=>o.value===c.layout)?c.layout:'grid',gap:clamp(+c.gap||0,0,5)};$('collageCount').value=String(app.collage.count);$('collageLayout').value=app.collage.layout;$('collageGap').value=String(app.collage.gap);$('collageGapValue').textContent=app.collage.gap+'%';app.rect={...(template.rect||{x:Math.round(frame.width*.1),y:Math.round(frame.height*.2),w:Math.round(frame.width*.8),h:Math.round(frame.height*.6)})};app.frameOpening=cloneShape(template.frameOpening||shapeOf(template));app.appearance=templateAppearance(template,app.frameOpening,frame);syncAppearanceUI();setShape(shapeOf(template),false);$('previewTitle').textContent=template.name;$('previewInfo').textContent=frame.width+' × '+frame.height+' px';populateTemplates();$('templateSelect').value=template.id;updateShapeUI();render();updateLabels()}
 function sampleTemplate(id='sample'){if(id==='gold')return {id:'gold',name:'7-Day Big Savings Sale · Gold corners',data:GOLD_IMAGE,rect:shapeBounds(goldPoints),shape:cloneShape(defaultGoldShape),frameOpening:cloneShape(defaultGoldShape),appearance:{borderColor:'#d7b34a',borderWidth:8,replaceOpening:true}};return {id:'sample',name:'7-Day Big Savings Sale · Blue border',data:SAMPLE_IMAGE,rect:{...defaultRect},shape:{type:'rect',points:rectPoints(defaultRect)},frameOpening:{type:'rect',points:rectPoints(defaultRect)},appearance:{borderColor:'#1f55d7',borderWidth:8,replaceOpening:true}}}
 async function switchTemplate(id){const template=(id==='sample'||id==='gold')?sampleTemplate(id):app.templates.find(t=>t.id===id);if(!template)return;try{const frame=await decodedImage(template.data);applyTemplate(template,template.data,frame)}catch(err){notify('Unable to load this frame: '+err.message)}}
-function populateTemplates(){const sel=$('templateSelect');const selected=app.template?.id||'sample';sel.innerHTML='';const opts=allFrameTemplates();if(app.template?.id==='new')opts.push(app.template);for(const t of opts){const o=document.createElement('option');o.value=t.id;o.textContent=t.id==='new'?'✳ Unsaved: '+t.name:t.name;sel.append(o)}sel.value=selected}
+function populateTemplates(){const sel=$('templateSelect');const selected=app.template?.id||'new';sel.innerHTML='';const opts=allFrameTemplates();if(app.template?.id==='new')opts.push(app.template);for(const t of opts){const o=document.createElement('option');o.value=t.id;o.textContent=t.id==='new'?'✳ Unsaved: '+t.name:t.name;sel.append(o)}sel.value=selected}
 const DB_NAME='megaframe_studio_local', DB_STORE='templates';let dbPromise;
 function dbOpen(){if(dbPromise)return dbPromise;dbPromise=new Promise((resolve)=>{if(!window.indexedDB)return resolve(null);try{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(DB_STORE))r.result.createObjectStore(DB_STORE,{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>resolve(null)}catch{resolve(null)}});return dbPromise}
 async function dbAll(){const db=await dbOpen();if(!db)return[];return new Promise(resolve=>{try{const r=db.transaction(DB_STORE,'readonly').objectStore(DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>resolve([])}catch{resolve([])}})}
@@ -201,7 +201,7 @@ async function dbPut(t){const db=await dbOpen();if(!db)return false;return new P
 async function dbDelete(id){const db=await dbOpen();if(!db)return false;return new Promise(resolve=>{try{const x=db.transaction(DB_STORE,'readwrite');x.objectStore(DB_STORE).delete(id);x.oncomplete=()=>resolve(true);x.onerror=()=>resolve(false)}catch{resolve(false)}})}
 async function uploadTemplate(file){if(!isPhotoFile(file))return notify('Please select JPG, PNG or WebP image.');try{let data=await dataUrlOf(file);const frame=await decodedImage(data);if(frame.width<200||frame.height<200)return notify('Please use a frame at least 200 × 200 pixels.');const rect={x:Math.round(frame.width*.10),y:Math.round(frame.height*.20),w:Math.round(frame.width*.80),h:Math.round(frame.height*.60)};const name=file.name.replace(/\.[^.]+$/,'');const opening=blankShape();const t={id:'new',name,data,rect,shape:cloneShape(opening),frameOpening:cloneShape(opening),appearance:{borderColor:'#d7b34a',borderWidth:8,replaceOpening:false}};applyTemplate(t,data,frame);setMode('map');notify('Frame imported without a shape. Choose an opening from the dropdown, draw one, or reuse a saved shape.')}catch(err){notify('Could not import the frame: '+err.message)}}
 function boundRect(r){const W=app.frame?.width||2018,H=app.frame?.height||2048;let x=Math.max(0,Math.min(W-8,r.x)),y=Math.max(0,Math.min(H-8,r.y));let w=Math.max(8,Math.min(W-x,r.w)),h=Math.max(8,Math.min(H-y,r.h));return{x,y,w,h}}
-function render(){scheduleDraftSave();updatePhotoQuality();if(renderPending)return;renderPending=true;requestAnimationFrame(()=>{renderPending=false;drawPreview();drawLiveExportPreview()})}
+function render(){if(hasUnsavedChanges())scheduleDraftSave();updateUnsavedIndicator();updatePhotoQuality();if(renderPending)return;renderPending=true;requestAnimationFrame(()=>{renderPending=false;drawPreview();drawLiveExportPreview()})}
 function canvasSize(){const canvas=$('previewCanvas');const frame=app.frame;if(!frame)return null;if(canvas.width!==frame.width||canvas.height!==frame.height){canvas.width=frame.width;canvas.height=frame.height}return canvas}
 function drawPhoto(ctx,photo,points){const rect=shapeBounds(points);ctx.save();polygonPath(ctx,points);ctx.clip();ctx.fillStyle='#fff';ctx.fillRect(rect.x,rect.y,rect.w,rect.h);const im=enhancedPhotoImage(photo);if(!im){ctx.restore();return}const rot=(photo.rot||0)*Math.PI/180;const absC=Math.abs(Math.cos(rot)),absS=Math.abs(Math.sin(rot));const bw=im.width*absC+im.height*absS,bh=im.width*absS+im.height*absC;const base=(photo.fit==='contain'?Math.min(rect.w/bw,rect.h/bh):Math.max(rect.w/bw,rect.h/bh));const sc=base*(photo.zoom||1);const dw=im.width*sc,dh=im.height*sc;const cx=rect.x+rect.w/2+(photo.dx||0)*rect.w,cy=rect.y+rect.h/2+(photo.dy||0)*rect.h;ctx.translate(cx,cy);ctx.rotate(rot);ctx.filter=photoFilterCSS(photo);ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.filter='none';ctx.restore()}
 function renderComposite(ctx,scale,photosOrPage,previewOnly=false,raw=false){const frame=app.frame;if(!frame)return;const W=frame.width,H=frame.height;ctx.clearRect(0,0,W*scale,H*scale);ctx.save();ctx.scale(scale,scale);ctx.drawImage(frame,0,0);const needsCleanup=!!app.appearance?.replaceOpening&&app.frameOpening?.points?.length>=3;if(needsCleanup)coverOriginalOpening(ctx,app.frameOpening.points);let items=[];if(typeof photosOrPage==='number')items=getPagePhotos(photosOrPage);else if(Array.isArray(photosOrPage))items=photosOrPage;else if(photosOrPage)items=[photosOrPage];const missing=!hasPhotoShape();if(items.length&&(!missing||previewOnly)){const bounds=missing?app.rect:app.rect;const points=missing?rectPoints(bounds):app.shape.points;const cells=layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,bounds,app.collage.gap);if(missing){ctx.save();ctx.globalAlpha=.94}for(let i=0;i<Math.min(items.length,cells.length);i++)drawCollagePhoto(ctx,items[i],points,cells[i],raw);if(missing)ctx.restore()}if(needsCleanup){ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);addPolygonPath(ctx,app.frameOpening.points);ctx.clip('evenodd');ctx.drawImage(frame,0,0);ctx.restore()}if(hasPhotoShape())strokeOpeningBorder(ctx,app.shape.points);if(!raw&&items.length&&(!missing||previewOnly)){const points=missing?rectPoints(app.rect):app.shape.points;const cells=layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,app.rect,app.collage.gap);for(let i=0;i<Math.min(items.length,cells.length);i++)drawFaceCovers(ctx,items[i],cells[i],points)}if(missing&&previewOnly&&items.length){const r=app.rect;ctx.save();ctx.lineWidth=Math.max(4,W/340);ctx.strokeStyle='#f5c94d';ctx.setLineDash([Math.max(8,W/90),Math.max(6,W/150)]);ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.setLineDash([]);const size=Math.max(18,Math.round(W/53));const label='PREVIEW ONLY · SELECT A PHOTO SHAPE';ctx.font=`bold ${size}px system-ui,sans-serif`;const mw=ctx.measureText(label).width;ctx.fillStyle='#101e4dde';ctx.fillRect(r.x,r.y,Math.min(r.w,mw+32),size+22);ctx.fillStyle='#fff';ctx.fillText(label,r.x+14,r.y+size+9);ctx.restore()}ctx.restore()}
@@ -457,7 +457,7 @@ function serializeDraft() {
  };
 }
 async function saveCurrentDraft() {
- if (!draftEnabled || !app.frame) return;
+ if (!draftEnabled || !app.frame || !hasUnsavedChanges()) return;
  if (draftWriting) { draftQueued = true; return; }
  draftWriting = true;
  try {
@@ -480,7 +480,7 @@ async function saveCurrentDraft() {
  }
 }
 function scheduleDraftSave() {
- if (!draftEnabled) return;
+ if (!draftEnabled || !hasUnsavedChanges()) return;
  clearTimeout(draftTimer);
  draftTimer = setTimeout(saveCurrentDraft, 1500);
 }
@@ -586,11 +586,15 @@ async function saveNamedProject(){
  if(name===null)return;
  const id='project_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
  const record={format:'MegaFrameProjectV1',id,name:name.slice(0,90),savedAt:Date.now(),photoCount:payload.photos.length,payload};
- try{await projectWrite(record);notify('Project saved: '+record.name);$('projectSaveStatus').textContent='Saved '+record.name+' on this device.';}
+ try{await projectWrite(record);cleanProjectFingerprint=projectFingerprint();clearTimeout(draftTimer);if(draftEnabled)await draftDelete();notify('Project saved: '+record.name);$('projectSaveStatus').textContent='Saved '+record.name+' on this device.';}
  catch(err){notify('Project not saved: '+err.message);$('projectSaveStatus').textContent='Save failed. Check browser storage capacity.';}
 }
 async function renderSavedProjects(){
  const list=$('projectList');list.replaceChildren();
+ const recovery=await draftRead();
+ const validRecovery=recovery?.format==='MegaFrameDraftV1'&&!!recovery.template;
+ $('automaticRecoveryCard').hidden=!validRecovery;
+ if(validRecovery)$('recoveryProjectMeta').textContent='Saved '+(recovery.savedAt?new Date(recovery.savedAt).toLocaleString():'during a previous session')+' · '+(recovery.photos?.length||0)+' photo(s)';
  try{
   const projects=await projectList();$('projectListStatus').textContent=projects.length?projects.length+' saved project(s) on this device.':'No saved projects yet.';
   for(const row of projects){
@@ -618,13 +622,14 @@ async function renderSavedProjects(){
   }
  }catch(err){$('projectListStatus').textContent='Project library unavailable: '+err.message;}
 }
-async function openSavedProjects(){
+async function openSavedProjects(onStartup=false){
+ $('startBlankProject').hidden=!onStartup;
  await renderSavedProjects();if(!$('savedProjectsDialog').open)$('savedProjectsDialog').showModal();
 }
 async function openNamedProject(id){
  const saved=await projectRead(id);if(!saved?.payload)return notify('Project could not be found.');
  if(!await confirmAction('Open saved project?','This replaces your currently open frame and photos. Save your current work first if you need it later.','Open saved project'))return;
- try{await restoreLocalDraft(saved.payload);$('savedProjectsDialog').close();showPanel(4);
+ try{await restoreLocalDraft(saved.payload);cleanProjectFingerprint=projectFingerprint();$('savedProjectsDialog').close();showPanel(4);
   notify('Project restored: '+saved.name);
  }catch(err){notify('Project could not be restored: '+err.message)}
 }
@@ -644,35 +649,53 @@ async function importProjectBackup(file){
 
 async function initializeDraftRecovery() {
  const saved=await draftRead();
- if (saved?.format==='MegaFrameDraftV1' && saved.template) {
-  const date=saved.savedAt?new Date(saved.savedAt).toLocaleString():'a previous session';
-  const restore=await confirmAction(
-   'Restore unfinished editing session?',
-   'A draft was saved on this device on '+date+'. Restore its photos, frame and adjustments? Choose Cancel to start fresh and discard the old recovery copy.',
-   'Restore my edits'
-  );
-  if (restore) {
-   try { await restoreLocalDraft(saved); notify('Restored your unfinished editing session from this device.'); }
-   catch(err) { console.error(err);draftStatus('Saved draft could not be restored: '+err.message); }
-  } else {
-   await draftDelete();
-   draftStatus('Started a new session. The previous recovery copy was discarded.');
+ const hasRecovery=saved?.format==='MegaFrameDraftV1'&&!!saved.template;
+ let canAutosave=true;
+ // A fresh blank session must not erase yesterday's unfinished editing.
+ // Archive the rolling recovery as a named local project before new editing.
+ if(hasRecovery){
+  try{
+   const id='recovery_'+String(saved.savedAt||'unknown');
+   if(!await projectRead(id)){
+    await projectWrite({format:'MegaFrameProjectV1',id,
+     name:'Recovered session · '+(saved.savedAt?new Date(saved.savedAt).toLocaleString():'previous session'),
+     savedAt:saved.savedAt||Date.now(),photoCount:saved.photos?.length||0,payload:saved});
+   }
+   draftStatus('Previous session protected in Open Projects. New edits are saved locally.');
+  }catch(err){
+   canAutosave=false;
+   draftStatus('Previous recovery preserved, but cannot archive it. Automatic saving is paused so it is not overwritten. Choose Save Project for new edits.');
+   console.error('Could not archive previous recovery',err);
   }
  }else draftStatus('Auto-save ready. Edits and imported photos stay on this device.');
- draftEnabled = true;
- $('saveDraftNow').onclick = () => { clearTimeout(draftTimer);saveCurrentDraft(); };
- $('prefix').addEventListener('input', scheduleDraftSave);
- $('clearSavedDraft').onclick = async() => {
-  if (!await confirmAction('Clear local recovery copy?',
-   'Delete the locally saved recovery copy? Photos currently open in the editor will stay, but they will not be recoverable until a new save.','Clear recovery copy')) return;
+ draftEnabled=canAutosave;
+ $('restoreRecoveryDraft').onclick=async()=>{
+  const record=await draftRead();
+  if(!record?.template)return notify('No automatic recovery copy found.');
+  if(hasUnsavedChanges()&&!await confirmAction('Restore recovery copy?','You have changes that have not been saved as a named project. Save Project first if you want to keep them, or confirm replacement.','Restore recovery'))return;
+  try{await restoreLocalDraft(record);$('savedProjectsDialog').close();showPanel(4);notify('Unfinished editing session restored.');}
+  catch(err){draftStatus('Saved draft could not be restored: '+err.message);notify('Could not restore recovery copy.');}
+ };
+ $('startBlankProject').onclick=()=>$('savedProjectsDialog').close();
+ try{
+  const names=await projectList();
+  if(hasRecovery||names.length)await openSavedProjects(true);
+ }catch(err){if(hasRecovery)await openSavedProjects(true);}
+ $('saveDraftNow').onclick=()=>{clearTimeout(draftTimer);saveCurrentDraft();};
+ $('prefix').addEventListener('input',scheduleDraftSave);
+ $('clearSavedDraft').onclick=async()=>{
+  if(!await confirmAction('Clear local recovery copy?',
+   'Delete the automatic recovery copy on this device? Previously saved named projects are not removed.','Clear recovery copy'))return;
   clearTimeout(draftTimer);
   const previous=draftEnabled;draftEnabled=false;
   const removed=await draftDelete();draftEnabled=previous;
   draftStatus(removed?'Recovery copy cleared. New edits will auto-save again.':'Could not clear local recovery storage.');
  };
- // Visibility changes are a last opportunity to save recent edits.
  document.addEventListener('visibilitychange',()=>{
-  if (document.hidden && draftEnabled) { clearTimeout(draftTimer);saveCurrentDraft(); }
+  if(document.hidden&&draftEnabled&&hasUnsavedChanges()){clearTimeout(draftTimer);saveCurrentDraft();}
+ });
+ window.addEventListener('pagehide',()=>{
+  if(draftEnabled&&hasUnsavedChanges()){clearTimeout(draftTimer);saveCurrentDraft();}
  });
 }
 
@@ -705,6 +728,15 @@ function loadHiddenSamples(){try{const a=JSON.parse(localStorage.getItem(HIDDEN_
 function persistHiddenSamples(){try{localStorage.setItem(HIDDEN_SAMPLE_KEY,JSON.stringify([...hiddenSamples]));return true}catch{return false}}
 function allFrameTemplates(){return[sampleTemplate('gold'),sampleTemplate('sample')].filter(t=>!hiddenSamples.has(t.id)).concat(app.templates)}
 function createBlankStarter(){const cv=document.createElement('canvas');cv.width=cv.height=1254;const c=cv.getContext('2d');c.fillStyle='#f7f8fc';c.fillRect(0,0,1254,1254);const data=cv.toDataURL('image/png');return{id:'new',name:'Blank workspace — upload a frame',data,rect:{x:0,y:0,w:1254,h:1254},shape:{type:'none',points:[]},frameOpening:{type:'none',points:[]},appearance:{borderColor:'#d7b34a',borderWidth:8,replaceOpening:false},collage:{count:1,layout:'grid',gap:1}}}
+async function openBlankWorkspace(){
+ const t=createBlankStarter(),frame=await decodedImage(t.data);
+ app.photos=[];app.selected=-1;app.activeCoverIndex=-1;
+ applyTemplate(t,t.data,frame);
+ if($('prefix'))$('prefix').value='';
+ if($('exportType'))$('exportType').value='image/jpeg';
+ if($('exportSize'))$('exportSize').value='original';
+ updateGallery();updateControls();setMode('map');updateLabels();
+}
 async function chooseAvailableFrame(){const t=allFrameTemplates()[0];if(t)await switchTemplate(t.id);else{const blank=createBlankStarter();const img=await decodedImage(blank.data);applyTemplate(blank,blank.data,img);setMode('map');notify('Library is empty. Upload a frame to begin.')}}
 async function deleteFromFrameLibrary(t){const builtin=['gold','sample'].includes(t.id);const question=builtin?'Remove the built-in frame "'+t.name+'" from your library? You can restore original samples later.':'Permanently delete saved frame "'+t.name+'" from this browser? This cannot be undone.';if(!await confirmAction(builtin?'Remove sample frame?':'Delete saved frame?',question,builtin?'Remove sample':'Delete frame'))return;const selected=app.template?.id===t.id;if(builtin){hiddenSamples.add(t.id);if(!persistHiddenSamples())notify('Could not persist sample removal. It may reappear after restarting.')}else{const ok=await dbDelete(t.id);if(!ok){notify('Could not delete saved frame.');return}app.templates=app.templates.filter(item=>item.id!==t.id)}if(selected)await chooseAvailableFrame();else populateTemplates();renderFrameLibrary();notify((builtin?'Removed sample frame: ':'Deleted saved frame: ')+t.name)}
 function refreshLibraryFilters(){
@@ -754,7 +786,7 @@ function setupPinnedNav(){const nav=$('pinNav');nav.querySelectorAll('button[dat
 
 function setupEvents(){
  $('saveProject').onclick=saveNamedProject;
- $('openProjects').onclick=openSavedProjects;
+ $('openProjects').onclick=()=>openSavedProjects();
  $('closeSavedProjects').onclick=()=>$('savedProjectsDialog').close();
  $('importProjectFile').onchange=async e=>{const file=e.target.files?.[0];e.target.value='';await importProjectBackup(file)};
  $('importProject').onclick=()=>$('importProjectFile').click();
@@ -868,5 +900,29 @@ const t={id:prior||'template_'+Date.now()+'_'+Math.random().toString(36).slice(2
  $('previous').onclick=()=>goPage(-1);$('next').onclick=()=>goPage(1);$('downloadOne').onclick=exportSelected;$('downloadZip').onclick=exportZip;$('prepareAll').onclick=prepareAllPhotos;$('closeExportGallery').onclick=()=>$('exportGallery').close();$('exportGallery').addEventListener('close',clearPreparedImages);$('shareBatch').onclick=sharePreparedImages;$('downloadBatch').onclick=downloadPreparedImages;
  window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName))){e.preventDefault();if(e.shiftKey)redo();else undo();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}if(e.target instanceof HTMLElement&&['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;if(e.key==='Escape'&&app.drawingPolygon){app.drawingPolygon=false;app.draftPoints=[];updateShapeUI();render()}if(e.key==='Enter'&&app.drawingPolygon){finishPolygon()}if(e.key==='ArrowRight'&&app.photos.length){goPage(1)}if(e.key==='ArrowLeft'&&app.photos.length){goPage(-1)}});
 }
-async function start(){setupAccordion();setupMobileDrawer();setupPinnedNav();setupEvents();loadHiddenSamples();loadFavoriteFrames();app.templates=await dbAll();populateTemplates();await chooseAvailableFrame();updateControls();updateGallery();setMode('map');status('Ready · v2.1. Customer photos are processed on this device.');await initializeDraftRecovery();}
+// Browsers control the wording of their native close-tab confirmation.
+let cleanProjectFingerprint=null;
+function projectFingerprint(){
+ if(!app.frame)return '';
+ const t=app.template||{};
+ return JSON.stringify([
+  t.id,t.name,t.data?.length||0,t.data?.slice(-64)||'',
+  app.rect,app.shape,app.frameOpening,app.appearance,app.collage,
+  app.photos.map(p=>[p.id,p.name,p.data?.length||0,p.data?.slice(-40)||'',p.zoom,p.rot,p.dx,p.dy,p.fit,p.filters,p.enhancement,p.covers]),
+  $('prefix')?.value||'',$('exportType')?.value||'',$('exportSize')?.value||''
+ ]);
+}
+function hasUnsavedChanges(){return cleanProjectFingerprint!==null&&projectFingerprint()!==cleanProjectFingerprint;}
+function updateUnsavedIndicator(){
+ const node=$('projectSaveStatus');
+ if(!node||cleanProjectFingerprint===null)return;
+ if(hasUnsavedChanges())node.textContent='Unsaved edits · Choose Save Project to keep a named copy. Automatic local recovery is also available.';
+ else if(node.textContent.startsWith('Unsaved edits'))node.textContent='All changes saved or workspace ready.';
+}
+window.addEventListener('beforeunload',event=>{
+ if(!hasUnsavedChanges())return;
+ event.preventDefault();
+ event.returnValue='';
+});
+async function start(){setupAccordion();setupMobileDrawer();setupPinnedNav();setupEvents();loadHiddenSamples();loadFavoriteFrames();app.templates=await dbAll();await openBlankWorkspace();cleanProjectFingerprint=projectFingerprint();updateUnsavedIndicator();status('Ready · v2.7. Blank workspace. Customer photos are processed on this device.');await initializeDraftRecovery();}
 start().catch(err=>{console.error(err);notify('App could not initialize: '+err.message)});
