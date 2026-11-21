@@ -146,25 +146,52 @@ function overlayLocalPoint(pt,g){
  const dx=pt.x-g.cx,dy=pt.y-g.cy,c=Math.cos(g.angle),s=Math.sin(g.angle);
  return {x:dx*c+dy*s,y:-dx*s+dy*c};
 }
+function overlayHitTarget(p){
+ const items=app.photos.length?getPagePhotos(currentPage()):[];
+ const cells=items.length?layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,app.rect,app.collage.gap):[];
+ for(const o of [...app.overlays].reverse()){
+  const candidates=o.scope==='canvas'?[{photo:null,cell:{x:0,y:0,w:app.frame.width,h:app.frame.height},index:-1}]:
+   items.map((photo,i)=>({photo,cell:cells[i],index:app.photos.indexOf(photo)}))
+    .filter(x=>x.cell&&(o.scope==='all'||o.photoId===x.photo.id));
+  for(const c of candidates){
+   const t=overlayTransform(o,c.photo);
+   if(!t.visible)continue;
+   const g=overlayGeo(t,c.cell),local=overlayLocalPoint(p,g);
+   if(Math.abs(local.x)<=g.w/2&&Math.abs(local.y)<=g.h/2)return {overlay:o,photo:c.photo,index:c.index};
+  }
+ }
+ return null;
+}
 function overlayPointerDown(p){
  if(!app.overlayEditing)return false;
- const sel=overlaySelected();
- if(!sel||sel.locked)return true;
- let photo=overlayTargetPhoto(sel),cell=overlayCurrentCell(sel);
- if(!cell)return true;
- const t=overlayTransform(sel,photo),g=overlayGeo(t,cell),local=overlayLocalPoint(p,g);
+ let sel=overlaySelected(),photo=sel?overlayTargetPhoto(sel):null,cell=sel?overlayCurrentCell(sel):null;
  const tol=Math.max(14,app.frame.width/90);
- const rotateY=-g.h/2-Math.max(tol*2,app.frame.height/40);
- let type=null,corner='';
- if(Math.hypot(local.x,local.y-rotateY)<tol*1.5)type='rotate';
- if(!type)for(const sx of [-1,1])for(const sy of [-1,1]){
-  if(Math.hypot(local.x-sx*g.w/2,local.y-sy*g.h/2)<tol*1.5){type='resize';corner=(sx<0?'l':'r')+(sy<0?'t':'b');break}
+ let type=null,corner='',g=null,t=null;
+ // Give an already-selected overlay's transform handles first priority.
+ if(sel&&cell&&!sel.locked){
+  t=overlayTransform(sel,photo);g=overlayGeo(t,cell);
+  const loc=overlayLocalPoint(p,g),ry=-g.h/2-Math.max(tol*2,app.frame.height/40);
+  if(Math.hypot(loc.x,loc.y-ry)<tol*1.5)type='rotate';
+  if(!type)for(const sx of [-1,1])for(const sy of [-1,1]){
+   if(Math.hypot(loc.x-sx*g.w/2,loc.y-sy*g.h/2)<tol*1.5){
+    type='resize';corner=(sx<0?'l':'r')+(sy<0?'t':'b');
+   }
+  }
  }
- if(!type&&Math.abs(local.x)<g.w/2+tol&&Math.abs(local.y)<g.h/2+tol)type='move';
- if(type){
+ if(!type){
+  const hit=overlayHitTarget(p);
+  if(hit){
+   if(hit.index>=0&&hit.index!==app.selected)selectPhoto(hit.index);
+   if(hit.overlay.id!==app.activeOverlayId)overlaySelect(hit.overlay.id);
+   sel=hit.overlay;photo=overlayTargetPhoto(sel);cell=overlayCurrentCell(sel);
+   if(!sel.locked)type='move';
+  }
+ }
+ if(type&&sel&&!sel.locked&&cell){
+  t=overlayTransform(sel,photo);g=overlayGeo(t,cell);
   saveHistory();
   app.overlayPointer={type,corner,start:p,initial:{...t},cell,photoId:photo?.id||null,geo:g};
- }
+ }else if(!type){app.activeOverlayId=null;overlayRefreshList();overlayRefreshEditor();render()}
  return true;
 }
 function overlayPointerMove(p){
