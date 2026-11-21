@@ -586,7 +586,7 @@ async function saveNamedProject(){
  if(name===null)return;
  const id='project_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
  const record={format:'MegaFrameProjectV1',id,name:name.slice(0,90),savedAt:Date.now(),photoCount:payload.photos.length,payload};
- try{await projectWrite(record);cleanProjectFingerprint=projectFingerprint();clearTimeout(draftTimer);await draftDelete();notify('Project saved: '+record.name);$('projectSaveStatus').textContent='Saved '+record.name+' on this device.';}
+ try{await projectWrite(record);cleanProjectFingerprint=projectFingerprint();clearTimeout(draftTimer);if(draftEnabled)await draftDelete();notify('Project saved: '+record.name);$('projectSaveStatus').textContent='Saved '+record.name+' on this device.';}
  catch(err){notify('Project not saved: '+err.message);$('projectSaveStatus').textContent='Save failed. Check browser storage capacity.';}
 }
 async function renderSavedProjects(){
