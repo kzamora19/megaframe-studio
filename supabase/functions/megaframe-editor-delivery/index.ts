@@ -2,7 +2,7 @@
 // Returns a private editor bundle as JSON after checking a PTG-issued studio ticket.
 // GET text/html is not used: default Supabase Edge domains rewrite HTML responses.
 import {createClient} from "npm:@supabase/supabase-js@2.49.8";
-import {studioTicketOk,deliveryConfigured,exactHttpsOrigin} from "../_shared/studio-private-policy.mjs";
+import {studioTicketOk,deliveryConfigured,exactHttpsOrigin,validPtgGatewayUrl} from "../_shared/studio-private-policy.mjs";
 
 const MEGAFRAME_URL=Deno.env.get("SUPABASE_URL")||"";
 const MEGAFRAME_SERVICE=Deno.env.get("SUPABASE_SECRET_KEY")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -11,7 +11,11 @@ const ALLOWED_ORIGIN=Deno.env.get("MEGAFRAME_STUDIO_ALLOWED_ORIGIN")||"";
 const BUNDLE_PATH=Deno.env.get("MEGAFRAME_PRIVATE_BUNDLE_PATH")||"";
 const BUNDLE_SHA=Deno.env.get("MEGAFRAME_PRIVATE_BUNDLE_SHA256")||"";
 const BUNDLE_BUCKET="megaframe-editor-release"; // Never reuse the live shared-assets bucket.
-const PTG_VERIFY_URL="https://agknxlowackphvwyvxge.supabase.co/functions/v1/ptg-studio-access";
+// Never connect a staging Studio to a live PTG authorization authority.
+const DEPLOYMENT_MODE=Deno.env.get("PTG_STUDIO_DEPLOYMENT_MODE")||"";
+const PTG_VERIFY_URL=validPtgGatewayUrl(
+  Deno.env.get("PTG_STUDIO_GATEWAY_URL")||"",DEPLOYMENT_MODE
+);
 const NO_CACHE={"Cache-Control":"no-store, private","Pragma":"no-cache","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer"};
 
 function json(origin:string,value:unknown,status=200){
@@ -25,7 +29,7 @@ function json(origin:string,value:unknown,status=200){
  return new Response(JSON.stringify(value),{status,headers});
 }
 function configReady(){
- return /^https:\/\/[^/]+\.supabase\.co$/.test(MEGAFRAME_URL)&&deliveryConfigured({
+ return !!PTG_VERIFY_URL && /^https:\/\/[^/]+\.supabase\.co$/.test(MEGAFRAME_URL)&&deliveryConfigured({
   origin:ALLOWED_ORIGIN,secret:VERIFY_SECRET,serviceKey:MEGAFRAME_SERVICE,
   path:BUNDLE_PATH,sha:BUNDLE_SHA,bucket:BUNDLE_BUCKET
  });

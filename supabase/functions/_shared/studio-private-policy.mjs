@@ -20,3 +20,26 @@ export function deliveryConfigured({origin, secret, serviceKey, path, sha, bucke
     typeof serviceKey === "string" && serviceKey.length >= 32 &&
     releasePathOk(path) && sha256Ok(sha) && bucket === "megaframe-editor-release";
 }
+
+/**
+ * Cross-project PTG Studio authorization endpoint.
+ * Staging must NEVER call the production PTG project; production cannot
+ * silently accept an unreviewed alternative verification endpoint.
+ * HTTPS only, exact Supabase function path, no port/query/credentials.
+ */
+export const PRODUCTION_PTG_REF = "agknxlowackphvwyvxge";
+export function validPtgGatewayUrl(raw,mode) {
+ if(typeof raw!=="string" || !["staging","production"].includes(mode))return "";
+ try{
+  const u=new URL(raw);
+  if(u.protocol!=="https:"||u.username||u.password||u.port||u.search||u.hash||
+     u.pathname!=="/functions/v1/ptg-studio-access")return "";
+  const match=/^([a-z0-9]{20})\.supabase\.co$/.exec(u.hostname);
+  if(!match || u.hostname!==u.hostname.toLowerCase())return "";
+  const isProd=match[1]===PRODUCTION_PTG_REF;
+  if(mode==="staging"&&isProd)return "";
+  if(mode==="production"&&!isProd)return "";
+  if(raw!==u.href)return "";
+  return u.href;
+ }catch{return "";}
+}
