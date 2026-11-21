@@ -37,7 +37,7 @@
     // Do not attempt to inspect iframe cookies or cross-origin draft storage.
     mount.replaceChildren();
     if(cloudPanel)cloudPanel.hidden=true;
-    window.BRANCHLINE_GOOGLE_DRIVE_BACKUP?.lock();
+    window.BRANCHLINE_CENTRAL_DRIVE?.lock();
     show(message, true);
   };
   const raw = new URLSearchParams(location.hash.startsWith("#") ? location.hash.slice(1) : "");
@@ -131,6 +131,18 @@
       if(!result.cloud||typeof result.cloud.status!=="string")
         throw Error("Invalid encrypted cloud response.");
       return result.cloud;
+    });
+  }
+  async function centralDriveOperation(operation,details={}){
+    return withProof(async()=>{
+      if(!active||expired||Date.now()>=expiry)throw Error("PTG session expired.");
+      let result;
+      try{result=await gateway("drive",{operation,...details});}
+      catch(error){stop("PTG Drive authorization could not be verified.");throw error;}
+      deadlineAt(result.expiresAt);
+      if(!result.drive||typeof result.drive.status!=="string")
+        throw Error("Invalid Google Drive response.");
+      return result.drive;
     });
   }
   function setupCloud(vault){
@@ -248,20 +260,12 @@
       active = true;
       status.hidden = true;
       setupCloud(vault);
-      if(window.BRANCHLINE_GOOGLE_DRIVE_BACKUP){
-        void window.BRANCHLINE_GOOGLE_DRIVE_BACKUP.setup({
-          studio:"megaframe",scope:data.draftScope,
-          clientId:config.googleDriveClientId||"",vault,
-          verify:async()=>{
-            if(!active||expired||Date.now()>=expiry)throw Error("PTG Studio session expired.");
-            try{
-              const result=await withProof(()=>gateway("check"));
-              if(!active||expired)throw Error("PTG Studio access ended.");
-              deadlineAt(result.expiresAt);
-            }catch(error){stop("PTG access could not be verified for Google Drive.");throw error;}
-          }
+      if(window.BRANCHLINE_CENTRAL_DRIVE){
+        void window.BRANCHLINE_CENTRAL_DRIVE.setup({
+          studio:"megaframe",vault,
+          request:(operation,fields)=>centralDriveOperation(operation,fields)
         }).catch(()=>{const n=document.getElementById("driveMessage");
-          if(n)n.textContent="Google Drive backup could not initialize.";});
+          if(n)n.textContent="Company Google Drive could not initialize.";});
       }
       const every = Number.isInteger(config.checkIntervalMs) && config.checkIntervalMs >= 500
         ? config.checkIntervalMs : 30000;
