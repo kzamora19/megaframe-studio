@@ -24,6 +24,7 @@ const assert=require('node:assert/strict');
    }
    assert.equal(await page.locator('#zoomNumber').isDisabled(),true,'Zoom cannot be changed without photo');
 
+   if(mobile)await page.locator('#mobileEditToggle').click();
    await page.locator('[data-panel="1"]').click();
    await page.locator('#shapePreset').selectOption('rect');
    await page.locator('#photosInput').setInputFiles({name:'sample.png',mimeType:'image/png',buffer:png});
