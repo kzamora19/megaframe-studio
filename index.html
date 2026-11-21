@@ -296,6 +296,54 @@ button.danger:hover{background:#ffe9ec}
 .recoveryDetails .draftStatus{margin-top:9px}
 #projectSaveStatus{margin:8px 0 0}
 @media(max-width:720px){.savedProjectsBody{padding:14px}.savedProjectActions{width:100%}}
+
+/* BRANCHLINE unified-interface branding — approved Workspace source tokens.
+   Only interactive editor chrome is styled. Customer images, frame templates,
+   preview canvas pixels, and PNG/PDF export settings are unchanged. */
+:root{
+  --branchline-navy:#1d2836;
+  --branchline-blue:#355ee8;
+  --branchline-blue-dark:#2348c7;
+  --branchline-blue-soft:#eef2ff;
+  --branchline-white:#fff;
+  --branchline-line:#e9edf1;
+}
+body>.appbar{
+  height:auto;min-height:74px;
+  background:var(--branchline-navy);
+  color:var(--branchline-white);
+  border-bottom:2px solid var(--branchline-blue);
+}
+body>.appbar .brandname{color:var(--branchline-white);font-weight:850}
+body>.appbar .brandname span{color:#dce6ff!important}
+body>.appbar .brandtag{color:#dce6ff;font-weight:650;letter-spacing:.01em}
+body>.appbar .btn.ghost{
+  background:var(--branchline-blue-soft);
+  border-color:#d8e2ff;
+  color:var(--branchline-blue-dark);
+}
+body>.appbar .btn.ghost:hover:not(:disabled){
+  background:#dce6ff;border-color:#bccdff;
+}
+body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
+.appbody>.sidebar{border-right-color:var(--branchline-line)}
+.appbody>.sidebar .pinNav button.active,
+.appbody>.sidebar .pinNav button:hover{
+  background:var(--branchline-blue-soft);
+  border-color:#aac0ff;
+  color:var(--branchline-blue-dark);
+}
+.appbody .btn.primary{background:var(--branchline-blue);border-color:var(--branchline-blue)}
+.appbody .btn.primary:hover:not(:disabled){background:var(--branchline-blue-dark);border-color:var(--branchline-blue-dark)}
+.appbody .btn.dark{background:var(--branchline-navy);border-color:var(--branchline-navy)}
+.appbody .workspaceHeader h1{color:var(--branchline-navy)}
+@media(max-width:720px){
+  body>.appbar{min-height:74px;padding:12px 15px;gap:10px}
+  body>.appbar .brand{min-width:0}
+  body>.appbar .brandname{font-size:16px}
+  body>.appbar .brandtag{font-size:10px;line-height:1.3;max-width:29ch}
+}
+
 </style>
 </head>
 <body>

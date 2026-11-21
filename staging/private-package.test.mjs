@@ -18,6 +18,13 @@ test("private MegaFrame build leaves the public output editor-free", () => {
     assert.equal(manifest.inlined.length,15);
     assert.ok(editor.length>75000);
     assert.ok(editor.startsWith("<!-- PRIVATE MEGAFRAME EDITOR BUNDLE."));
+    assert.match(editor,/Social Media Photo Frame Generator/);
+    assert.match(editor,/--branchline-blue:#355ee8/);
+    assert.match(editor,/--branchline-blue-dark:#2348c7/);
+    assert.match(editor,/--branchline-navy:#1d2836/);
+    assert.match(editor,/\.appbody \.btn\.primary/);
+    assert.ok(!editor.includes("Promotional Flyer & Sale Artwork Generator"),
+      "MegaFrame identity must not be replaced by MegaFlyer branding");
     assert.match(editor,/<script>/);
     assert.doesNotMatch(editor,/megaframe_named_projects_v1/, "The public named-project IndexedDB must be replaced in the private bundle");
     assert.match(editor,/project-list/, "Named projects use a protected parent vault bridge");

@@ -117,6 +117,15 @@ try {
   assert.equal(await page.locator("#studio-editor-frame").getAttribute("sandbox"),
     "allow-scripts allow-downloads");
   const frame=page.frameLocator("#studio-editor-frame");
+  assert.equal((await frame.locator(".brandtag").textContent()).trim(),
+    "Social Media Photo Frame Generator");
+  const headerChrome=await frame.locator(".appbar").evaluate(el=>({
+    background:getComputedStyle(el).backgroundColor,
+    subtitle:getComputedStyle(el.querySelector(".brandtag")).color,
+  }));
+  assert.equal(headerChrome.background,"rgb(29, 40, 54)",
+    "Protected MegaFrame uses the Branchline navy header.");
+  assert.equal(headerChrome.subtitle,"rgb(220, 230, 255)");
   await frame.locator("#previewCanvas").waitFor({timeout:90000});
   await frame.locator("#frameLibrary").waitFor({state:"attached",timeout:30000});
   assert.equal(await frame.locator("#frameLibrary").isHidden(),true);
@@ -314,6 +323,19 @@ try {
     .every(x=>/^[ABCD]{43}$/.test(x.ticket)));
   assert.ok(requests.filter(x=>x.action==="check")
     .every(x=>!Object.hasOwn(x,"ticket") && /^[A-Za-z0-9_-]{80,96}$/.test(x.signature)));
+
+  // Branding must also fit a narrow mobile screen without modifying editor data.
+  await page.setViewportSize({width:390,height:800});
+  const mobileHeader=await other.locator(".appbar").evaluate(el=>({
+    title:el.querySelector(".brandname")?.textContent?.trim(),
+    subtitle:el.querySelector(".brandtag")?.textContent?.trim(),
+    right:el.getBoundingClientRect().right,
+    width:document.documentElement.clientWidth,
+  }));
+  assert.equal(mobileHeader.title,"MegaFrame Studio");
+  assert.equal(mobileHeader.subtitle,"Social Media Photo Frame Generator");
+  assert.ok(mobileHeader.right<=mobileHeader.width+2,
+    "Protected mobile MegaFrame header must fit the iframe viewport.");
   // Collect errors explicitly; these expose compatibility problems with
   // opaque-origin localStorage, OAuth, or the original editor scripts.
   if(errors.length)console.log("STAGED_EDITOR_ERRORS:",JSON.stringify(errors.slice(0,12)));
