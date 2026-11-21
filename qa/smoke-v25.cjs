@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
  try {
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'));
+  await page.locator('#createNewProject').click();
   const navMin=await page.locator('.pinNav button').first().evaluate(el=>parseFloat(getComputedStyle(el).minHeight));
   assert.ok(navMin>=44,'Mobile navigation has a usable touch target');
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9J6ofLwAAAABJRU5ErkJggg==','base64');
