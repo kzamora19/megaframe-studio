@@ -126,6 +126,49 @@ function addEmojiCover(symbol='😎'){
  setLiveExportPreview(false);setMode('adjust');showPanel(4);updateEmojiControls();render();
  notify('Emoji added. Drag it over the face; use Size to adjust. Add another for another face.');
 }
+function renderEmojiPicker(){
+ const tabs=$('emojiPickerTabs'),grid=$('emojiPickerGrid');
+ tabs.replaceChildren();grid.replaceChildren();
+ for(const category of EMOJI_CATEGORIES){
+  const b=document.createElement('button');b.type='button';b.className='emojiPickerTab'+(category.id===emojiCategory?' active':'');
+  b.textContent=category.icon;b.title=category.label;b.setAttribute('aria-label',category.label);
+  b.setAttribute('aria-pressed',String(category.id===emojiCategory));
+  b.onclick=()=>{emojiCategory=category.id;renderEmojiPicker()};
+  tabs.append(b);
+ }
+ const query=emojiQuery.trim().toLocaleLowerCase();
+ const entries=EMOJI_LIBRARY.filter(e=>query
+  ? e.symbol.includes(query)||e.keywords.includes(query)||e.category.includes(query)
+  : e.category===emojiCategory);
+ $('emojiPickerCaption').textContent=query?'Results · '+entries.length:
+   (EMOJI_CATEGORIES.find(c=>c.id===emojiCategory)?.label||'Emojis')+' · '+entries.length;
+ const group=document.createDocumentFragment();
+ for(const entry of entries){
+  const b=document.createElement('button');b.type='button';b.className='emojiPickerItem';
+  b.textContent=entry.symbol;b.title=entry.keywords;b.setAttribute('aria-label',entry.keywords);
+  b.onclick=()=>chooseEmoji(entry.symbol);
+  group.append(b);
+ }
+ if(!entries.length){const p=document.createElement('p');p.className='emojiPickerEmpty';p.textContent='No matching emojis. Try another keyword.';group.append(p)}
+ grid.append(group);
+}
+function openEmojiPicker(mode='add'){
+ if(!getPhoto())return notify('Import and select a customer photo first.');
+ if(!hasPhotoShape())return notify('Choose a photo opening before placing an emoji.');
+ emojiPickerMode=mode==='replace'&&activeCover()?'replace':'add';
+ emojiQuery='';emojiCategory='faces';$('emojiPickerSearch').value='';
+ $('emojiPickerTitle').textContent=emojiPickerMode==='replace'?'Change the selected emoji':'Choose a face-cover emoji';
+ renderEmojiPicker();$('emojiPickerDialog').showModal();$('emojiPickerSearch').focus();
+}
+function closeEmojiPicker(){if($('emojiPickerDialog').open)$('emojiPickerDialog').close()}
+function chooseEmoji(symbol){
+ if(!FACE_EMOJIS.has(symbol))return;
+ closeEmojiPicker();
+ if(emojiPickerMode==='replace'&&activeCover()){
+  saveHistory();activeCover().symbol=symbol;updateEmojiControls();render();notify('Emoji changed.');
+ }else addEmojiCover(symbol);
+}
+
 function coverGeometry(cover,cell){
  const diameter=Math.min(cell.w,cell.h)*clamp(cover.size,.12,.7);
  return {x:cell.x+cell.w*cover.x,y:cell.y+cell.h*cover.y,radius:diameter*.62,diameter};
@@ -665,8 +708,12 @@ const t={id:prior||'template_'+Date.now()+'_'+Math.random().toString(36).slice(2
   ['centerPhoto',p=>{p.dx=0;p.dy=0}],
   ['resetPhotoPosition',p=>{p.zoom=1;p.rot=0;p.dx=0;p.dy=0}]
  ]) $(id).onclick=()=>{const p=getPhoto();if(!p)return;saveHistory();update(p);updateControls();render();};
- $('addEmojiCover').onclick=addEmojiCover;
- $('emojiCoverChoice').onchange=e=>{const cover=activeCover();if(!cover)return;saveHistory();cover.symbol=FACE_EMOJIS.has(e.target.value)?e.target.value:'😎';updateEmojiControls();render()};
+ $('addEmojiCover').onclick=()=>openEmojiPicker('add');
+ $('emojiPickerOpen').onclick=()=>openEmojiPicker(activeCover()?'replace':'add');
+ $('emojiPickerClose').onclick=closeEmojiPicker;
+ $('emojiPickerSearch').oninput=e=>{emojiQuery=e.target.value;renderEmojiPicker()};
+ $('emojiPickerDialog').addEventListener('click',e=>{if(e.target===$('emojiPickerDialog'))closeEmojiPicker()});
+ $('emojiPickerDialog').addEventListener('close',()=>{emojiQuery='';$('emojiPickerSearch').value=''});
  $('emojiCoverSize').onpointerdown=()=>{if(activeCover())saveHistory()};
  $('emojiCoverSize').onkeydown=e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(e.key)&&activeCover())saveHistory()};
  $('emojiCoverSize').oninput=e=>{const cover=activeCover();if(!cover)return;cover.size=clamp(Number(e.target.value)/100,.12,.7);$('emojiCoverSizeValue').textContent=e.target.value+'%';render()};
