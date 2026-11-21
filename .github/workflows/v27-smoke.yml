@@ -7,6 +7,7 @@ on:
       - qa/smoke-v27.cjs
       - qa/smoke-exit-modal.cjs
       - qa/smoke-right-rail-reload.cjs
+      - qa/smoke-modal-prompts.cjs
       - qa/smoke-v27-cloud.cjs
       - shared.js
       - db/v27_template_organization.sql
@@ -28,6 +29,7 @@ jobs:
           node --check qa/smoke-v27.cjs
           node --check qa/smoke-exit-modal.cjs
           node --check qa/smoke-right-rail-reload.cjs
+          node --check qa/smoke-modal-prompts.cjs
           node --check qa/smoke-v27-cloud.cjs
           node --check shared.js
       - name: Install Chromium
@@ -45,3 +47,4 @@ jobs:
           node qa/smoke-v27-cloud.cjs
           node qa/smoke-exit-modal.cjs
           node qa/smoke-right-rail-reload.cjs
+          node qa/smoke-modal-prompts.cjs
