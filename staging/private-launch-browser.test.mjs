@@ -18,7 +18,8 @@ try {
     {cwd:root,stdio:"pipe",timeout:60000});
   const privateHtml=readFileSync(join(tmp,"private/studio.html"),"utf8");
   const manifest=JSON.parse(readFileSync(join(tmp,"manifest.json"),"utf8"));
-  const draftScope="S".repeat(43),draftKey=Buffer.alloc(32,77).toString("base64url");
+  let draftScope="S".repeat(43);
+  const draftKey=Buffer.alloc(32,77).toString("base64url");
   const sha=value=>createHash("sha256").update(value).digest("hex");
   assert.equal(sha(privateHtml),manifest.sha256);
   const original=readFileSync(join(staging,"index.html"),"utf8");
@@ -163,7 +164,49 @@ try {
   assert.match(await page.locator("#status").textContent(),/revoked|cannot be verified/i);
   assert.ok(requests.some(x=>x.action==="load"));
   assert.ok(requests.some(x=>x.action==="check"));
-  assert.ok(requests.every(x=>/^[AB]{43}$/.test(x.ticket)));
+  // A new valid PTG launch under the same account restores the real photo.
+  mode="authorized";
+  await page.goto(origin+"/#ptg_studio_ticket="+"C".repeat(43),
+    {waitUntil:"domcontentloaded"});
+  await page.locator("#studio-editor-frame").waitFor({timeout:90000});
+  const restored=page.frameLocator("#studio-editor-frame");
+  await restored.locator("#actionModal").waitFor({state:"visible",timeout:30000});
+  assert.match(await restored.locator("#actionModalTitle").textContent(),
+    /Restore unfinished editing session/);
+  await restored.locator("#actionModalConfirm").click();
+  await restored.locator("#photoCount").getByText(/1 photo/i).waitFor({timeout:20000});
+  assert.match(await restored.locator("#draftStatus").textContent(),/Draft saved|Auto-save|Restored/i);
+
+  // Changing the PTG account's server-issued recovery scope MUST NOT display
+  // another account's unfinished photos, even with the same test crypto key.
+  draftScope="X".repeat(43);
+  await page.goto(origin+"/#ptg_studio_ticket="+"D".repeat(43),
+    {waitUntil:"domcontentloaded"});
+  await page.locator("#studio-editor-frame").waitFor({timeout:90000});
+  const other=page.frameLocator("#studio-editor-frame");
+  await other.locator("#photoCount").waitFor({timeout:30000});
+  assert.match(await other.locator("#photoCount").textContent(),/0 photos/i);
+  assert.equal(await other.locator("#actionModal").isVisible(),false);
+  // Stored bytes must be opaque ciphertext rather than a plaintext photo record.
+  const encrypted=await page.evaluate(async () => {
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open("megaframe-protected-draft-v1");
+      req.onerror=()=>reject(Error("Vault database unavailable"));
+      req.onsuccess=()=>{
+        const tx=req.result.transaction("drafts","readonly");
+        const get=tx.objectStore("drafts").get("S".repeat(43));
+        get.onerror=()=>reject(Error("Stored draft unavailable"));
+        get.onsuccess=()=>{
+          const value=get.result;
+          resolve(!!value && value.format==="AES-GCM-v1" &&
+            value.encrypted instanceof ArrayBuffer &&
+            value.iv instanceof Uint8Array && value.encrypted.byteLength>100);
+        };
+      };
+    });
+  });
+  assert.equal(encrypted,true,"All locally stored photo drafts must be AES-GCM ciphertext");
+  assert.ok(requests.every(x=>/^[ABCD]{43}$/.test(x.ticket)));
   // Collect errors explicitly; these expose compatibility problems with
   // opaque-origin localStorage, OAuth, or the original editor scripts.
   if(errors.length)console.log("STAGED_EDITOR_ERRORS:",JSON.stringify(errors.slice(0,12)));
