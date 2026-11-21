@@ -10,6 +10,7 @@ const assert = require('node:assert/strict');
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.locator('#draftStatus').waitFor({state:'visible',timeout:45000});
   await page.waitForFunction(() => document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:45000});
+  await page.locator('#createNewProject').click();
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9J6ofLwAAAABJRU5ErkJggg==','base64');
   await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
@@ -25,6 +26,8 @@ const assert = require('node:assert/strict');
   await page.waitForFunction(() => document.getElementById('draftStatus')?.textContent?.includes('Draft saved'),{timeout:35000});
   page.once('dialog',dialog=>dialog.accept()); // Approve the native unsaved-work close warning.
   await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#startupChoiceDialog[open]').waitFor();
+  await page.locator('#retrieveStartupProject').click();
   await page.locator('#savedProjectsDialog[open]').waitFor({timeout:45000});
   await page.locator('#restoreRecoveryDraft').click();
   await page.waitForFunction(() => document.getElementById('photoCount')?.textContent?.includes('1 photo'),{timeout:30000});
