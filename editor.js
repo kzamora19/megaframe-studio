@@ -1176,5 +1176,82 @@ window.addEventListener('beforeunload',event=>{
  event.preventDefault();
  event.returnValue='';
 });
-async function start(){overlayInitialState();setupAccordion();setupMobileDrawer();setupPinnedNav();setupEvents();overlayInit();loadHiddenSamples();loadFavoriteFrames();app.templates=await dbAll();await openBlankWorkspace();cleanProjectFingerprint=projectFingerprint();updateUnsavedIndicator();status('Ready · v2.7. Blank workspace. Customer photos are processed on this device.');await initializeDraftRecovery();}
+// Every adjustable range readout can also be typed directly. The original
+// readout remains in the DOM for older editor code and is synchronized with
+// the new number control, so existing sliders, history, presets and restores
+// continue to be the only source of truth.
+function setupEditableEditorValues(){
+ const controls=[
+  ['shapeScale','shapeScaleValue','%'],
+  ['borderWidth','borderWidthValue','px'],
+  ['cornerCut','cornerValue','%'],
+  ['collageGap','collageGapValue','%'],
+  ['zoom','zoomValue','%'],
+  ['rotate','rotateValue','°'],
+  ['emojiCoverSize','emojiCoverSizeValue','%'],
+  ['filterBrightness','filterBrightnessValue','%'],
+  ['filterContrast','filterContrastValue','%'],
+  ['filterSaturation','filterSaturationValue','%'],
+  ['filterGrayscale','filterGrayscaleValue','%'],
+  ['filterSepia','filterSepiaValue','%'],
+  ['enhanceSharpness','enhanceSharpnessValue','%'],
+  ['enhanceDenoise','enhanceDenoiseValue','%']
+ ];
+ for(const [sliderId,valueId,unit] of controls){
+  const slider=$(sliderId),oldReadout=$(valueId);
+  if(!slider||!oldReadout||$(sliderId+'Number'))continue;
+  const label=oldReadout.parentElement?.querySelector('label')?.textContent?.trim()||sliderId;
+  const badge=document.createElement('span');
+  badge.className='editorNumberBadge';
+  const input=document.createElement('input');
+  input.type='number';input.id=sliderId+'Number';
+  input.min=slider.min;input.max=slider.max;input.step=slider.step||'1';
+  input.inputMode='decimal';
+  input.setAttribute('aria-label',label+' value ('+slider.min+' to '+slider.max+(unit==='°'?' degrees':unit)+')');
+  input.title='Type a value between '+slider.min+' and '+slider.max+(unit==='°'?' degrees':unit);
+  const suffix=document.createElement('span');
+  suffix.className='numberUnit';suffix.textContent=unit;
+  suffix.setAttribute('aria-hidden','true');
+  badge.append(input,suffix);
+  oldReadout.hidden=true;
+  oldReadout.after(badge);
+  const sync=()=>{
+   const disabled=slider.disabled;
+   input.disabled=disabled;badge.classList.toggle('is-disabled',disabled);
+   if(document.activeElement!==input)input.value=slider.value;
+  };
+  slider.addEventListener('input',sync);
+  slider.addEventListener('change',sync);
+  new MutationObserver(sync).observe(oldReadout,{childList:true,characterData:true,subtree:true});
+  new MutationObserver(sync).observe(slider,{attributes:true,attributeFilter:['disabled','min','max','step']});
+  const revert=()=>{input.value=slider.value};
+  input.addEventListener('focus',()=>input.select());
+  input.addEventListener('keydown',event=>{
+   if(event.key==='Enter'){event.preventDefault();input.blur()}
+   if(event.key==='Escape'){event.preventDefault();revert();input.blur()}
+  });
+  input.addEventListener('change',()=>{
+   if(slider.disabled||input.value.trim()===''){revert();return}
+   const raw=Number(input.value),min=Number(slider.min),max=Number(slider.max);
+   const step=Number(slider.step)||1;
+   if(!Number.isFinite(raw)){revert();return}
+   const bounded=Math.max(min,Math.min(max,raw));
+   const snapped=Math.max(min,Math.min(max,Math.round((bounded-min)/step)*step+min));
+   const value=Number(snapped.toFixed(6));
+   if(value!==Number(slider.value)){
+    // Match a normal slider interaction so the existing undo/redo history
+    // and photo-specific editing logic still run exactly once.
+    if(typeof slider.onpointerdown==='function')slider.onpointerdown();
+    slider.value=String(value);
+    slider.dispatchEvent(new Event('input',{bubbles:true}));
+    slider.dispatchEvent(new Event('change',{bubbles:true}));
+   }
+   revert();
+  });
+  input.addEventListener('blur',sync);
+  sync();
+ }
+}
+
+async function start(){overlayInitialState();setupAccordion();setupMobileDrawer();setupPinnedNav();setupEvents();setupEditableEditorValues();overlayInit();loadHiddenSamples();loadFavoriteFrames();app.templates=await dbAll();await openBlankWorkspace();cleanProjectFingerprint=projectFingerprint();updateUnsavedIndicator();status('Ready · v2.7. Blank workspace. Customer photos are processed on this device.');await initializeDraftRecovery();}
 start().catch(err=>{console.error(err);notify('App could not initialize: '+err.message)});
