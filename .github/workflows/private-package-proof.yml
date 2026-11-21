@@ -10,6 +10,7 @@ on:
       - 'supabase/functions/**'
       - 'supabase/config.toml'
       - '.github/workflows/private-package-proof.yml'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
   contents: read

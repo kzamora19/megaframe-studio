@@ -89,7 +89,9 @@ jobs:
           node qa/smoke-drive.cjs
 
   publish:
-    if: github.event_name != 'pull_request'
+    # DO NOT publish the public editor when the draft is merged. The explicit
+    # owner-controlled release variable must be enabled only after hosted acceptance.
+    if: github.event_name != 'pull_request' && vars.MEGAFRAME_CUTOVER_APPROVED == 'true'
     needs: verify
     runs-on: ubuntu-24.04
     permissions:
@@ -105,11 +107,18 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Prepare static site
-        run: python3 scripts/build_pages_site.py _site
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify legacy public editor retirement preview (fail closed)
+        run: |
+          node --check staging/build-cutover-pages.mjs
+          node --test staging/cutover-pages.test.mjs
+      - name: Prepare approved editor-free public Pages artifact ONLY
+        run: PTG_STUDIO_CUTOVER_PREVIEW=1 node staging/build-cutover-pages.mjs staging/.cutover-release
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: staging/.cutover-release
       - id: deployment
         name: Publish app to GitHub Pages
         uses: actions/deploy-pages@v4

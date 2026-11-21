@@ -31,6 +31,13 @@ test("Retirement Pages artifact excludes editor source, preserves icon, and incl
   assert.doesNotMatch(sw,/caches\.match|caches\.open|indexedDB|localStorage/);
   assert.doesNotMatch(client,/indexedDB\.(?:deleteDatabase|open)|localStorage\.(?:clear|removeItem)|caches\.delete|unregister\(/);
   assert.equal(readdirSync(join(target,"icons")).length,3);
+  const workflow=readFileSync(join(root,".github/workflows/pages.yml"),"utf8");
+  assert.match(workflow,/vars\.MEGAFRAME_CUTOVER_APPROVED == 'true'/,
+    "Main-branch Pages publishing must require explicit release approval");
+  const publisher=workflow.slice(workflow.indexOf("\n  publish:"));
+  assert.match(publisher,/PTG_STUDIO_CUTOVER_PREVIEW=1 node staging\/build-cutover-pages\.mjs staging\/\.cutover-release/);
+  assert.match(publisher,/path: staging\/\.cutover-release/);
+  assert.doesNotMatch(publisher,/python3 scripts\/build_pages_site\.py _site/);
   assert.equal(readFileSync(join(root,"scripts/build_pages_site.py"),"utf8").includes("build-cutover-pages"),false,
    "Production Pages publish job must not be changed before approval");
  }finally{rmSync(target,{recursive:true,force:true});}
