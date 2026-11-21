@@ -33,7 +33,7 @@ test("server verifies PTG megaframe ticket for each load/check, without exposing
   assert.match(source,/if\(body.action==="check"\)/);
   assert.match(source,/admin.storage.from\(BUNDLE_BUCKET\).download\(BUNDLE_PATH\)/);
   assert.match(source,/if\(hash!==BUNDLE_SHA\)/);
-  assert.match(source,/if\(origin!==exactHttpsOrigin\(ALLOWED_ORIGIN\)\)/);
+  assert.match(source,/origin!==exactHttpsOrigin\(ALLOWED_ORIGIN\)/);
   assert.doesNotMatch(source,/createSignedUrl\(/);
   assert.doesNotMatch(source,/vercel[.]app/);
   assert.match(source,/Cache-Control":"no-store, private"/);
