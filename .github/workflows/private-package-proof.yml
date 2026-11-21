@@ -37,6 +37,8 @@ jobs:
           node --check staging/studio-access/draft-vault.js
           node --check staging/studio-access/drive-backup.js
           node --test staging/drive-backup.test.mjs
+          node --check staging/studio-access/central-drive.js
+          node --test staging/central-drive.test.mjs
           node --check staging/cloud-backup-browser.test.mjs
           node --check staging/editor-draft-bridge.js
       - uses: denoland/setup-deno@v2
