@@ -20,12 +20,16 @@ const assert=require('node:assert/strict');
   await page.locator('#studioInfoClose').click();
   assert.equal(await page.locator('#studioInfoDialog').isVisible(),false);
   // New version banner should request a modal, not skip waiting immediately.
+  await page.waitForFunction(()=>typeof window.megaFrameApplyUpdate==='function');
   await page.evaluate(()=>{
+   // Simulate a worker activated by another browser tab. The editor must not
+   // reload automatically; instead the PWA client presents an update control.
+   navigator.serviceWorker.dispatchEvent(new Event('controllerchange'));
+   navigator.serviceWorker.dispatchEvent(new Event('controllerchange'));
    window.__updateRequestCount=0;
    window.megaFrameApplyUpdate=()=>window.__updateRequestCount++;
-   document.getElementById('pwa-update').hidden=false;
-   document.getElementById('pwa-update-reload').onclick=()=>window.megaFrameOpenReloadModal('update');
   });
+  assert.equal(await page.locator('#pwa-update').isVisible(),true,'Update banner shown instead of forced reload');
   await page.locator('#pwa-update-reload').click();
   await page.locator('#reloadStudioDialog[open]').waitFor();
   assert.match(await page.locator('#reloadStudioTitle').textContent(),/Update MegaFrame Studio/);
