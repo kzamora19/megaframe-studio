@@ -50,6 +50,8 @@ const assert=require('node:assert/strict');
   if(await page.locator('#actionModal[open]').count())await page.locator('#actionModalCancel').click();
   await page.locator('[data-panel="0"]').click();
   await page.locator('#openProjects').click();
+  await page.locator('#savedProjectsDialog[open]').waitFor();
+  await page.waitForFunction(()=>document.querySelectorAll('.savedProjectCard').length===2,{timeout:20000});
   assert.equal(await page.locator('.savedProjectCard').count(),2,'Projects persist after a page reload');
   await page.locator('.savedProjectCard').filter({hasText:'Customer frame A'}).getByRole('button',{name:'Open'}).click();
   await page.locator('#actionModalConfirm').click();
