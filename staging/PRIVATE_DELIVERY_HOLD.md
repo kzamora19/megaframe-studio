@@ -21,3 +21,12 @@ Existing draft PR #16 protects requests with a Vercel proxy, conflicting with th
 7. Obtain separate, explicit production release approval after staging and real-account security checks.
 
 **Current work is not an authentication solution or a functioning protected MegaFrame.**
+
+## November 21 — actual sandbox-browser acceptance finding
+- Staging Chrome tests confirmed that a forged/mismatched private-bundle digest is denied; a valid mock PTG ticket loads the actual editor into an opaque-origin sandbox; the photo upload and full PNG download work; and a simulated session revocation removes the frame.
+- The 8MB+ source is inlined with exact SHA-256 Content Security Policy script hashes; source and secret files remain out of the live GitHub Pages publication.
+- **BLOCKER: photo draft auto-save does NOT work inside the sandbox.** The current editor's IndexedDB is unavailable from this opaque origin, reporting: `Draft not saved (storage unavailable or full)`. A release cannot silently discard customer edits. The staged browser test now hard-fails when a draft cannot be recovered.
+- Any secure persistence solution must preserve local-only customer-photo privacy, use an origin-separated authenticated storage bridge or another reviewed isolated design, and verify resume after ticket expiry/forced logout on real accounts. Enabling `allow-same-origin` on the shared github.io origin is NOT an acceptable shortcut.
+- Other outstanding checks: Supabase cloud template Auth, optional Google Drive backup, mobile/touch/PWA behavior, input image quality, actual Edge Function performance with the 8MB+ JSON response, and server-side session renewal/replay limits.
+
+**Current live MegaFrame remains on GitHub Pages + Supabase, unchanged; this is a deliberately failing release gate.**
