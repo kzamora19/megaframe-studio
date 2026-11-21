@@ -8,6 +8,10 @@
   let active = false, checking = false, expired = false, expiry = 0;
   let interval = null, deadline = null, warned = false;
   let draftPort = null, keyPair = null, proof = null;
+  const cloudPanel=document.getElementById("cloudPanel");
+  const cloudNote=document.getElementById("cloudMessage");
+  let proofQueue=Promise.resolve();
+  const withProof=fn=>{const next=proofQueue.then(fn);proofQueue=next.catch(()=>{});return next;};
   const show = (message, addPortal = false) => {
     status.replaceChildren(document.createTextNode(message));
     if (addPortal) {
@@ -32,6 +36,7 @@
     ticket = "";
     // Do not attempt to inspect iframe cookies or cross-origin draft storage.
     mount.replaceChildren();
+    if(cloudPanel)cloudPanel.hidden=true;
     show(message, true);
   };
   const raw = new URLSearchParams(location.hash.startsWith("#") ? location.hash.slice(1) : "");
@@ -47,7 +52,7 @@
   }
   const b64url = buffer => btoa(String.fromCharCode(...new Uint8Array(buffer)))
     .replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
-  async function gateway(action) {
+  async function gateway(action,cloudDetails={}) {
     let payload;
     if (action === "load") {
       // Private key is non-extractable and stays in this browser document.
@@ -61,7 +66,7 @@
         "ptg-studio-v1|megaframe|" + proof.sessionId + "|" + proof.challenge);
       const signature = b64url(await crypto.subtle.sign(
         {name:"ECDSA",hash:"SHA-256"},keyPair.privateKey,statement));
-      payload = {action,sessionId:proof.sessionId,challenge:proof.challenge,signature};
+      payload = {action,...cloudDetails,sessionId:proof.sessionId,challenge:proof.challenge,signature};
     }
     const response = await fetch(config.endpoint, {
       method: "POST", cache: "no-store", redirect: "error", referrerPolicy: "no-referrer",
@@ -75,6 +80,7 @@
         typeof result.challenge !== "string" ||
         !/^[A-Za-z0-9_-]{43}$/.test(result.challenge))
       throw Error("PTG authorization denied or unavailable.");
+    if(proof && proof.sessionId!==result.sessionId)throw Error("Studio account session changed.");
     proof = {sessionId:result.sessionId,challenge:result.challenge};
     if(action === "load") ticket = ""; // Burn bearer in browser memory after one-time exchange.
     return result;
@@ -99,7 +105,7 @@
     if (Date.now() >= expiry) { stop("PTG access expired."); return; }
     checking = true;
     try {
-      const data = await gateway("check");
+      const data = await withProof(()=>gateway("check"));
       if (!active || expired) return;
       deadlineAt(data.expiresAt);
       warn();
@@ -111,6 +117,81 @@
     if (!active || document.visibilityState !== "visible") return;
     void check();
   });
+  // Manual encrypted cloud archive is stored in the EXISTING PTG project,
+  // keyed by the server-verified PTG actor; no fifth project or extra sign-in.
+  // Every request consumes the same serialized one-use P-256 challenge as check().
+  async function cloudOperation(operation,details={}){
+    return withProof(async()=>{
+      if(!active||expired||Date.now()>=expiry)throw Error("PTG session expired.");
+      let result;
+      try{result=await gateway("cloud",{operation,...details});}
+      catch(error){stop("PTG cloud authorization could not be verified.");throw error;}
+      deadlineAt(result.expiresAt);
+      if(!result.cloud||typeof result.cloud.status!=="string")
+        throw Error("Invalid encrypted cloud response.");
+      return result.cloud;
+    });
+  }
+  function setupCloud(vault){
+    if(!cloudPanel||!cloudNote)return;
+    const local=document.getElementById("cloudLocalProject"),remote=document.getElementById("cloudRemoteProject");
+    const say=value=>{cloudNote.textContent=String(value);};
+    const choices=(select,items)=>{
+      select.replaceChildren();
+      for(const item of items){
+        const opt=document.createElement("option");opt.value=item.id;
+        opt.textContent=item.label||item.id;select.append(opt);
+      }
+    };
+    let busy=false;
+    const doTask=fn=>async()=>{
+      if(busy||!active||expired)return;
+      busy=true;
+      for(const btn of cloudPanel.querySelectorAll("button"))btn.disabled=true;
+      try{await fn();}catch(error){say(error?.message||"Encrypted cloud operation failed.");}
+      finally{busy=false;for(const btn of cloudPanel.querySelectorAll("button"))btn.disabled=false;}
+    };
+    let remoteItems=[];
+    async function refresh(){
+      const saved=await vault["project-list"]();
+      choices(local,saved.map(item=>({id:item.id,label:item.name||item.id})));
+      const result=await cloudOperation("list");
+      if(result.status!=="ok")throw Error("Encrypted PTG cloud archive unavailable.");
+      remoteItems=Array.isArray(result.items)?result.items:[];
+      choices(remote,remoteItems.map(item=>({id:item.record_key,label:item.record_key})));
+      say("Local projects: "+saved.length+" · Encrypted cloud backups: "+remoteItems.length);
+    }
+    document.getElementById("cloudRefresh").onclick=doTask(refresh);
+    document.getElementById("cloudBackup").onclick=doTask(async()=>{
+      const id=local.value;
+      if(!id)throw Error("Save a named project in MegaFrame first.");
+      const envelope=await vault["cloud-export"](id);
+      if(!envelope)throw Error("The selected local project could not be found.");
+      const listed=await cloudOperation("list");
+      if(listed.status!=="ok")throw Error("Encrypted cloud archive unavailable.");
+      const existing=(listed.items||[]).find(item=>item.record_key===id);
+      if(existing&&!window.confirm("Replace this project's existing encrypted cloud backup?"))return;
+      const saved=await cloudOperation("write",{
+        recordKey:id,...envelope,expectedVersion:existing?.version||0
+      });
+      if(saved.status==="conflict")throw Error("Another device changed this cloud project. Refresh before replacing.");
+      if(saved.status!=="ok")throw Error("Encrypted cloud archive write was unavailable.");
+      await refresh();
+      say("Encrypted backup saved. No customer photos were uploaded without your click.");
+    });
+    document.getElementById("cloudRestore").onclick=doTask(async()=>{
+      const id=remote.value;
+      if(!id)throw Error("Choose a cloud project first.");
+      const old=await vault["project-read"](id);
+      if(old&&!window.confirm("Replace the existing local project with this encrypted cloud version?"))return;
+      const data=await cloudOperation("read",{recordKey:id});
+      if(data.status!=="ok"||!data.record)throw Error("Cloud project no longer exists.");
+      await vault["cloud-import"](id,data.record);
+      say("Encrypted project retrieved. Open it from MegaFrame's Open Projects menu.");
+    });
+    cloudPanel.hidden=false;
+    say("Cloud backup is optional. Save a named project, then select Refresh projects.");
+  }
   async function showEditor() {
     try {
       const data = await gateway("load");
@@ -165,6 +246,7 @@
       mount.replaceChildren(frame);
       active = true;
       status.hidden = true;
+      setupCloud(vault);
       const every = Number.isInteger(config.checkIntervalMs) && config.checkIntervalMs >= 500
         ? config.checkIntervalMs : 30000;
       interval = setInterval(() => { void check(); }, every);
