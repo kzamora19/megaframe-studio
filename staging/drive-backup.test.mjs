@@ -130,3 +130,29 @@ test("Drive files are never automatically synchronized or stored as OAuth tokens
   assert.match(source,/More than 1,000 Drive backups/);
   assert.match(source,/Refusing Google Drive authorization to an untrusted destination/);
 });
+
+test("PTG revocation during asynchronous Drive setup cannot reopen controls",async()=>{
+  const nodes=new Map();
+  const node=id=>{
+    if(!nodes.has(id))nodes.set(id,{hidden:false,disabled:false,textContent:"",
+      replaceChildren(){},querySelectorAll(){return[];}});
+    return nodes.get(id);
+  };
+  let unblock;
+  const fakeCrypto={subtle:{digest:()=>new Promise(resolve=>{unblock=resolve;})}};
+  const context={window:{},document:{getElementById:node},
+    crypto:fakeCrypto,TextEncoder,Uint8Array,AbortController,URL,URLSearchParams,
+    Blob,Date,Promise,Error,console};
+  runInNewContext(source,context);
+  const api=context.window.BRANCHLINE_GOOGLE_DRIVE_BACKUP;
+  const pending=api.setup({studio:"megaframe",scope:"a".repeat(43),
+    clientId:"873550026587-test.apps.googleusercontent.com",
+    vault:{},verify:async()=>{}});
+  assert.equal(typeof unblock,"function");
+  api.lock();
+  unblock(new Uint8Array(32));
+  await pending;
+  assert.equal(node("drivePanel").hidden,true,
+    "Revoked account cannot make stale Google Drive setup visible again");
+  assert.equal(node("driveBackup").disabled,true);
+});
