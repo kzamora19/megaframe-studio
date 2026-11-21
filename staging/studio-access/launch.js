@@ -7,6 +7,7 @@
   const portal = "https://kzamora19.github.io/first-megasaver-ptg/studios/";
   let active = false, checking = false, expired = false, expiry = 0;
   let interval = null, deadline = null, warned = false;
+  let draftPort = null;
   const show = (message, addPortal = false) => {
     status.replaceChildren(document.createTextNode(message));
     if (addPortal) {
@@ -24,6 +25,8 @@
     if (interval) clearInterval(interval);
     if (deadline) clearTimeout(deadline);
     interval = deadline = null;
+    if (draftPort) draftPort.close();
+    draftPort = null;
     // Do not attempt to inspect iframe cookies or cross-origin draft storage.
     mount.replaceChildren();
     show(message, true);
@@ -94,6 +97,11 @@
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(data.html));
       const sha = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
       if (sha !== data.sha256) throw Error("Protected editor integrity failed.");
+      if (!window.MEGAFRAME_LOCAL_DRAFT_VAULT ||
+          !/^[A-Za-z0-9_-]{43}$/.test(String(data.draftScope || "")) ||
+          !/^[A-Za-z0-9_-]{43}$/.test(String(data.draftKey || "")))
+        throw Error("Verified account's encrypted local recovery is unavailable.");
+      const vault = window.MEGAFRAME_LOCAL_DRAFT_VAULT.session(data.draftScope, data.draftKey);
       deadlineAt(data.expiresAt);
       const frame = document.createElement("iframe");
       frame.id = "studio-editor-frame";
@@ -103,6 +111,27 @@
       // able to read PTG/Branchline localStorage on the shared github.io origin.
       // Cloud OAuth/storage functionality must pass compatibility testing before release.
       frame.sandbox = "allow-scripts allow-downloads";
+      const channel = new MessageChannel();
+      draftPort = channel.port1;
+      channel.port1.onmessage = async ({data:message}) => {
+        if (!active || expired || Date.now() >= expiry ||
+            mount.querySelector("iframe") !== frame ||
+            !message || !Number.isSafeInteger(message.id) ||
+            !["read", "write", "delete"].includes(message.action)) return;
+        try {
+          const value = await vault[message.action](message.record);
+          if (active && !expired && Date.now() < expiry)
+            channel.port1.postMessage({id:message.id,ok:true,value});
+        } catch {
+          if (active && !expired && Date.now() < expiry)
+            channel.port1.postMessage({id:message.id,ok:false});
+        }
+      };
+      channel.port1.start();
+      frame.addEventListener("load", () => {
+        if (active && !expired && frame.contentWindow)
+          frame.contentWindow.postMessage({kind:"megaframe-private-draft-port"},"*",[channel.port2]);
+      }, {once:true});
       frame.srcdoc = data.html;
       mount.replaceChildren(frame);
       active = true;
