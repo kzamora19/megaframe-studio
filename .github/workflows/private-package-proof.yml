@@ -1,0 +1,62 @@
+name: Staged MegaFrame private-package proof (not deployable)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'staging/**'
+      - 'index.html'
+      - '*.js'
+      - 'icons/**'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+      - '.github/workflows/private-package-proof.yml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-private-separation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify staged source/private and launcher/public separation
+        run: |
+          node --check staging/build-private-package.mjs
+          node --test staging/private-package.test.mjs
+          node --test staging/private-delivery-policy.test.mjs
+      - name: Validate undeployed editor-free historical Pages cutover preview
+        run: |
+          node --check staging/build-cutover-pages.mjs
+          node --test staging/cutover-pages.test.mjs
+      - name: Check private launcher and vault JavaScript syntax
+        run: |
+          node --check staging/studio-access/launch.js
+          node --check staging/studio-access/draft-vault.js
+          node --check staging/cloud-backup-browser.test.mjs
+          node --check staging/editor-draft-bridge.js
+      - uses: denoland/setup-deno@v2
+        with: {deno-version: v2.x}
+      - name: Typecheck undeployed Supabase private-editor delivery
+        run: deno check supabase/functions/megaframe-editor-delivery/index.ts
+  verify-protected-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install isolated Chromium
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install chromium --only-shell
+      - name: Verify protected MegaFrame editor mount, tampered bundles and revocation
+        run: |
+          node staging/private-launch-browser.test.mjs
+          node staging/cloud-backup-browser.test.mjs
+          node staging/cloud-launcher-browser.test.mjs
+      - name: Rehearse old installed PWA cache retirement and local data preservation
+        run: node staging/cutover-browser.test.mjs
