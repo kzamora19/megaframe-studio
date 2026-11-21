@@ -6,7 +6,7 @@ import {runInNewContext} from "node:vm";
 import {webcrypto} from "node:crypto";
 
 const source=readFileSync("staging/studio-access/drive-backup.js","utf8");
-test("manual Drive backup requires Google consent and fresh PTG authorization",async()=>{
+for(const studio of ["megaframe","flyer"])test("manual Drive backup, recovery, and revocation: "+studio,async()=>{
   const nodes=new Map(),buttons=["driveConnect","driveDisconnect","driveRefresh","driveBackup","driveRestore"];
   function node(id){
     if(!nodes.has(id)){
@@ -24,15 +24,17 @@ test("manual Drive backup requires Google consent and fresh PTG authorization",a
   let proofAllowed=true,proofChecks=0,exported=0,imported=0;
   let driveCalls=0,uploaded=null,metadata=null;
   const scope="a".repeat(43);
-  const studio="megaframe";
-  const projectId="project_abc";
+  const projectId=studio==="flyer"?"p:current":"project_abc";
+  const mockExport=async(id,opts)=>{assert.equal(id,projectId);assert.equal(opts.drive,true);
+      exported++;return {iv:"x".repeat(16),encrypted:"ciphertext-only-data"};};
+  const mockImport=async(id,record,opts)=>{assert.equal(id,projectId);
+      assert.equal(opts.drive,true);assert.equal(record.encrypted,"ciphertext-only-data");imported++;};
   const vault={
     ["project-list"]:async()=>[{id:projectId,name:"Test layout",savedAt:1}],
     ["project-read"]:async()=>({format:"local"}),
-    ["cloud-export"]:async(id,opts)=>{assert.equal(id,projectId);assert.equal(opts.drive,true);
-      exported++;return {iv:"x".repeat(16),encrypted:"ciphertext-only-data"};},
-    ["cloud-import"]:async(id,record,opts)=>{assert.equal(id,projectId);
-      assert.equal(opts.drive,true);assert.equal(record.encrypted,"ciphertext-only-data");imported++;}
+    read:async()=>({format:"local"}),
+    ["cloud-export"]:mockExport,cloudExport:mockExport,
+    ["cloud-import"]:mockImport,cloudImport:mockImport
   };
   const uploadUrl="https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=test";
   function response(data,extra={}){
@@ -49,6 +51,7 @@ test("manual Drive backup requires Google consent and fresh PTG authorization",a
       return response({},{"Location":uploadUrl});
     }
     if(m==="PUT"&&url===uploadUrl){
+      assert.equal(opts.headers["Content-Range"],"bytes 0-"+(opts.body.size-1)+"/"+opts.body.size);
       uploaded=await opts.body.text();
       return response({id:"fileEncrypted123"});
     }
@@ -59,6 +62,8 @@ test("manual Drive backup requires Google consent and fresh PTG authorization",a
       const q=u.searchParams.get("q")||"";
       if(q.includes("appProperties has")){
         assert.match(q,/ownerScope/);
+        // A partial first Drive results page must not hide recoverable backups.
+        if(!u.searchParams.has("pageToken"))return response({files:[],nextPageToken:"page2"});
         return response({files:uploaded?[{id:"fileEncrypted123",
           name:metadata.name,modifiedTime:"2026-11-21T00:00:00Z",
           appProperties:metadata.appProperties,size:String(uploaded.length)}]:[]});
@@ -99,7 +104,7 @@ test("manual Drive backup requires Google consent and fresh PTG authorization",a
   assert.ok(uploaded);
   assert.match(uploaded,/"format":"BranchlineStudioDriveBackupV1"/);
   assert.ok(!uploaded.includes("Test layout"),"No local project title/plaintext in Drive metadata");
-  assert.equal(metadata.appProperties.studio,"megaframe");
+  assert.equal(metadata.appProperties.studio,studio);
   assert.equal(metadata.appProperties.recordKey,projectId);
   assert.match(metadata.appProperties.ownerScope,/^[a-f0-9]{64}$/);
   assert.ok(!metadata.appProperties.ownerScope.includes(scope));
@@ -121,4 +126,7 @@ test("Drive files are never automatically synchronized or stored as OAuth tokens
   assert.match(source,/PTG proof/);
   assert.match(source,/appProperties/);
   assert.match(source,/uploadType=resumable/);
+  assert.match(source,/reader\.cancel\(\)/);
+  assert.match(source,/More than 1,000 Drive backups/);
+  assert.match(source,/Refusing Google Drive authorization to an untrusted destination/);
 });
