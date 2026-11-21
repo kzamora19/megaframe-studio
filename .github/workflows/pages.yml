@@ -20,6 +20,7 @@ on:
       - 'qa/smoke-new-project.cjs'
       - 'qa/smoke-exit-modal.cjs'
       - 'qa/smoke-right-rail-reload.cjs'
+      - 'qa/smoke-mobile-panels.cjs'
       - 'qa/smoke-modal-prompts.cjs'
       - 'qa/smoke-overlays.cjs'
       - 'qa/smoke-multiple-overlays.cjs'
@@ -46,6 +47,7 @@ on:
       - 'qa/smoke-new-project.cjs'
       - 'qa/smoke-exit-modal.cjs'
       - 'qa/smoke-right-rail-reload.cjs'
+      - 'qa/smoke-mobile-panels.cjs'
       - 'qa/smoke-modal-prompts.cjs'
       - 'qa/smoke-overlays.cjs'
       - 'qa/smoke-multiple-overlays.cjs'
@@ -88,6 +90,7 @@ jobs:
           node --check qa/smoke-new-project.cjs
           node --check qa/smoke-exit-modal.cjs
           node --check qa/smoke-right-rail-reload.cjs
+          node --check qa/smoke-mobile-panels.cjs
           node --check qa/smoke-modal-prompts.cjs
           node --check qa/smoke-overlays.cjs
           node --check qa/smoke-multiple-overlays.cjs
@@ -126,6 +129,7 @@ jobs:
           node qa/smoke-new-project.cjs
           node qa/smoke-exit-modal.cjs
           node qa/smoke-right-rail-reload.cjs
+          node qa/smoke-mobile-panels.cjs
           node qa/smoke-modal-prompts.cjs
           node qa/smoke-overlays.cjs
           node qa/smoke-multiple-overlays.cjs
