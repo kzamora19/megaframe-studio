@@ -723,10 +723,9 @@ async function initializeDraftRecovery() {
   }catch(err){notify('Could not discard recovery: '+err.message);}
  };
  $('startBlankProject').onclick=()=>$('savedProjectsDialog').close();
- try{
-  const names=await projectList();
-  if(hasRecovery||names.length)await openSavedProjects(true);
- }catch(err){if(hasRecovery)await openSavedProjects(true);}
+ // Ask on EVERY launch even when there are no projects to retrieve.
+ // Recovery is already archived, but stays unopened unless requested.
+ $('startupChoiceDialog').showModal();
  $('saveDraftNow').onclick=()=>{clearTimeout(draftTimer);saveCurrentDraft();};
  $('prefix').addEventListener('input',scheduleDraftSave);
  $('clearSavedDraft').onclick=async()=>{
@@ -831,6 +830,16 @@ function setupMobileDrawer(){
 function setupPinnedNav(){const nav=$('pinNav');nav.querySelectorAll('button[data-panel]').forEach(button=>{button.addEventListener('click',()=>showPanel(Number(button.dataset.panel)))});showPanel(0)}
 
 function setupEvents(){
+ $('createNewProject').onclick=()=>{
+  // Opening the app has already initialized an untouched blank editor.
+  $('startupChoiceDialog').close();
+  showPanel(0);
+ };
+ $('retrieveStartupProject').onclick=async()=>{
+  $('startupChoiceDialog').close();
+  await openSavedProjects(true);
+ };
+ $('startupChoiceDialog').addEventListener('cancel',event=>event.preventDefault());
  $('saveProject').onclick=saveNamedProject;
  $('openProjects').onclick=()=>openSavedProjects();
  $('closeSavedProjects').onclick=()=>$('savedProjectsDialog').close();
