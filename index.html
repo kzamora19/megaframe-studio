@@ -284,6 +284,19 @@ button.danger:hover{background:#ffe9ec}
 @media(max-width:410px){.emojiPickerItem{font-size:26px}.emojiPickerGrid{height:270px}.emojiPickerDialog{max-height:89dvh}}
 
 .savedProjectsDialog{max-width:760px;width:calc(100vw - 24px)}
+.startupChoiceDialog{max-width:670px;width:calc(100vw - 24px)}
+.startupChoiceBody{padding:24px}
+.startupChoiceOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.startupChoiceOption{border:1px solid #d7e1f8;background:#f5f8ff;border-radius:14px;padding:23px 16px;min-height:164px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:12px;cursor:pointer;color:#102451;transition:border-color .15s,box-shadow .15s,background .15s}
+.startupChoiceOption:hover,.startupChoiceOption:focus-visible{border-color:#2454f0;background:#edf2ff;box-shadow:0 0 0 2px rgba(36,84,240,.12)}
+.startupChoiceOption strong{font-size:17px;line-height:1.35;color:#1743c9}
+.startupChoiceOption small{font-size:12px;line-height:1.5;color:#647699}
+.startupChoiceNote{font-size:12px;color:#697a96;line-height:1.55;margin:17px 0 0}
+@media(max-width:580px){.startupChoiceBody{padding:16px}.startupChoiceOptions{grid-template-columns:1fr}.startupChoiceOption{min-height:110px;padding:17px}}
+.automaticRecoveryCard{background:#f2f6ff;border-color:#c9d8fb}
+.automaticRecoveryCard[hidden],#startBlankProject[hidden]{display:none!important}
+#savedProjectsIntro{margin:0 0 13px;line-height:1.5}
+#startBlankProject{margin-bottom:12px}
 .savedProjectsBody{padding:18px 24px 22px}
 .savedProjectList{display:grid;gap:10px;margin:13px 0 20px}
 .savedProjectCard{border:1px solid #e2e8f2;padding:13px;border-radius:11px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;background:#fff}
@@ -296,7 +309,6 @@ button.danger:hover{background:#ffe9ec}
 .recoveryDetails .draftStatus{margin-top:9px}
 #projectSaveStatus{margin:8px 0 0}
 @media(max-width:720px){.savedProjectsBody{padding:14px}.savedProjectActions{width:100%}}
-
 /* BRANCHLINE unified-interface branding — approved Workspace source tokens.
    Only interactive editor chrome is styled. Customer images, frame templates,
    preview canvas pixels, and PNG/PDF export settings are unchanged. */
@@ -349,7 +361,7 @@ body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="./icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><button id="drive-open" class="btn small ghost" type="button">Google Drive backup</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.7 + Drive</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="newProject" class="btn small" type="button" title="Save your current work before starting a new blank project">＋ New Project</button><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><button id="drive-open" class="btn small ghost" type="button">Google Drive backup</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.7 + Drive</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
@@ -377,7 +389,7 @@ body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
    <button class="btn ghost libraryOpen" id="openOnlineTemplates" type="button">⌕ Search online for frames</button>
    <div class="inline" style="margin-top:9px"><button id="changeTemplate" class="btn wide">＋ Upload frame</button><button id="saveTemplate" class="btn wide primary">Save template</button></div>
    <input type="file" id="templateInput" accept="image/png,image/jpeg,image/webp" />
-   <div class="draftTools"><strong>Unfinished projects</strong><div class="draftActions" style="margin-top:9px"><button id="saveProject" class="btn primary small" type="button">💾 Save Project</button><button id="openProjects" class="btn small" type="button">📂 Open Projects</button></div><p id="projectSaveStatus" class="help" role="status">Name and retrieve multiple unfinished projects on this device.</p><div class="draftStatus" id="draftStatus" role="status" aria-live="polite">Local recovery: checking for a saved draft…</div><div class="draftActions"><button id="saveDraftNow" class="btn small" type="button">Save draft now</button><button id="clearSavedDraft" class="btn small" type="button">Clear recovery copy</button></div><details class="recoveryDetails"><summary>Automatic recovery details</summary><p class="help" style="margin:7px 0 0">Auto-recovery keeps one temporary local draft. Named projects are separate and remain saved. All project data, including original customer photos, stays on this browser unless you export a backup.</p></details></div>
+   <div class="draftTools"><strong>Unfinished projects</strong><div class="draftActions" style="margin-top:9px"><button id="saveProject" class="btn primary small" type="button">💾 Save Project</button><button id="openProjects" class="btn small" type="button">📂 Open Projects</button><button id="newProjectPanel" class="btn small" type="button">＋ New Project</button></div><p id="projectSaveStatus" class="help" role="status">Name and retrieve multiple unfinished projects on this device.</p><div class="draftStatus" id="draftStatus" role="status" aria-live="polite">Local recovery: checking for a saved draft…</div><div class="draftActions"><button id="saveDraftNow" class="btn small" type="button">Save draft now</button><button id="clearSavedDraft" class="btn small" type="button">Clear recovery copy</button></div><details class="recoveryDetails"><summary>Automatic recovery details</summary><p class="help" style="margin:7px 0 0">Auto-recovery keeps one temporary local draft. Named projects are separate and remain saved. All project data, including original customer photos, stays on this browser unless you export a backup.</p></details></div>
    <div class="inline" style="margin-top:9px"><button id="renameTemplate" class="btn small">Rename</button><button id="duplicateTemplate" class="btn small">Duplicate</button></div>
    <div class="inline" style="margin-top:9px"><button id="backupTemplate" class="btn small">↓ Backup template</button><button id="restoreTemplate" class="btn small">↑ Restore backup</button></div>
    <input type="file" id="backupInput" accept=".json,application/json" />
@@ -530,9 +542,28 @@ body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
  <div id="emojiPickerTabs" class="emojiPickerTabs" role="group" aria-label="Emoji categories"></div>
  <p class="emojiPickerPrivacy">Transparent emoji overlay. Check face coverage before sharing.</p>
 </dialog>
+<dialog id="startupChoiceDialog" class="frameLibrary startupChoiceDialog" aria-labelledby="startupChoiceTitle">
+ <div class="frameLibHead"><div><h2 id="startupChoiceTitle">Welcome to MegaFrame Studio</h2><p>What would you like to do?</p></div></div>
+ <div class="startupChoiceBody">
+  <div class="startupChoiceOptions" role="group" aria-label="Choose how to begin">
+   <button id="createNewProject" class="startupChoiceOption" type="button" autofocus><strong>＋ Create New Project</strong><small>Start with a clean, blank workspace. Existing saved projects stay safe.</small></button>
+   <button id="retrieveStartupProject" class="startupChoiceOption" type="button"><strong>📂 Retrieve Saved Project</strong><small>Open a previously saved project, restore unfinished work, or import a backup.</small></button>
+  </div>
+  <p class="startupChoiceNote">Your named projects and automatic recovery copies remain stored on this device unless you explicitly delete them.</p>
+ </div>
+</dialog>
 <dialog id="savedProjectsDialog" class="frameLibrary savedProjectsDialog" aria-labelledby="savedProjectsTitle">
- <div class="frameLibHead"><div><h2 id="savedProjectsTitle">Saved projects</h2><p>Open unfinished frames, collages and customer-photo edits</p></div><button id="closeSavedProjects" class="btn small" type="button">Close</button></div>
+ <div class="frameLibHead"><div><h2 id="savedProjectsTitle">Retrieve unfinished projects</h2><p>Pick up where you left off, or begin with a blank workspace</p></div><button id="closeSavedProjects" class="btn small" type="button">Close</button></div>
  <div class="savedProjectsBody">
+  <p id="savedProjectsIntro" class="help">Restore a recovery draft or open a named project saved on this device. Your saved work is not deleted when you start blank.</p>
+  <button id="startBlankProject" class="btn primary" type="button" hidden>Start blank workspace</button>
+  <article id="automaticRecoveryCard" class="savedProjectCard automaticRecoveryCard" hidden>
+    <div><strong>Automatic recovery copy</strong><small id="recoveryProjectMeta">Checking this device…</small></div>
+    <div class="savedProjectActions">
+      <button id="restoreRecoveryDraft" class="btn primary small" type="button">Restore unfinished session</button>
+      <button id="discardRecoveryDraft" class="btn danger small" type="button">Discard recovery</button>
+    </div>
+  </article>
   <div class="inline"><button id="importProject" class="btn small" type="button">↑ Import project backup</button><input hidden type="file" id="importProjectFile" accept=".json,application/json" /></div>
   <p id="projectListStatus" class="help" role="status">Loading saved projects…</p>
   <div id="projectList" class="savedProjectList"></div>
