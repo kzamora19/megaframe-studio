@@ -28,9 +28,11 @@ test("private MegaFrame delivery cannot configure without server secrets or a pr
 });
 test("server verifies PTG megaframe ticket for each load/check, without exposing bucket URLs", () => {
   const source=readFileSync(new URL("../supabase/functions/megaframe-editor-delivery/index.ts",import.meta.url),"utf8");
-  assert.match(source,/studio:"megaframe",ticket/);
-  assert.match(source,/if\(!expiresAt\)return json/);
+  assert.match(source,/studio:"megaframe",\.\.\.body/);
+  assert.match(source,/trustedPtg\("exchange"/);
+  assert.match(source,/trustedPtg\("prove"/);
   assert.match(source,/if\(body.action==="check"\)/);
+  assert.doesNotMatch(source,/action:"verify"/);
   assert.match(source,/admin.storage.from\(BUNDLE_BUCKET\).download\(BUNDLE_PATH\)/);
   assert.match(source,/if\(hash!==BUNDLE_SHA\)/);
   assert.match(source,/origin!==exactHttpsOrigin\(ALLOWED_ORIGIN\)/);
