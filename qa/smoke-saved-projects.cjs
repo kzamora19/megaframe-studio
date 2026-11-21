@@ -8,6 +8,7 @@ const assert=require('node:assert/strict');
  try{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'));
+  await page.locator('#createNewProject').click();
   await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
   await page.locator('#photosInput').setInputFiles({name:'customer-photo.png',mimeType:'image/png',buffer:png});
@@ -48,6 +49,8 @@ const assert=require('node:assert/strict');
   await page.waitForFunction(()=>document.getElementById('projectSaveStatus')?.textContent?.includes('Customer frame B'));
   assert.equal(await page.evaluate(()=>projectList().then(a=>a.length)),2,'Named projects stay separate');
   await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#startupChoiceDialog[open]').waitFor();
+  await page.locator('#retrieveStartupProject').click();
   await page.locator('#savedProjectsDialog[open]').waitFor({timeout:30000});
   await page.locator('#closeSavedProjects').click();
   await page.locator('[data-panel="0"]').click();
