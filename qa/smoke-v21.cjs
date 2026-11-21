@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
   await page.locator('#draftStatus').waitFor({state:'visible',timeout:45000});
   await page.waitForFunction(() => document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:45000});
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9J6ofLwAAAABJRU5ErkJggg==','base64');
+  await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
   await page.locator('#photosInput').setInputFiles({name:'test-photo.png',mimeType:'image/png',buffer:png});
   await page.waitForFunction(() => document.querySelector('#photoCount')?.textContent?.includes('1 photo'),{timeout:20000});
