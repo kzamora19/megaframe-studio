@@ -115,6 +115,40 @@ async function saveAndExitStudio(){
  try{if(await saveNamedProject())closeStudioWindow();}
  finally{exitStudioBusy=false;$('exitStudioSave').disabled=false;}
 }
+
+let reloadStudioBusy=false;
+function openReloadStudioDialog(){
+ if($('startupChoiceDialog').open)return; // Complete startup choice first.
+ const unsaved=hasUnsavedChanges();
+ $('reloadStudioWarning').textContent=unsaved
+  ?'You have unsaved changes to your photos or layout. Save this project before reloading to keep those edits in your named projects.'
+  :'Your current project has no unsaved changes. Reloading will reopen MegaFrame Studio.';
+ $('reloadStudioSave').hidden=!unsaved;
+ $('reloadStudioDiscard').textContent=unsaved?'Reload without saving':'Reload Studio';
+ if(!$('reloadStudioDialog').open)$('reloadStudioDialog').showModal();
+ $('reloadStudioCancel').focus();
+}
+function reloadStudioNow(){
+ // Explicit user confirmation bypasses beforeunload; arbitrary browser refresh
+ // remains protected by its native warning.
+ explicitStudioExit=true;
+ window.location.reload();
+}
+async function saveAndReloadStudio(){
+ if(reloadStudioBusy)return;
+ reloadStudioBusy=true;
+ $('reloadStudioSave').disabled=true;
+ $('reloadStudioDialog').close();
+ try{if(await saveNamedProject())reloadStudioNow();}
+ finally{reloadStudioBusy=false;$('reloadStudioSave').disabled=false;}
+}
+function handleReloadShortcut(event){
+ if(event.defaultPrevented||event.altKey||event.shiftKey||document.querySelector('dialog[open]'))return;
+ const reloadKey=event.key==='F5'||((event.ctrlKey||event.metaKey)&&String(event.key).toLowerCase()==='r');
+ if(!reloadKey)return;
+ event.preventDefault();
+ openReloadStudioDialog();
+}
 function confirmAction(title,message,label='Delete'){return popupAction({title,message,confirmLabel:label,danger:/delete|remove|clear/i.test(label)}).then(Boolean)}
 function resetPhotoFilterState(photo){photo.filters={...FILTER_DEFAULTS};photo.filterPreset='none'}
 async function deletePhotoAt(index){if(!Number.isInteger(index)||index<0||index>=app.photos.length)return;const target=app.photos[index];if(!await confirmAction('Delete imported photo?',`Remove “${target.name}” from this batch?\nOther photos will stay in the queue. You can use Undo to restore it.`,'Delete photo'))return;const currentId=getPhoto()?.id;saveHistory();app.photos.splice(index,1);const next=app.photos.findIndex(p=>p.id===currentId);selectPhoto(next>=0?next:Math.min(index,app.photos.length-1));updateGallery();notify('Photo deleted. Undo can restore it.')}
@@ -940,6 +974,11 @@ function setupEvents(){
  $('exitStudioCancel').onclick=()=>$('exitStudioDialog').close();
  $('exitStudioLeave').onclick=()=>{$('exitStudioDialog').close();closeStudioWindow();};
  $('exitStudioSave').onclick=saveAndExitStudio;
+ $('reloadStudio').onclick=openReloadStudioDialog;
+ $('reloadStudioCancel').onclick=()=>$('reloadStudioDialog').close();
+ $('reloadStudioDiscard').onclick=()=>{$('reloadStudioDialog').close();reloadStudioNow();};
+ $('reloadStudioSave').onclick=saveAndReloadStudio;
+ window.addEventListener('keydown',handleReloadShortcut);
  $('newProject').onclick=beginNewProject;
  $('newProjectPanel').onclick=beginNewProject;
  $('openProjects').onclick=()=>openSavedProjects();
