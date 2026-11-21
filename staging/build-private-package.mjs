@@ -17,14 +17,15 @@ const sha256 = value => createHash("sha256").update(value).digest("hex");
 const scriptNames = [
   ...Array.from({length: 6}, (_, i) => "sample_image-" + i + ".js"),
   ...Array.from({length: 4}, (_, i) => "gold_image-" + i + ".js"),
-  "editor.js", "cloud-config.js", "google-drive-config.js",
-  "google-drive.js", "shared.js"
+  "overlay-engine.js", "editor.js", "cloud-config.js", "google-drive-config.js",
+  "google-drive.js", "shared.js", "chat-sidebar.js"
 ];
 let html = readFileSync(join(root, "index.html"), "utf8");
 const inlined = [];
 const scriptHashes = [];
 for (const name of scriptNames) {
-  const tag = '<script src="./' + name + '" defer></script>';
+  const resource = (name==="editor.js"||name==="chat-sidebar.js") ? name+"?v=20261121-static-loader-1" : name;
+  const tag = '<script src="./' + resource + '" defer></script>';
   if (html.split(tag).length !== 2) throw Error("Missing or duplicate editor script: " + name);
   let code = readFileSync(join(root, name), "utf8").replace(/<\/script/gi, "<\\/script");
   let injected = "";
@@ -86,6 +87,18 @@ for (const name of scriptNames) {
   scriptHashes.push("'sha256-" + createHash("sha256").update(code).digest("base64") + "'");
   inlined.push(name);
 }
+// Preserve current production's new ChatGPT-style navigation without any
+// relative public assets in this opaque-origin private bundle.
+const newSidebarStylesheet='<link rel="stylesheet" href="./chat-sidebar.css?v=20261121-static-loader-1" />';
+if(html.split(newSidebarStylesheet).length!==2)
+  throw Error("Live MegaFrame sidebar CSS reference changed; review packaging.");
+html=html.replace(newSidebarStylesheet,'<style>'+readFileSync(join(root,"chat-sidebar.css"),"utf8")+'</style>');
+// The Branchline-approved chrome palette is applied only to protected UI.
+// Keep the live index.html intact so late overlay/font/sidebar features survive.
+const branchlineStyles="/* BRANCHLINE unified-interface branding — approved Workspace source tokens.\n   Only interactive editor chrome is styled. Customer images, frame templates,\n   preview canvas pixels, and PNG/PDF export settings are unchanged. */\n:root{\n  --branchline-navy:#1d2836;\n  --branchline-blue:#355ee8;\n  --branchline-blue-dark:#2348c7;\n  --branchline-blue-soft:#eef2ff;\n  --branchline-white:#fff;\n  --branchline-line:#e9edf1;\n}\nbody>.appbar{\n  height:auto;min-height:74px;\n  background:var(--branchline-navy);\n  color:var(--branchline-white);\n  border-bottom:2px solid var(--branchline-blue);\n}\nbody>.appbar .brandname{color:var(--branchline-white);font-weight:850}\nbody>.appbar .brandname span{color:#dce6ff!important}\nbody>.appbar .brandtag{color:#dce6ff;font-weight:650;letter-spacing:.01em}\nbody>.appbar .btn.ghost{\n  background:var(--branchline-blue-soft);\n  border-color:#d8e2ff;\n  color:var(--branchline-blue-dark);\n}\nbody>.appbar .btn.ghost:hover:not(:disabled){\n  background:#dce6ff;border-color:#bccdff;\n}\nbody>.appbar .logo{box-shadow:0 3px 10px #101a3690}\n.appbody>.sidebar{border-right-color:var(--branchline-line)}\n.appbody>.sidebar .pinNav button.active,\n.appbody>.sidebar .pinNav button:hover{\n  background:var(--branchline-blue-soft);\n  border-color:#aac0ff;\n  color:var(--branchline-blue-dark);\n}\n.appbody .btn.primary{background:var(--branchline-blue);border-color:var(--branchline-blue)}\n.appbody .btn.primary:hover:not(:disabled){background:var(--branchline-blue-dark);border-color:var(--branchline-blue-dark)}\n.appbody .btn.dark{background:var(--branchline-navy);border-color:var(--branchline-navy)}\n.appbody .workspaceHeader h1{color:var(--branchline-navy)}\n@media(max-width:720px){\n  body>.appbar{min-height:74px;padding:12px 15px;gap:10px}\n  body>.appbar .brand{min-width:0}\n  body>.appbar .brandname{font-size:16px}\n  body>.appbar .brandtag{font-size:10px;line-height:1.3;max-width:29ch}\n}\n\n";
+if(html.split('</style>').length<2)throw Error("No private UI style boundary.");
+html=html.replace('</style>',branchlineStyles+'</style>');
+inlined.push("chat-sidebar.css", "Branchline protected chrome");
 // Source CSP permits external scripts from self, but the private bundle
 // contains inlined code. Hash-only script exceptions keep the existing policy
 // restrictive, rather than bypassing it with unsafe-inline.

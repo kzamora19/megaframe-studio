@@ -18,7 +18,21 @@
 <style>
 :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#19254a;background:#f5f7fd;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input[type=file]{display:none}input[type=range]{accent-color:#265dff;width:100%}input[type=text],select{background:#fff;border:1px solid #dce2f2;border-radius:10px;outline:0;color:#172343;padding:10px 11px;width:100%;min-width:0}input[type=text]:focus,select:focus{border-color:#4167ff;box-shadow:0 0 0 3px #c5d3ff80}
-.appbar{height:74px;padding:0 28px;background:#fff;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e3e8f2;gap:16px}.brand{display:flex;gap:12px;align-items:center}.logo{height:41px;width:41px;flex:0 0 41px;border-radius:12px;display:block;object-fit:cover;box-shadow:0 3px 10px #07143c26}.brandname{font-size:18px;font-weight:850;letter-spacing:-.5px}.brandtag{font-size:12px;color:#818ca6;margin-top:3px}.pill{border-radius:100px;padding:6px 11px;background:#eef7f1;color:#27855a;font-size:12px;font-weight:700}.appbody{display:grid;grid-template-columns:345px minmax(350px,1fr);gap:0;min-height:calc(100vh - 74px)}.sidebar{border-right:1px solid #e1e7f2;background:#fff;padding:21px 18px 42px;max-height:calc(100vh - 74px);overflow-y:auto}.workspace{padding:23px clamp(18px,3.3vw,52px) 40px;min-width:0}.section{margin-bottom:24px}.sectionHead{display:flex;align-items:center;gap:9px;margin:0 0 14px}.step{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#eaf0ff;color:#2857eb;font-weight:850;font-size:12px}.sectionHead h2{font-size:14px;margin:0;letter-spacing:.05px}.help{font-size:12px;line-height:1.5;color:#7c879f;margin:5px 0 12px}.field{margin-top:12px}.field label{font-size:12px;font-weight:750;display:block;margin-bottom:7px;color:#43506a}.inline{display:flex;align-items:center;gap:8px}.inline>*{min-width:0}.btn{border:1px solid #dbe2f1;border-radius:11px;padding:10px 12px;background:#fff;color:#344461;font-weight:750;font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;line-height:1.2;transition:background .15s,border .15s}.btn:hover:not(:disabled){background:#f1f5ff;border-color:#aebfff}.btn.primary{background:#264dec;border:1px solid #264dec;color:#fff}.btn.primary:hover:not(:disabled){background:#163edc}.btn.dark{background:#17234e;border-color:#17234e;color:#fff}.btn.small{padding:7px 9px;font-size:11px;border-radius:8px}.btn.wide{width:100%}.btn.ghost{background:#eef3ff;color:#2750d3;border-color:#e5ebff}.btn.danger{color:#bd3b4a}.btn svg{width:15px;height:15px;stroke-width:2}.sep{height:1px;background:#edf0f7;margin:22px -18px}.tag{display:inline-flex;align-items:center;font-size:10px;letter-spacing:.05em;font-weight:800;text-transform:uppercase;color:#4770df;background:#eaf0ff;padding:4px 7px;border-radius:6px}.dropzone{border:1.5px dashed #b2c5ff;background:#f7f9ff;border-radius:14px;padding:21px 12px;text-align:center;cursor:pointer;transition:.2s}.dropzone:hover,.dropzone.dragging{background:#e9f0ff;border-color:#4173ff}.dropzone .circle{width:42px;height:42px;border-radius:13px;background:#e3eaff;color:#3f61d9;display:grid;place-items:center;margin:0 auto 10px}.dropzone strong{display:block;font-size:13px}.dropzone span{display:block;margin:5px 0 0;font-size:11px;color:#8390a9}.hintBox{padding:11px 12px;border-radius:10px;background:#f1f4ff;color:#67769a;font-size:11px;line-height:1.55}.radioLine{display:flex;gap:7px;margin-bottom:10px}.radioLine>button{flex:1}.modeBtn.active{background:#e8efff;border-color:#4266f9;color:#284ee5}.rangerow{display:flex;justify-content:space-between;gap:10px}.value{font-size:12px;font-weight:800;color:#2c54dc}.check{display:flex;align-items:center;gap:8px;font-size:12px;color:#4d5a72}.check input{accent-color:#265dff}.workspaceHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.workspaceHeader h1{font-size:24px;margin:0 0 6px;letter-spacing:-1px;font-weight:850}.workspaceHeader p{font-size:13px;color:#8a94ac;margin:0}.previewCard{background:#fff;border:1px solid #e4e9f3;border-radius:17px;box-shadow:0 8px 30px #21376d0a;overflow:hidden}.previewTop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 17px;border-bottom:1px solid #edf0f6;flex-wrap:wrap}.previewTop strong{font-size:13px}.previewTop small{font-size:11px;color:#92a0b4}.previewBody{background:#e9edf6;background-image:radial-gradient(#c8d0e2 1px,transparent 1px);background-size:16px 16px;min-height:420px;display:flex;align-items:center;justify-content:center;padding:22px;position:relative}.canvasShell{position:relative;width:min(100%,550px);box-shadow:0 12px 30px #1f2c5b30;line-height:0;touch-action:none;background:white;border-radius:3px;overflow:hidden}#previewCanvas{width:100%;height:auto;display:block;cursor:crosshair;touch-action:none}.canvasShell.adjust #previewCanvas{cursor:grab}.canvasShell.adjust.grabbing #previewCanvas{cursor:grabbing}.previewFoot{display:flex;justify-content:space-between;align-items:center;padding:12px 17px;gap:10px;flex-wrap:wrap}.previewFoot span{font-size:12px;color:#78869f}.shortcuts{font-size:11px;color:#9ca6b7}.galleryWrap{margin-top:22px}.galleryTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.galleryTop h2{font-size:16px;margin:0}.counter{font-size:12px;color:#667898}.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:12px}.thumb{border:2px solid transparent;background:#fff;border-radius:13px;padding:7px;cursor:pointer;min-width:0;box-shadow:0 2px 10px #1f376013;position:relative}.thumb.active{border-color:#2a54ec;box-shadow:0 0 0 3px #ccdaff}.thumb img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:7px;background:#f2f5fa;display:block}.thumb .name{font-size:10px;margin:8px 2px 1px;color:#50617d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}.thumb .num{position:absolute;top:11px;left:11px;border-radius:6px;background:#182a55cc;color:#fff;font-size:10px;padding:3px 5px}.thumb .remove{position:absolute;top:8px;right:8px;color:white;background:#ba3543;border:0;border-radius:50%;height:22px;width:22px;display:none}.thumb:hover .remove{display:block}.emptyGallery{border:1px dashed #d4dce9;background:#f9faff;padding:24px;border-radius:13px;color:#92a0b5;font-size:13px;text-align:center}.metrics{display:flex;gap:10px;flex-wrap:wrap}.metric{display:flex;align-items:center;gap:8px;font-size:12px;color:#7a859b}.dot{width:7px;height:7px;background:#52b889;border-radius:50%}.progress{height:7px;background:#e9edfa;border-radius:20px;overflow:hidden;margin-top:10px;display:none}.progress>div{height:100%;width:0;background:#2857ff;transition:width .2s}.toast{position:fixed;right:22px;bottom:18px;background:#17254d;color:white;border-radius:11px;padding:13px 18px;box-shadow:0 9px 30px #1a2a5650;font-size:12px;z-index:5;max-width:350px;opacity:0;pointer-events:none;transform:translateY(10px);transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.status{font-size:11px;color:#7f8da6;min-height:17px;margin-top:7px}.chip{background:#f0f3fb;border-radius:6px;font-size:11px;padding:3px 6px;font-weight:700;color:#647391}.footer{font-size:11px;color:#9aa6bd;margin-top:20px;line-height:1.4}.hidden{display:none!important}
+.appbar{height:74px;padding:0 28px;background:#fff;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e3e8f2;gap:16px}.brand{display:flex;gap:12px;align-items:center}.logo{height:41px;width:41px;flex:0 0 41px;border-radius:12px;display:block;object-fit:cover;box-shadow:0 3px 10px #07143c26}.brandname{font-size:18px;font-weight:850;letter-spacing:-.5px}.brandtag{font-size:12px;color:#818ca6;margin-top:3px}.pill{border-radius:100px;padding:6px 11px;background:#eef7f1;color:#27855a;font-size:12px;font-weight:700}.appbody{display:grid;grid-template-columns:345px minmax(350px,1fr);gap:0;min-height:calc(100vh - 74px)}.sidebar{border-right:1px solid #e1e7f2;background:#fff;padding:21px 18px 42px;max-height:calc(100vh - 74px);overflow-y:auto}.workspace{padding:23px clamp(18px,3.3vw,52px) 40px;min-width:0}.section{margin-bottom:24px}.sectionHead{display:flex;align-items:center;gap:9px;margin:0 0 14px}.step{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#eaf0ff;color:#2857eb;font-weight:850;font-size:12px}.sectionHead h2{font-size:14px;margin:0;letter-spacing:.05px}.help{font-size:12px;line-height:1.5;color:#7c879f;margin:5px 0 12px}.field{margin-top:12px}.field label{font-size:12px;font-weight:750;display:block;margin-bottom:7px;color:#43506a}.inline{display:flex;align-items:center;gap:8px}.inline>*{min-width:0}.btn{border:1px solid #dbe2f1;border-radius:11px;padding:10px 12px;background:#fff;color:#344461;font-weight:750;font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;line-height:1.2;transition:background .15s,border .15s}.btn:hover:not(:disabled){background:#f1f5ff;border-color:#aebfff}.btn.primary{background:#264dec;border:1px solid #264dec;color:#fff}.btn.primary:hover:not(:disabled){background:#163edc}.btn.dark{background:#17234e;border-color:#17234e;color:#fff}.btn.small{padding:7px 9px;font-size:11px;border-radius:8px}.btn.wide{width:100%}.btn.ghost{background:#eef3ff;color:#2750d3;border-color:#e5ebff}.btn.danger{color:#bd3b4a}.btn svg{width:15px;height:15px;stroke-width:2}.sep{height:1px;background:#edf0f7;margin:22px -18px}.tag{display:inline-flex;align-items:center;font-size:10px;letter-spacing:.05em;font-weight:800;text-transform:uppercase;color:#4770df;background:#eaf0ff;padding:4px 7px;border-radius:6px}.dropzone{border:1.5px dashed #b2c5ff;background:#f7f9ff;border-radius:14px;padding:21px 12px;text-align:center;cursor:pointer;transition:.2s}.dropzone:hover,.dropzone.dragging{background:#e9f0ff;border-color:#4173ff}.dropzone .circle{width:42px;height:42px;border-radius:13px;background:#e3eaff;color:#3f61d9;display:grid;place-items:center;margin:0 auto 10px}.dropzone strong{display:block;font-size:13px}.dropzone span{display:block;margin:5px 0 0;font-size:11px;color:#8390a9}.hintBox{padding:11px 12px;border-radius:10px;background:#f1f4ff;color:#67769a;font-size:11px;line-height:1.55}.radioLine{display:flex;gap:7px;margin-bottom:10px}.radioLine>button{flex:1}.modeBtn.active{background:#e8efff;border-color:#4266f9;color:#284ee5}.rangerow{display:flex;justify-content:space-between;gap:10px}.value{font-size:12px;font-weight:800;color:#2c54dc}
+/* Editable values accompany every editing slider. Keep the range control for
+   quick adjustments, while allowing precise keyboard entry like font sizing. */
+.editorNumberBadge{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto;
+ min-height:31px;padding:2px 7px 2px 5px;border:1px solid #d3dff5;border-radius:8px;
+ background:#fff;color:#2b50d3;box-shadow:0 1px 2px rgba(22,45,94,.045);font:800 12px/1 Arial,sans-serif}
+.editorNumberBadge:focus-within{border-color:#3f68f7;box-shadow:0 0 0 2px rgba(72,116,255,.16)}
+.editorNumberBadge:hover:not(.is-disabled){border-color:#9bb7ed;background:#fbfcff}
+.editorNumberBadge.is-disabled{opacity:.48;background:#f5f7fb}
+.editorNumberBadge input{width:45px;min-width:0;max-width:50px;padding:3px 0;border:0!important;
+ background:transparent!important;color:inherit!important;text-align:right;font:inherit;box-shadow:none!important;
+ appearance:textfield;-moz-appearance:textfield;outline:none}
+.editorNumberBadge input::-webkit-outer-spin-button,.editorNumberBadge input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.editorNumberBadge .numberUnit{font-size:11px;color:#7183a7;white-space:nowrap}
+@media(max-width:720px){.editorNumberBadge{min-height:36px}.editorNumberBadge input{font-size:14px}}.check{display:flex;align-items:center;gap:8px;font-size:12px;color:#4d5a72}.check input{accent-color:#265dff}.workspaceHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.workspaceHeader h1{font-size:24px;margin:0 0 6px;letter-spacing:-1px;font-weight:850}.workspaceHeader p{font-size:13px;color:#8a94ac;margin:0}.previewCard{background:#fff;border:1px solid #e4e9f3;border-radius:17px;box-shadow:0 8px 30px #21376d0a;overflow:hidden}.previewTop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 17px;border-bottom:1px solid #edf0f6;flex-wrap:wrap}.previewTop strong{font-size:13px}.previewTop small{font-size:11px;color:#92a0b4}.previewBody{background:#e9edf6;background-image:radial-gradient(#c8d0e2 1px,transparent 1px);background-size:16px 16px;min-height:420px;display:flex;align-items:center;justify-content:center;padding:22px;position:relative}.canvasShell{position:relative;width:min(100%,550px);box-shadow:0 12px 30px #1f2c5b30;line-height:0;touch-action:none;background:white;border-radius:3px;overflow:hidden}#previewCanvas{width:100%;height:auto;display:block;cursor:crosshair;touch-action:none}.canvasShell.adjust #previewCanvas{cursor:grab}.canvasShell.adjust.grabbing #previewCanvas{cursor:grabbing}.previewFoot{display:flex;justify-content:space-between;align-items:center;padding:12px 17px;gap:10px;flex-wrap:wrap}.previewFoot span{font-size:12px;color:#78869f}.shortcuts{font-size:11px;color:#9ca6b7}.galleryWrap{margin-top:22px}.galleryTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.galleryTop h2{font-size:16px;margin:0}.counter{font-size:12px;color:#667898}.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:12px}.thumb{border:2px solid transparent;background:#fff;border-radius:13px;padding:7px;cursor:pointer;min-width:0;box-shadow:0 2px 10px #1f376013;position:relative}.thumb.active{border-color:#2a54ec;box-shadow:0 0 0 3px #ccdaff}.thumb img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:7px;background:#f2f5fa;display:block}.thumb .name{font-size:10px;margin:8px 2px 1px;color:#50617d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}.thumb .num{position:absolute;top:11px;left:11px;border-radius:6px;background:#182a55cc;color:#fff;font-size:10px;padding:3px 5px}.thumb .remove{position:absolute;top:8px;right:8px;color:white;background:#ba3543;border:0;border-radius:50%;height:22px;width:22px;display:none}.thumb:hover .remove{display:block}.emptyGallery{border:1px dashed #d4dce9;background:#f9faff;padding:24px;border-radius:13px;color:#92a0b5;font-size:13px;text-align:center}.metrics{display:flex;gap:10px;flex-wrap:wrap}.metric{display:flex;align-items:center;gap:8px;font-size:12px;color:#7a859b}.dot{width:7px;height:7px;background:#52b889;border-radius:50%}.progress{height:7px;background:#e9edfa;border-radius:20px;overflow:hidden;margin-top:10px;display:none}.progress>div{height:100%;width:0;background:#2857ff;transition:width .2s}.toast{position:fixed;right:22px;bottom:18px;background:#17254d;color:white;border-radius:11px;padding:13px 18px;box-shadow:0 9px 30px #1a2a5650;font-size:12px;z-index:5;max-width:350px;opacity:0;pointer-events:none;transform:translateY(10px);transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.status{font-size:11px;color:#7f8da6;min-height:17px;margin-top:7px}.chip{background:#f0f3fb;border-radius:6px;font-size:11px;padding:3px 6px;font-weight:700;color:#647391}.footer{font-size:11px;color:#9aa6bd;margin-top:20px;line-height:1.4}.hidden{display:none!important}
 @media(max-width:980px){.appbody{grid-template-columns:300px minmax(320px,1fr)}.sidebar{padding:16px 13px}.sep{margin-left:-13px;margin-right:-13px}.workspace{padding:20px}.previewBody{padding:16px;min-height:300px}}
 @media(max-width:720px){.appbar{height:auto;min-height:66px;padding:12px 15px}.brandname{font-size:16px}.brandtag{font-size:10px}.appbody{display:flex;flex-direction:column}.sidebar{max-height:none;overflow:visible;border-right:0;border-bottom:1px solid #e2e9f5}.workspaceHeader h1{font-size:20px}.workspace{padding:15px}.previewBody{min-height:250px;padding:12px}.canvasShell{width:min(100%,460px)}.sidebar .section{margin-bottom:14px}.pill{display:none}}
 
@@ -158,6 +172,13 @@ button.danger:hover{background:#ffe9ec}
 .actionModalFooter{padding:14px 22px 20px;display:flex;justify-content:flex-end;gap:9px;border-top:1px solid #eef1f7}
 .actionModalFooter .btn{min-width:98px}
 .actionModalFooter .dangerConfirm{background:#bd304e;border-color:#bd304e;color:white}
+/* In-app exit confirmation. Browser window-close warnings are not stylable. */
+.exitStudioDialog{width:min(475px,calc(100vw - 24px))}
+.exitStudioDialog .exitStudioHint{font-size:12px;color:#64718d;margin:0 0 7px}
+.exitStudioDialog .actionModalFooter{gap:8px;flex-wrap:wrap}
+.exitStudioDialog .actionModalFooter .btn{min-height:39px;white-space:normal}
+.exitStudioDialog #exitStudioSave[hidden]{display:none!important}
+@media(max-width:560px){.exitStudioDialog .actionModalFooter .btn{flex:1 1 100%}}
 @media(max-width:1000px){.previewFoot{flex-wrap:wrap;gap:8px}.previewActions{justify-content:flex-start}}
 
 /* v2.0 — always-visible per-thumbnail actions */
@@ -309,67 +330,136 @@ button.danger:hover{background:#ffe9ec}
 .recoveryDetails .draftStatus{margin-top:9px}
 #projectSaveStatus{margin:8px 0 0}
 @media(max-width:720px){.savedProjectsBody{padding:14px}.savedProjectActions{width:100%}}
-/* BRANCHLINE unified-interface branding — approved Workspace source tokens.
-   Only interactive editor chrome is styled. Customer images, frame templates,
-   preview canvas pixels, and PNG/PDF export settings are unchanged. */
-:root{
-  --branchline-navy:#1d2836;
-  --branchline-blue:#355ee8;
-  --branchline-blue-dark:#2348c7;
-  --branchline-blue-soft:#eef2ff;
-  --branchline-white:#fff;
-  --branchline-line:#e9edf1;
+.overlaySelectMode{cursor:move}
+#overlayEditor[hidden]{display:none!important}
+#overlayLayerList{width:100%;min-height:100px}
+#overlayContent{display:block;width:100%;min-height:74px;box-sizing:border-box;resize:vertical}
+#overlayPanel .field input[type="number"]{width:100%;min-width:0}
+#overlayPanel .draftActions{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+#overlayPanel .check{font-size:12px}
+/* Accessible Word-style font menu; native <option> elements cannot reliably display
+   different typefaces in Windows browsers. The hidden select supports older projects. */
+.overlayFontPicker{position:relative;min-width:0}
+.overlayFontLegacy{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;border:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
+.overlayFontButton{width:100%;min-width:0;min-height:46px;background:#fff;border:1px solid #dce2f2;border-radius:10px;padding:7px 8px 7px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;color:#172343;font-size:17px;line-height:1.25;text-align:left}
+.overlayFontButton:hover{border-color:#9cb0e9;background:#fafbff}
+.overlayFontButton:focus-visible,.overlayFontButton[aria-expanded="true"]{border-color:#4167ff;outline:2px solid #c5d3ff80;outline-offset:1px}
+#overlayFontSelected{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.3}
+.overlayFontChevron{flex:0 0 31px;width:31px;height:29px;display:flex;align-items:center;justify-content:center;border-left:1px solid #e8edf7;color:#647797;border-radius:0 6px 6px 0;transition:color .15s,background .15s}
+.overlayFontChevron svg{width:16px;height:16px;display:block;fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round;transition:transform .17s ease}
+.overlayFontButton:hover .overlayFontChevron{color:#2e56b7;background:#f3f6ff}
+.overlayFontButton[aria-expanded="true"] .overlayFontChevron{color:#2e55d5;background:#edf3ff}
+.overlayFontButton[aria-expanded="true"] .overlayFontChevron svg{transform:rotate(180deg)}
+@media(prefers-reduced-motion:reduce){.overlayFontChevron,.overlayFontChevron svg{transition:none}}
+.overlayFontMenu{position:fixed;z-index:1100;background:#fff;color:#19254a;border:1px solid #c7d5f4;border-radius:13px;box-shadow:0 12px 42px #172b5460;display:flex;flex-direction:column;max-height:calc(100dvh - 24px);padding:8px;gap:5px}
+.overlayFontMenu[hidden]{display:none!important}
+.overlayFontSearchRow{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+#overlayFontSearch{width:100%;min-width:0;min-height:39px;padding:8px 10px;font-size:13px;background:#f8faff;border:1px solid #cdd8ee;border-radius:9px}
+#overlayFontSearch:focus-visible{outline:2px solid #8aa9ff}
+#overlayFontClose{flex:0 0 34px;width:34px;height:34px;background:#f4f6fb;border:0;border-radius:8px;color:#425779;font-size:22px;line-height:1}
+.overlayFontList{overflow-y:auto;overscroll-behavior:contain;flex:1;min-height:90px;padding:2px 0}
+.overlayFontGroup{font:750 10px Arial,sans-serif;text-transform:uppercase;letter-spacing:.09em;color:#8190a9;padding:11px 10px 4px}
+.overlayFontOption{width:100%;min-height:40px;padding:7px 11px;border:0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;color:#16264a;text-align:left;font-size:19px;line-height:1.35;white-space:nowrap}
+.overlayFontOption span:first-child{overflow:hidden;text-overflow:ellipsis}
+.overlayFontOption .fontSample{flex:0 0 auto;color:#8290aa;font-size:15px;opacity:.8}
+.overlayFontOption:hover,.overlayFontOption:focus-visible{background:#edf3ff;outline:none}
+.overlayFontOption[aria-selected="true"]{background:#e8efff;box-shadow:inset 3px 0 #315ded;color:#173ba3}
+.overlayFontEmpty{padding:16px 10px;color:#697c9b;font-size:13px}
+.overlayFontNote{font:11px/1.4 Arial,sans-serif;color:#7d8da5;margin:0;padding:5px 7px;border-top:1px solid #edf0f7;flex:0 0 auto}
+@media(max-width:720px){.overlayFontOption{min-height:45px}.overlayFontMenu{border-radius:12px}.overlayFontButton{min-height:45px}}
+/* Right-hand PowerPoint-style photo strip. Controls stay pinned while only the queue scrolls. */
+/* Keep the thumbnail navigator next to the canvas: old 721-900px rule placed it below. */
+@media(min-width:721px){
+ .appbody{grid-template-columns:clamp(205px,24vw,345px) minmax(0,1fr) clamp(210px,22vw,305px)}
+ .workspace{padding:20px clamp(10px,1.7vw,28px) 35px}
+ .photoQueueSidebar{position:sticky;top:0;align-self:start;height:calc(100dvh - 74px);min-height:340px}
 }
-body>.appbar{
-  height:auto;min-height:74px;
-  background:var(--branchline-navy);
-  color:var(--branchline-white);
-  border-bottom:2px solid var(--branchline-blue);
-}
-body>.appbar .brandname{color:var(--branchline-white);font-weight:850}
-body>.appbar .brandname span{color:#dce6ff!important}
-body>.appbar .brandtag{color:#dce6ff;font-weight:650;letter-spacing:.01em}
-body>.appbar .btn.ghost{
-  background:var(--branchline-blue-soft);
-  border-color:#d8e2ff;
-  color:var(--branchline-blue-dark);
-}
-body>.appbar .btn.ghost:hover:not(:disabled){
-  background:#dce6ff;border-color:#bccdff;
-}
-body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
-.appbody>.sidebar{border-right-color:var(--branchline-line)}
-.appbody>.sidebar .pinNav button.active,
-.appbody>.sidebar .pinNav button:hover{
-  background:var(--branchline-blue-soft);
-  border-color:#aac0ff;
-  color:var(--branchline-blue-dark);
-}
-.appbody .btn.primary{background:var(--branchline-blue);border-color:var(--branchline-blue)}
-.appbody .btn.primary:hover:not(:disabled){background:var(--branchline-blue-dark);border-color:var(--branchline-blue-dark)}
-.appbody .btn.dark{background:var(--branchline-navy);border-color:var(--branchline-navy)}
-.appbody .workspaceHeader h1{color:var(--branchline-navy)}
+.photoQueueSidebar{display:flex;flex-direction:column;min-width:0;background:#f9fbff;border-left:1px solid #e1e8f6;box-shadow:-3px 0 15px #1a346009;z-index:3;overflow:hidden}
+.photoQueuePinned{flex:0 0 auto;min-width:0;padding:15px 13px 12px;background:#fff;border-bottom:1px solid #dfe7f4;box-shadow:0 3px 9px #1a34600a}
+.photoQueuePinned h2{font-size:13px;margin:0 0 8px;color:#263b72}
+.photoQueuePinned .previewFoot{padding:0;display:block}
+.photoQueuePinned #previewLabel{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.45;max-width:100%;overflow:hidden;overflow-wrap:anywhere;margin:0 0 10px}
+.photoQueuePinned .previewActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}
+.photoQueuePinned .previewActions>.btn{min-width:0;min-height:37px;font-size:11px;padding:7px 5px;white-space:normal}
+.photoQueuePinned #addEmojiCover{grid-column:span 2}
+.photoQueueSidebar .galleryWrap{margin:0;padding:15px 12px 25px;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.photoQueueSidebar .galleryTop{position:sticky;top:-15px;z-index:1;background:#f9fbff;align-items:flex-start;flex-wrap:wrap;gap:5px;margin:-15px 0 10px;padding:15px 0 10px;border-bottom:1px solid #e1e8f6}
+.photoQueueSidebar .galleryTop h2{font-size:14px}
+.photoQueueSidebar .gallery{grid-template-columns:minmax(0,1fr);gap:11px}
+.photoQueueSidebar .thumb{width:100%;max-width:100%;text-align:left}
+.photoQueueSidebar .thumb img{width:100%;aspect-ratio:16/9;object-fit:contain}
+.photoQueueSidebar .thumb .name{overflow-wrap:anywhere}
 @media(max-width:720px){
-  body>.appbar{min-height:74px;padding:12px 15px;gap:10px}
-  body>.appbar .brand{min-width:0}
-  body>.appbar .brandname{font-size:16px}
-  body>.appbar .brandtag{font-size:10px;line-height:1.3;max-width:29ch}
+ .photoQueueSidebar{overflow:visible;z-index:auto}
+ .photoQueuePinned{position:sticky;top:0;z-index:3}
+ .photoQueueSidebar .galleryWrap{overflow:visible;max-height:none}
+ .photoQueueSidebar .gallery{grid-template-columns:repeat(auto-fill,minmax(135px,1fr))}
 }
-
+/* Narrow-screen panel controls: collapsed by default and in document flow.
+   No persistent panels or floating overlays may obscure the photo canvas. */
+.mobilePanelBar{display:none}
+@media(max-width:720px){
+ .appbody{display:flex;flex-direction:column;align-items:stretch}
+ .mobilePanelBar{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+  order:0;position:sticky;top:0;z-index:6;padding:7px 10px;
+  background:#fff;border-bottom:1px solid #dce5f3;
+  box-shadow:0 3px 11px #20355f14;
+ }
+ .mobilePanelButton{
+  min-width:0;min-height:42px;white-space:normal;line-height:1.3;
+  font-size:12px;background:#eef3ff;color:#2451a9;border:1px solid #ccdaf7;
+ }
+ .mobilePanelButton[aria-expanded="true"]{
+  background:#2454eb;color:#fff;border-color:#2454eb;
+ }
+ .appbody>.sidebar{order:1;min-width:0;max-width:none}
+ .appbody>.photoQueueSidebar{order:1;min-width:0;max-width:none}
+ .appbody>.workspace{order:2;min-width:0}
+ .appbody>.sidebar.mobileDrawerClosed,
+ .appbody>.photoQueueSidebar.photoQueueClosed{display:none!important}
+ .appbody>.sidebar:not(.mobileDrawerClosed){
+  display:block;position:relative;top:auto;height:auto;max-height:min(62dvh,540px);
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;
+  box-shadow:none;padding:12px;border-bottom:1px solid #dfe7f4;
+ }
+ .appbody>.sidebar .mobileDrawerToggle{display:none!important}
+ .appbody>.sidebar .pinNav{position:relative!important;top:auto!important}
+ .appbody>.photoQueueSidebar:not(.photoQueueClosed){
+  display:flex;position:relative;top:auto;z-index:1;align-self:stretch;
+  height:min(64dvh,520px);min-height:220px;overflow:hidden;
+  border-left:0;border-bottom:1px solid #dfe7f4;box-shadow:none;
+ }
+ .appbody>.photoQueueSidebar .photoQueuePinned{
+  position:relative;top:auto;z-index:1;padding:11px 12px 9px
+ }
+ .appbody>.photoQueueSidebar .galleryWrap{
+  flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;
+  overscroll-behavior:contain;padding:12px;
+ }
+ .appbody>.photoQueueSidebar .gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .appbody>.workspace{padding:12px 10px 28px}
+ .appbody>.workspace .previewBody{padding:10px}
+}
 </style>
+<link rel="stylesheet" href="./chat-sidebar.css?v=20261121-static-loader-1" />
 </head>
 <body>
 <header class="appbar">
  <div class="brand"><img class="logo" src="./icons/icon-192.png?v=blue-m-20261118" alt="MegaFrame Studio logo" width="41" height="41" /><div><div class="brandname">MegaFrame <span style="color:#2454f0">Studio</span></div><div class="brandtag">Social Media Photo Frame Generator</div></div></div>
- <div class="inline"><button id="newProject" class="btn small" type="button" title="Save your current work before starting a new blank project">＋ New Project</button><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><button id="drive-open" class="btn small ghost" type="button">Google Drive backup</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.7 + Drive</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span></div>
+ <div class="inline"><button id="newProject" class="btn small" type="button" title="Save your current work before starting a new blank project">＋ New Project</button><button id="mf-open" class="btn small ghost" type="button">Shared templates</button><button id="drive-open" class="btn small ghost" type="button">Google Drive backup</button><span class="pill">● &nbsp; Runs on your device</span><span class="chip">v2.7 + Drive</span><button class="btn small ghost pwa-install" id="pwa-install" type="button">Install app</button><span id="pwa-status" class="pwa-status" role="status" aria-live="polite"></span><button id="reloadStudio" class="btn small ghost" type="button" title="Reload with an in-app confirmation">↻ Reload</button><button id="exitStudio" class="btn small danger" type="button" title="Open an exit confirmation before leaving">Exit Studio</button></div>
 </header>
 <div id="pwa-update" class="pwa-update" role="status" hidden>
   A new version of MegaFrame Studio is available. Save or export any work before updating.
   <button id="pwa-update-reload" class="btn small" type="button">Update &amp; reload</button>
 </div>
 <main class="appbody">
-<aside class="sidebar">
-<button id="mobileDrawerToggle" class="btn mobileDrawerToggle" type="button" aria-expanded="true" aria-controls="pinNav">Hide editing controls ▴</button>
+<div class="mobilePanelBar" role="group" aria-label="Mobile workspace panels">
+  <button id="mobileEditToggle" class="btn mobilePanelButton" type="button" aria-controls="editingSidebar" aria-expanded="false">☰ Editing controls ▾</button>
+  <button id="mobileSlidesToggle" class="btn mobilePanelButton" type="button" aria-controls="photoQueueSidebar" aria-expanded="false">▤ Photo slides ▾</button>
+</div>
+<aside id="editingSidebar" class="sidebar mobileDrawerClosed">
+<button id="mobileDrawerToggle" class="btn mobileDrawerToggle" type="button" aria-expanded="false" aria-controls="pinNav">Show editing controls ▾</button>
 <nav id="pinNav" class="pinNav" aria-label="Section navigation">
  <div class="pinNavTitle"><span>SECTIONS</span><span>Select one panel</span></div>
  <div class="pinNavGrid">
@@ -378,7 +468,7 @@ body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
  <button type="button" data-panel="2">3 · Import photos</button>
  <button type="button" data-panel="3">4 · Collage layout</button>
  <button type="button" data-panel="4">5 · Photo adjustments</button>
- <button type="button" data-panel="5">6 · Export images</button>
+ <button type="button" data-panel="5">6 · Export images</button><button type="button" data-panel="6">7 · Captions &amp; Overlays</button>
  </div>
 </nav>
 
@@ -522,6 +612,43 @@ body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
    <div id="exportProgress" class="progress"><div id="exportBar"></div></div>
    <div class="status" id="status" aria-live="polite"></div>
   </section>
+
+  <div class="sep"></div>
+  <section class="section" id="overlayPanel">
+   <div class="sectionHead"><span class="step">7</span><h2>Captions &amp; Overlays</h2></div>
+   <p class="help">Add as many captions, word art elements, logos and image overlays as your project needs. Each new element becomes its own editable layer; shared elements can have different positions, sizes and rotations on every photo.</p>
+   <div class="field"><label for="overlayScope">Apply new overlay to</label><select id="overlayScope"><option value="all">All photos (independent layouts)</option><option value="photo">Selected photo only</option><option value="canvas">Entire canvas</option></select></div>
+   <div class="draftActions"><button id="addTextOverlay" class="btn small primary" type="button">＋ Add Caption / Word Art</button><button id="addImageOverlay" class="btn small" type="button">＋ Add Image / Caption Graphic</button></div>
+   <input id="overlayImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+   <div class="field"><label for="overlayLayerList">Overlay layers</label><select id="overlayLayerList" size="4" aria-label="Select overlay"></select></div>
+   <div id="overlayEditor" hidden>
+    <div class="field"><label for="overlayContent">Text / Word art</label><textarea id="overlayContent" rows="3" maxlength="600"></textarea></div>
+    <div class="inline"><div class="field" style="flex:1">
+     <label for="overlayFontButton">Font style</label>
+     <div id="overlayFontPicker" class="overlayFontPicker">
+      <button id="overlayFontButton" class="overlayFontButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="overlayFontList" aria-label="Choose font"><span id="overlayFontSelected">Arial</span><span id="overlayFontChevron" aria-hidden="true" class="overlayFontChevron"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
+      <div id="overlayFontMenu" class="overlayFontMenu" hidden>
+       <div class="overlayFontSearchRow"><input id="overlayFontSearch" type="search" placeholder="Search fonts…" aria-label="Search font styles" autocomplete="off" /><button id="overlayFontClose" type="button" aria-label="Close font menu">×</button></div>
+       <div id="overlayFontList" class="overlayFontList" role="listbox" aria-label="Fonts shown in their own style"></div>
+       <p id="overlayFontEmpty" class="overlayFontEmpty" hidden>No matching fonts found.</p>
+       <p class="overlayFontNote">Fonts use your device's installed typefaces. Missing fonts may display a substitute.</p>
+      </div>
+      <select id="overlayFont" class="overlayFontLegacy" tabindex="-1" aria-hidden="true"><option>Arial</option></select>
+     </div>
+    </div><div class="field" style="flex:1"><label for="overlayColor">Text color</label><input id="overlayColor" type="color" value="#ffffff" /></div></div>
+    <div class="inline"><label class="check"><input id="overlayBold" type="checkbox" checked /> Bold</label><label class="check"><input id="overlayOutline" type="checkbox" /> Outline</label><label class="check"><input id="overlayShadow" type="checkbox" checked /> Shadow</label></div>
+    <div class="field"><label for="overlayFontSize">Font size (% of photo height)</label><input id="overlayFontSize" type="number" min="2" max="45" value="10" /></div>
+    <div class="inline"><div class="field" style="flex:1"><label for="overlayX">Position X (%)</label><input id="overlayX" type="number" min="-50" max="150" value="50" /></div><div class="field" style="flex:1"><label for="overlayY">Position Y (%)</label><input id="overlayY" type="number" min="-50" max="150" value="75" /></div></div>
+    <div class="inline"><div class="field" style="flex:1"><label for="overlayWidth">Width (%)</label><input id="overlayWidth" type="number" min="3" max="250" value="55" /></div><div class="field" style="flex:1"><label for="overlayHeight">Height (%)</label><input id="overlayHeight" type="number" min="3" max="250" value="18" /></div></div>
+    <label class="check"><input id="overlayAspectLock" type="checkbox" checked /> Keep aspect ratio while resizing</label>
+    <div class="inline"><div class="field" style="flex:1"><label for="overlayRotation">Rotate (degrees)</label><input id="overlayRotation" type="number" min="-360" max="360" value="0" /></div><div class="field" style="flex:1"><label for="overlayOpacity">Opacity (%)</label><input id="overlayOpacity" type="number" min="0" max="100" value="100" /></div></div>
+    <div class="inline"><label class="check"><input id="overlayVisible" type="checkbox" checked /> Visible on this photo</label><label class="check"><input id="overlayLocked" type="checkbox" /> Lock</label></div>
+    <div class="draftActions"><button id="overlayRotateLeft" class="btn small" type="button">↶ 90°</button><button id="overlayRotateRight" class="btn small" type="button">↷ 90°</button><button id="overlayDuplicate" class="btn small" type="button">Duplicate</button><button id="overlayDelete" class="btn small danger" type="button">Delete</button></div>
+    <div class="draftActions"><button id="overlayFront" class="btn small" type="button">Bring forward</button><button id="overlayBack" class="btn small" type="button">Send backward</button><button id="overlayReset" class="btn small" type="button">Reset layout</button></div>
+    <button id="overlayApplyAll" class="btn small" type="button">Apply this layout to all photos</button>
+    <p id="overlayStatus" class="help" role="status">Drag to move, drag corners to resize, use the round handle to rotate.</p>
+   </div>
+  </section>
   <div class="footer">Photos are processed locally in your browser. No account, internet connection, or server upload is required. Templates can be backed up as JSON, including the shape, appearance and collage settings.</div>
 </aside>
 <section class="workspace">
@@ -529,10 +656,15 @@ body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
  <div class="previewCard">
   <div class="previewTop"><div><strong id="previewTitle">7-Day Big Savings Sale</strong> <span class="tag" style="margin-left:7px" id="modeTag">Shape editing</span></div><div class="exportPreviewMeta"><small id="previewInfo">1254 × 1254 px</small><button type="button" id="exportInspect" class="btn small" hidden>Inspect 100%</button><button type="button" id="returnEditor" class="btn small" hidden>Back to editing</button></div></div>
   <div class="previewBody"><div class="canvasShell" id="canvasShell"><canvas id="previewCanvas" width="2018" height="2048" aria-label="Photo frame preview and editor"></canvas><canvas id="exportPreviewCanvas" hidden aria-label="Live preview at selected export resolution"></canvas></div></div>
+ </div>
+</section>
+<aside id="photoQueueSidebar" class="photoQueueSidebar photoQueueClosed" aria-label="Photo slides and selected photo controls">
+ <div class="photoQueuePinned">
+  <h2>Selected photo</h2>
   <div class="previewFoot"><span id="previewLabel">Sample frame · upload photos to get started</span><div class="inline previewActions"><button id="addEmojiCover" class="btn small" type="button" title="Add an emoji over a customer's face">😎 Cover face</button><button id="quickReplacePhoto" class="btn small" type="button">↻ Replace photo</button><button id="quickDeletePhoto" class="btn small danger" type="button">✕ Delete photo</button><button id="previous" class="btn small">‹ Previous</button><button id="next" class="btn small">Next ›</button></div></div>
  </div>
- <div class="galleryWrap"><div class="galleryTop"><h2>Batch photo queue</h2><span class="counter" id="queueSummary">No photos yet</span></div><div class="gallery" id="gallery"><div class="emptyGallery" style="grid-column:1/-1">Your imported photos will appear here. Select any to edit its image or collage slot.</div></div></div>
-</section>
+ <div class="galleryWrap" role="region" aria-label="Photo slide navigation"><div class="galleryTop"><h2>Photo slides</h2><span class="counter" id="queueSummary">No photos yet</span></div><div class="gallery" id="gallery"><div class="emptyGallery" style="grid-column:1/-1">Your imported photos will appear here. Select any to edit its image or collage slot.</div></div></div>
+</aside>
 </main>
 <dialog id="emojiPickerDialog" class="emojiPickerDialog" aria-labelledby="emojiPickerTitle">
  <div class="emojiPickerHeader"><strong id="emojiPickerTitle">Choose an emoji</strong><button id="emojiPickerClose" type="button" aria-label="Close emoji picker">✕</button></div>
@@ -613,6 +745,35 @@ body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
    <div class="exportInspectScroll"><canvas id="exportInspectCanvas" aria-label="Rendered export at its actual pixel dimensions"></canvas></div>
    <p class="exportInspectNote">Scroll to examine the actual output pixels. The fit-to-screen preview may look the same size at different resolutions.</p>
   </dialog>
+<dialog id="studioInfoDialog" class="actionModal" aria-labelledby="studioInfoTitle" aria-describedby="studioInfoMessage">
+ <div class="actionModalHeader"><h2 id="studioInfoTitle">MegaFrame Studio</h2></div>
+ <div class="actionModalBody"><p id="studioInfoMessage"></p></div>
+ <div class="actionModalFooter"><button id="studioInfoClose" class="btn primary" type="button" autofocus>OK</button></div>
+</dialog>
+<dialog id="reloadStudioDialog" class="actionModal exitStudioDialog" aria-labelledby="reloadStudioTitle" aria-describedby="reloadStudioWarning">
+ <div class="actionModalHeader"><h2 id="reloadStudioTitle">Reload MegaFrame Studio?</h2></div>
+ <div class="actionModalBody">
+  <p id="reloadStudioWarning">Reloading restarts the editor. Your saved projects will remain available.</p>
+  <p class="exitStudioHint">This in-app dialog applies to the Reload button and supported keyboard shortcuts. Browser-controlled reloads may still show a system confirmation.</p>
+ </div>
+ <div class="actionModalFooter">
+  <button id="reloadStudioCancel" class="btn" type="button" autofocus>Cancel</button>
+  <button id="reloadStudioDiscard" class="btn danger" type="button">Reload without saving</button>
+  <button id="reloadStudioSave" class="btn primary" type="button">Save &amp; Reload</button>
+ </div>
+</dialog>
+<dialog id="exitStudioDialog" class="actionModal exitStudioDialog" aria-labelledby="exitStudioTitle" aria-describedby="exitStudioWarning">
+ <div class="actionModalHeader"><h2 id="exitStudioTitle">Leave MegaFrame Studio?</h2></div>
+ <div class="actionModalBody">
+  <p id="exitStudioWarning">Check your unsaved changes before leaving.</p>
+  <p class="exitStudioHint">Saved projects are stored on this device. Closing the window or refreshing may still use a browser confirmation.</p>
+ </div>
+ <div class="actionModalFooter">
+  <button id="exitStudioCancel" class="btn" type="button" autofocus>Cancel</button>
+  <button id="exitStudioLeave" class="btn danger" type="button">Leave without saving</button>
+  <button id="exitStudioSave" class="btn primary" type="button">Save &amp; Exit</button>
+ </div>
+</dialog>
   <dialog id="actionModal" class="actionModal" aria-labelledby="actionModalTitle" aria-describedby="actionModalMessage">
  <div class="actionModalHeader"><h2 id="actionModalTitle">Confirm action</h2></div>
  <div class="actionModalBody"><p id="actionModalMessage"></p><input type="text" id="actionModalInput" maxlength="140" hidden aria-label="Enter name" /><p id="actionModalError" class="actionModalError" hidden>Please enter a name.</p></div>
@@ -771,10 +932,12 @@ body>.appbar .logo{box-shadow:0 3px 10px #101a3690}
 <script src="./gold_image-1.js" defer></script>
 <script src="./gold_image-2.js" defer></script>
 <script src="./gold_image-3.js" defer></script>
-<script src="./editor.js" defer></script>
+<script src="./overlay-engine.js" defer></script>
+<script src="./editor.js?v=20261121-static-loader-1" defer></script>
 <script src="./cloud-config.js" defer></script>
 <script src="./google-drive-config.js" defer></script>
 <script src="./google-drive.js" defer></script>
 <script src="./shared.js" defer></script>
 <script src="./pwa-client.js" defer></script>
+<script src="./chat-sidebar.js?v=20261121-static-loader-1" defer></script>
 </body></html>

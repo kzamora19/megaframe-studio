@@ -15,7 +15,7 @@ test("private MegaFrame build leaves the public output editor-free", () => {
     const manifest=JSON.parse(readFileSync(join(output,"manifest.json"),"utf8"));
     const editor=readFileSync(join(output,"private","studio.html"),"utf8");
     const publicEntry=readFileSync(join(output,"public","index.html"),"utf8");
-    assert.equal(manifest.inlined.length,15);
+    assert.equal(manifest.inlined.length,19);
     assert.ok(editor.length>75000);
     assert.ok(editor.startsWith("<!-- PRIVATE MEGAFRAME EDITOR BUNDLE."));
     assert.match(editor,/Social Media Photo Frame Generator/);
@@ -32,6 +32,10 @@ test("private MegaFrame build leaves the public output editor-free", () => {
       "Protected editor must keep latest recovery archive ID helper");
     assert.match(editor,/async function deleteLinkedRecovery\(id\)/,
       "Recovery deletion must coordinate auto-draft and archived project");
+    assert.match(editor,/function overlayDrawLayers\(/,"Current multi-layer captions and overlays must survive private packaging");
+    assert.match(editor,/const MENUS=\[/,"Current ChatGPT-style navigation must survive private packaging");
+    assert.match(editor,/chatRailWide|frameRailWide/,"Responsive sidebar must be included");
+    assert.doesNotMatch(editor,/src=["']\.\/chat-sidebar\.js|href=["']\.\/chat-sidebar\.css/);
     assert.match(editor,/startupChoiceDialog/,
       "Current v2.7 startup Create New / Retrieve chooser must remain bundled");
     const vault=readFileSync(join(root,"staging/studio-access/draft-vault.js"),"utf8");
