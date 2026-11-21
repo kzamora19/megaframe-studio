@@ -1,6 +1,6 @@
 # MegaFrame Studio PTG-gated private delivery — staging only
 
-**DO NOT DEPLOY OR MERGE INTO PUBLIC PAGES.** This branch contains only source/public bundling proof, not a functioning authorized app.
+**DO NOT DEPLOY OR MERGE INTO PUBLIC PAGES.** This branch contains an actual mock-authorized protected editor and private packaging proof, but NO live authorization service or production changes.
 
 ## Reason for a new route
 Existing draft PR #16 protects requests with a Vercel proxy, conflicting with the approved GitHub Pages + Supabase architecture. GitHub Pages cannot authenticate requests to HTML, JavaScript or offline editor files. The PTG Creative Studios gate must authorize loading protected editor assets, not just hide navigation.
@@ -12,7 +12,7 @@ Existing draft PR #16 protects requests with a Vercel proxy, conflicting with th
 - Existing main workflow scripts/build_pages_site.py remains unchanged and still serves the current public editor. No existing sessions or saved frames are altered.
 
 ## Required next steps before any release
-1. Implement MegaFrame Supabase Edge private delivery with exact-origin CORS plus server-side ticket verification via PTG #38. Verify ticket entitlement for MegaFrame on every load/check, immutable path/hash and no direct Storage read policy.
+1. Validate the existing staged MegaFrame Supabase Edge private delivery on an isolated hosted staging backend against current PTG draft #40. Verify entitlement on every load/check, immutable path/hash and no direct Storage read policy.
 2. Make protected editor run in a properly isolated browser origin; the current CSP script-src self disallows bundled inline scripts and must be re-designed, not disabled casually. Google Identity and OAuth, cloud library, relative images and storage origin also need testing.
 3. Real-login acceptance: eligible TL/Admin allowed; ordinary user, disabled/revoked/branch-off and expired/forged/wrong-studio ticket denied. Check direct editor URL, asset, PWA cache bypasses.
 4. Validate photo/frame editing, PDF/PNG export, cloud templates, Google Drive backups, and local draft restoration. A ten-minute ticket may expire mid-edit: add safe renewal/re-entry.
@@ -20,7 +20,7 @@ Existing draft PR #16 protects requests with a Vercel proxy, conflicting with th
 6. No secret or refresh token exposed to GitHub Pages or scripts. All applications under kzamora19.github.io share an origin, so URL path separation does not protect localStorage.
 7. Obtain separate, explicit production release approval after staging and real-account security checks.
 
-**Current work is not an authentication solution or a functioning protected MegaFrame.**
+**Mock-protected editor and encrypted project storage work in development; actual live PTG authorization and hosted delivery remain unverified.**
 
 ## November 21 — actual sandbox-browser acceptance finding
 - Staging Chrome tests confirmed that a forged/mismatched private-bundle digest is denied; a valid mock PTG ticket loads the actual editor into an opaque-origin sandbox; the photo upload and full PNG download work; and a simulated session revocation removes the frame.
@@ -38,3 +38,13 @@ Existing draft PR #16 protects requests with a Vercel proxy, conflicting with th
 - Key rotation must be planned: changing PTG_STUDIO_DRAFT_RECOVERY_SECRET without decrypt/re-encrypt migration would make existing encrypted local drafts unreadable.
 - **Production remains unchanged.** Do not merge or deploy until real end-to-end, privacy, direct-URL/PWA-cache and atomic cutover checks pass.
 
+
+
+## November 21 — synchronize new live project library and privacy bridge (current)
+- Latest production MegaFrame main commit `1bcf361241a190b676f4ce17c5ba3086b3c5548d` (searchable categorized emoji picker, named Save Project/Open Projects, backup/import) was incorporated as a two-parent merge into this **development-only** branch.
+- The original named-project IndexedDB would not work inside a sandbox without `allow-same-origin`, and must not save plaintext customer photos on the shared GitHub Pages origin. The private package builder now replaces all four named-project storage functions with the same narrow parent `MessagePort` vault used by automatic drafts.
+- The launcher AES-256-GCM vault now keeps each saved project as a separate ciphertext record keyed by the authenticated PTG-account scope. The record's name and original customer-photo payload are encrypted, with per-record authenticated associated data. The existing encrypted rolling draft remains readable without a database version change.
+- Chromium regression verifies emoji search/picker, the real Save Project/Open Projects UI, same-account project restoration after revoked/new PTG launch, different-account project denial, and ciphertext-only IndexedDB records.
+- **[Passing private package + Chromium browser CI](https://github.com/kzamora19/megaframe-studio/actions/runs/44876506308)**, staging commit `83de09d611cf047230bc08ffcaa845fb77a195a6`. This is mocked PTG/cloud authorization; it does NOT prove real Google Drive backups, cloud templates, separate-device synchronization, account revocation against deployed Edge services, or PWA/old-source cutover.
+- Downloaded MegaFrame project JSON backup files intentionally contain the original customer photos **in plaintext**; users must keep those exports private. Automatic cross-device upload is not enabled.
+- PTG #40 additionally passed local real Supabase Auth/PostgREST, PostgreSQL concurrency, and per-account atomic launch rate limiting. Do not confuse those PTG-local results with a deployed MegaFrame integration. **NO merge or production deployment approved.**
