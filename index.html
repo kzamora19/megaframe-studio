@@ -284,6 +284,15 @@ button.danger:hover{background:#ffe9ec}
 @media(max-width:410px){.emojiPickerItem{font-size:26px}.emojiPickerGrid{height:270px}.emojiPickerDialog{max-height:89dvh}}
 
 .savedProjectsDialog{max-width:760px;width:calc(100vw - 24px)}
+.startupChoiceDialog{max-width:670px;width:calc(100vw - 24px)}
+.startupChoiceBody{padding:24px}
+.startupChoiceOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.startupChoiceOption{border:1px solid #d7e1f8;background:#f5f8ff;border-radius:14px;padding:23px 16px;min-height:164px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:12px;cursor:pointer;color:#102451;transition:border-color .15s,box-shadow .15s,background .15s}
+.startupChoiceOption:hover,.startupChoiceOption:focus-visible{border-color:#2454f0;background:#edf2ff;box-shadow:0 0 0 2px rgba(36,84,240,.12)}
+.startupChoiceOption strong{font-size:17px;line-height:1.35;color:#1743c9}
+.startupChoiceOption small{font-size:12px;line-height:1.5;color:#647699}
+.startupChoiceNote{font-size:12px;color:#697a96;line-height:1.55;margin:17px 0 0}
+@media(max-width:580px){.startupChoiceBody{padding:16px}.startupChoiceOptions{grid-template-columns:1fr}.startupChoiceOption{min-height:110px;padding:17px}}
 .automaticRecoveryCard{background:#f2f6ff;border-color:#c9d8fb}
 .automaticRecoveryCard[hidden],#startBlankProject[hidden]{display:none!important}
 #savedProjectsIntro{margin:0 0 13px;line-height:1.5}
@@ -485,6 +494,16 @@ button.danger:hover{background:#ffe9ec}
  <div id="emojiPickerGrid" class="emojiPickerGrid" role="group" aria-label="Emoji choices"></div>
  <div id="emojiPickerTabs" class="emojiPickerTabs" role="group" aria-label="Emoji categories"></div>
  <p class="emojiPickerPrivacy">Transparent emoji overlay. Check face coverage before sharing.</p>
+</dialog>
+<dialog id="startupChoiceDialog" class="frameLibrary startupChoiceDialog" aria-labelledby="startupChoiceTitle">
+ <div class="frameLibHead"><div><h2 id="startupChoiceTitle">Welcome to MegaFrame Studio</h2><p>What would you like to do?</p></div></div>
+ <div class="startupChoiceBody">
+  <div class="startupChoiceOptions" role="group" aria-label="Choose how to begin">
+   <button id="createNewProject" class="startupChoiceOption" type="button" autofocus><strong>＋ Create New Project</strong><small>Start with a clean, blank workspace. Existing saved projects stay safe.</small></button>
+   <button id="retrieveStartupProject" class="startupChoiceOption" type="button"><strong>📂 Retrieve Saved Project</strong><small>Open a previously saved project, restore unfinished work, or import a backup.</small></button>
+  </div>
+  <p class="startupChoiceNote">Your named projects and automatic recovery copies remain stored on this device unless you explicitly delete them.</p>
+ </div>
 </dialog>
 <dialog id="savedProjectsDialog" class="frameLibrary savedProjectsDialog" aria-labelledby="savedProjectsTitle">
  <div class="frameLibHead"><div><h2 id="savedProjectsTitle">Retrieve unfinished projects</h2><p>Pick up where you left off, or begin with a blank workspace</p></div><button id="closeSavedProjects" class="btn small" type="button">Close</button></div>
