@@ -89,6 +89,7 @@ const assert=require('node:assert/strict');
 
   // On phones, both panels begin collapsed to leave the canvas clear.
   await page.setViewportSize({width:390,height:844});
+  await page.waitForFunction(()=>document.querySelector('.sidebar').classList.contains('mobileDrawerClosed')&&document.querySelector('.photoQueueSidebar').classList.contains('photoQueueClosed'));
   assert.equal(await page.locator('#mobileSlidesToggle').getAttribute('aria-expanded'),'false');
   assert.equal(await page.locator('.photoQueueSidebar').isVisible(),false);
   assert.equal(await page.locator('.sidebar').isVisible(),false);
