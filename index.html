@@ -327,11 +327,16 @@ button.danger:hover{background:#ffe9ec}
    different typefaces in Windows browsers. The hidden select supports older projects. */
 .overlayFontPicker{position:relative;min-width:0}
 .overlayFontLegacy{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;border:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
-.overlayFontButton{width:100%;min-width:0;min-height:43px;background:#fff;border:1px solid #dce2f2;border-radius:10px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#172343;font-size:17px;text-align:left}
+.overlayFontButton{width:100%;min-width:0;min-height:46px;background:#fff;border:1px solid #dce2f2;border-radius:10px;padding:7px 8px 7px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;color:#172343;font-size:17px;line-height:1.25;text-align:left}
 .overlayFontButton:hover{border-color:#9cb0e9;background:#fafbff}
 .overlayFontButton:focus-visible,.overlayFontButton[aria-expanded="true"]{border-color:#4167ff;outline:2px solid #c5d3ff80;outline-offset:1px}
-#overlayFontSelected{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.overlayFontChevron{font-family:Arial,sans-serif;font-size:18px;color:#62769f;line-height:1}
+#overlayFontSelected{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.3}
+.overlayFontChevron{flex:0 0 31px;width:31px;height:29px;display:flex;align-items:center;justify-content:center;border-left:1px solid #e8edf7;color:#647797;border-radius:0 6px 6px 0;transition:color .15s,background .15s}
+.overlayFontChevron svg{width:16px;height:16px;display:block;fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round;transition:transform .17s ease}
+.overlayFontButton:hover .overlayFontChevron{color:#2e56b7;background:#f3f6ff}
+.overlayFontButton[aria-expanded="true"] .overlayFontChevron{color:#2e55d5;background:#edf3ff}
+.overlayFontButton[aria-expanded="true"] .overlayFontChevron svg{transform:rotate(180deg)}
+@media(prefers-reduced-motion:reduce){.overlayFontChevron,.overlayFontChevron svg{transition:none}}
 .overlayFontMenu{position:fixed;z-index:1100;background:#fff;color:#19254a;border:1px solid #c7d5f4;border-radius:13px;box-shadow:0 12px 42px #172b5460;display:flex;flex-direction:column;max-height:calc(100dvh - 24px);padding:8px;gap:5px}
 .overlayFontMenu[hidden]{display:none!important}
 .overlayFontSearchRow{display:flex;align-items:center;gap:5px;flex:0 0 auto}
@@ -556,7 +561,7 @@ button.danger:hover{background:#ffe9ec}
     <div class="inline"><div class="field" style="flex:1">
      <label for="overlayFontButton">Font style</label>
      <div id="overlayFontPicker" class="overlayFontPicker">
-      <button id="overlayFontButton" class="overlayFontButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="overlayFontList" aria-label="Choose font"><span id="overlayFontSelected">Arial</span><span aria-hidden="true" class="overlayFontChevron">⌄</span></button>
+      <button id="overlayFontButton" class="overlayFontButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="overlayFontList" aria-label="Choose font"><span id="overlayFontSelected">Arial</span><span id="overlayFontChevron" aria-hidden="true" class="overlayFontChevron"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
       <div id="overlayFontMenu" class="overlayFontMenu" hidden>
        <div class="overlayFontSearchRow"><input id="overlayFontSearch" type="search" placeholder="Search fonts…" aria-label="Search font styles" autocomplete="off" /><button id="overlayFontClose" type="button" aria-label="Close font menu">×</button></div>
        <div id="overlayFontList" class="overlayFontList" role="listbox" aria-label="Fonts shown in their own style"></div>

@@ -17,12 +17,29 @@ async function testFonts(browser,mobile){
   await page.locator('#addTextOverlay').click();
   await page.locator('#overlayContent').fill('BIG SAVINGS!');
   assert.ok(await page.locator('#overlayFont').locator('option').count()>=40,'Expanded font catalog');
+  // The chevron should be a true centered icon, not a font glyph shifted by baseline.
+  assert.equal(await page.locator('#overlayFontChevron svg path').count(),1);
+  assert.equal((await page.locator('#overlayFontChevron').textContent()).trim(),'');
+  const chevronGeometry=await page.evaluate(()=>{
+   const button=document.querySelector('#overlayFontButton').getBoundingClientRect();
+   const arrow=document.querySelector('#overlayFontChevron svg').getBoundingClientRect();
+   const name=document.querySelector('#overlayFontSelected').getBoundingClientRect();
+   return {centerDelta:Math.abs((button.y+button.height/2)-(arrow.y+arrow.height/2)),
+    arrowInside:arrow.x>=name.right&&arrow.right<=button.right,
+    iconSize:arrow.width};
+  });
+  assert.ok(chevronGeometry.centerDelta<=3,'Chevron is vertically centered in font selector');
+  assert.ok(chevronGeometry.arrowInside,'Chevron is aligned at the right end of the font selector');
+  assert.ok(chevronGeometry.iconSize>=14&&chevronGeometry.iconSize<=18,'Chevron has consistent icon sizing');
   assert.equal(await page.locator('#overlayFontButton').getAttribute('aria-expanded'),'false');
   await page.locator('#overlayFontButton').click();
   await page.locator('#overlayFontMenu').waitFor({state:'visible'});
   const fontMenuImage=await page.locator('#overlayFontMenu').screenshot({type:'jpeg',quality:55,animations:'disabled'});
   console.log('FONT_PICKER_VISUAL_'+(mobile?'MOBILE':'DESKTOP')+'='+fontMenuImage.toString('base64'));
   assert.equal(await page.locator('#overlayFontButton').getAttribute('aria-expanded'),'true');
+  await page.waitForTimeout(210);
+  const chevronIsFlipped=await page.locator('#overlayFontChevron svg').evaluate(el=>getComputedStyle(el).transform);
+  assert.notEqual(chevronIsFlipped,'none','Chevron rotates when menu opens');
   assert.ok(await page.locator('#overlayFontList [data-font]').count()>=40);
   const names=await page.locator('#overlayFontList [data-font]').evaluateAll(els=>els.map(el=>el.dataset.font));
   assert.ok(names.includes('Segoe Script')&&names.includes('Times New Roman')&&names.includes('Cooper Black'));
