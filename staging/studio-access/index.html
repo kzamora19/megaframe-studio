@@ -54,9 +54,9 @@ main{padding:20px}
  </section>
 
 <section id="drivePanel" hidden aria-label="Manual Google Drive encrypted project backups">
-  <strong>Google Drive Backups</strong>
-  <small>Additional, opt-in storage in your own Google Drive. Supabase saving is unchanged. Encrypted projects may include customer photos.</small>
-  <button type="button" id="driveConnect">Connect Google Drive</button>
+  <strong>Company Google Drive Backups</strong>
+  <small>Centralized encrypted backups in the approved owner Google Drive. Staff sign in with PTG only. Supabase saving is unchanged.</small>
+  <button type="button" id="driveConnect" hidden>Owner authorization (admin only)</button>
   <button type="button" id="driveDisconnect" hidden>Disconnect</button>
   <button type="button" id="driveRefresh">Refresh Drive backups</button>
   <label id="driveLocalWrap">Local project <select id="driveLocalProject"></select></label>
@@ -75,7 +75,7 @@ window.MEGAFRAME_STUDIO_PRIVATE_CONFIG = {
   checkIntervalMs: 30000,
 };
 </script>
-<script src="./draft-vault.js" defer></script><script src="./drive-backup.js" defer></script>
+<script src="./draft-vault.js" defer></script><script src="./central-drive.js" defer></script>
 <script src="./launch.js" defer></script>
 </body>
 </html>
