@@ -12,6 +12,7 @@ const assert = require('node:assert/strict');
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'));
   assert.equal(await page.locator('#addEmojiCover').isDisabled(),true,'Emoji button disabled with no photo');
+  await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
   await page.locator('#photosInput').setInputFiles({name:'customer.png',mimeType:'image/png',buffer:png});
   await page.waitForFunction(()=>document.querySelector('#photoCount')?.textContent?.includes('1 photo'));
