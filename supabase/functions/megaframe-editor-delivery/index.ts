@@ -2,7 +2,7 @@
 // Returns a private editor bundle as JSON after checking a PTG-issued studio ticket.
 // GET text/html is not used: default Supabase Edge domains rewrite HTML responses.
 import {createClient} from "npm:@supabase/supabase-js@2.49.8";
-import {studioTicketOk,deliveryConfigured,exactHttpsOrigin,validPtgGatewayUrl} from "../_shared/studio-private-policy.mjs";
+import {studioTicketOk,deliveryConfigured,exactHttpsOrigin,validPtgGatewayUrl,validStudioBackendUrl} from "../_shared/studio-private-policy.mjs";
 
 const MEGAFRAME_URL=Deno.env.get("SUPABASE_URL")||"";
 const MEGAFRAME_SERVICE=Deno.env.get("SUPABASE_SECRET_KEY")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -29,7 +29,7 @@ function json(origin:string,value:unknown,status=200){
  return new Response(JSON.stringify(value),{status,headers});
 }
 function configReady(){
- return !!PTG_VERIFY_URL && /^https:\/\/[^/]+\.supabase\.co$/.test(MEGAFRAME_URL)&&deliveryConfigured({
+ return !!PTG_VERIFY_URL && !!validStudioBackendUrl(MEGAFRAME_URL,DEPLOYMENT_MODE,"vmyoxoiygfcecgkbavgg") && deliveryConfigured({
   origin:ALLOWED_ORIGIN,secret:VERIFY_SECRET,serviceKey:MEGAFRAME_SERVICE,
   path:BUNDLE_PATH,sha:BUNDLE_SHA,bucket:BUNDLE_BUCKET
  });
