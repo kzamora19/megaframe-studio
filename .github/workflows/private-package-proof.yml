@@ -22,3 +22,19 @@ jobs:
           node --check staging/build-private-package.mjs
           node --test staging/private-package.test.mjs
           node --test staging/private-delivery-policy.test.mjs
+      - name: Check private launcher JavaScript syntax
+        run: node --check staging/studio-access/launch.js
+  verify-protected-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install isolated Chromium
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install chromium --only-shell
+      - name: Verify protected MegaFrame editor mount, tampered bundles and revocation
+        run: node staging/private-launch-browser.test.mjs
