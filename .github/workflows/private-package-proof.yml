@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'staging/**'
+      - 'supabase/functions/**'
       - '.github/workflows/private-package-proof.yml'
   workflow_dispatch:
 permissions:
@@ -20,3 +21,4 @@ jobs:
         run: |
           node --check staging/build-private-package.mjs
           node --test staging/private-package.test.mjs
+          node --test staging/private-delivery-policy.test.mjs
