@@ -31,7 +31,7 @@ test("Retirement Pages artifact excludes editor source, preserves icon, and incl
   assert.doesNotMatch(sw,/caches\.match|caches\.open|indexedDB|localStorage/);
   assert.doesNotMatch(client,/indexedDB\.(?:deleteDatabase|open)|localStorage\.(?:clear|removeItem)|caches\.delete|unregister\(/);
   assert.equal(readdirSync(join(target,"icons")).length,3);
-  assert.deepEqual(readdirSync(join(target,"studio")).sort(),["draft-vault.js","drive-backup.js","index.html","launch.js"]);
+  assert.deepEqual(readdirSync(join(target,"studio")).sort(),["draft-vault.js","central-drive.js","index.html","launch.js"]);
   const entry=readFileSync(join(target,"studio","index.html"),"utf8");
   assert.match(entry,/MegaFrame Studio — Branchline protected editor/);
   assert.match(entry,/megaframe-editor-delivery/);
