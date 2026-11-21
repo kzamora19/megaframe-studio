@@ -128,7 +128,27 @@ try {
   assert.equal(headerChrome.subtitle,"rgb(220, 230, 255)");
   await frame.locator("#previewCanvas").waitFor({timeout:90000});
   // Latest production startup choice must also work inside the private editor.
-  await frame.locator("#startupChoiceDialog[open]").waitFor({timeout:30000});
+  try{
+    await frame.locator("#startupChoiceDialog[open]").waitFor({timeout:12000});
+  }catch(error){
+    const diagnostic=await frame.locator("body").evaluate(()=>({
+      status:document.getElementById("status")?.textContent,
+      startupExists:!!document.getElementById("startupChoiceDialog"),
+      startupOpen:document.getElementById("startupChoiceDialog")?.open,
+      visibleDialogTitles:[...document.querySelectorAll("dialog[open]")].map(d=>d.querySelector("h2")?.textContent||d.id),
+      draftStatus:document.getElementById("draftStatus")?.textContent,
+      toast:document.getElementById("toast")?.textContent,
+      bridge:typeof window.__MEGAFRAME_PRIVATE_DRAFT__,
+      appState:typeof app!=="undefined"?{
+        template:app.template?.name,photoCount:app.photos?.length,frameReady:!!app.frame
+      }:null
+    })).catch(e=>({failedToInspect:e.message}));
+    console.log("MEGAFRAME_PRIVATE_STARTUP_DIAGNOSTIC",JSON.stringify({
+      diagnostic,pageErrors:errors.slice(0,20),launcher:await page.locator("#status").textContent().catch(()=>null),
+      requestCount:requests.length
+    }));
+    throw error;
+  }
   assert.equal(await frame.locator("#createNewProject").isVisible(),true);
   assert.equal(await frame.locator("#retrieveStartupProject").isVisible(),true);
   await frame.locator("#createNewProject").click();
