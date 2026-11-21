@@ -493,7 +493,10 @@ button.danger:hover{background:#ffe9ec}
   <button id="startBlankProject" class="btn primary" type="button" hidden>Start blank workspace</button>
   <article id="automaticRecoveryCard" class="savedProjectCard automaticRecoveryCard" hidden>
     <div><strong>Automatic recovery copy</strong><small id="recoveryProjectMeta">Checking this device…</small></div>
-    <div class="savedProjectActions"><button id="restoreRecoveryDraft" class="btn primary small" type="button">Restore unfinished session</button></div>
+    <div class="savedProjectActions">
+      <button id="restoreRecoveryDraft" class="btn primary small" type="button">Restore unfinished session</button>
+      <button id="discardRecoveryDraft" class="btn danger small" type="button">Discard recovery</button>
+    </div>
   </article>
   <div class="inline"><button id="importProject" class="btn small" type="button">↑ Import project backup</button><input hidden type="file" id="importProjectFile" accept=".json,application/json" /></div>
   <p id="projectListStatus" class="help" role="status">Loading saved projects…</p>
