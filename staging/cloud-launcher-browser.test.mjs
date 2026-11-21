@@ -32,10 +32,12 @@ try{
   const url=route.request().url();
   if(url.startsWith(origin))return route.continue();
   if(url!=="https://vmyoxoiygfcecgkbavgg.supabase.co/functions/v1/megaframe-editor-delivery")return route.abort();
-  const body=route.request().postDataJSON();
-  requests.push(body);
   const headers={"Access-Control-Allow-Origin":origin,"Access-Control-Allow-Headers":"*",
     "Access-Control-Allow-Methods":"POST, OPTIONS"};
+  if(route.request().method()==="OPTIONS")
+    return route.fulfill({status:204,headers});
+  const body=route.request().postDataJSON();
+  requests.push(body);
   if(body.action==="load"){
    const sessionId=randomUUID(),challenge=randomBytes(32).toString("base64url");
    sessions.set(sessionId,{challenge,publicKey:body.publicKey});
