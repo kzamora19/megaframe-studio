@@ -18,6 +18,9 @@ on:
       - 'qa/smoke-recovery-discard.cjs'
       - 'qa/smoke-startup-choice.cjs'
       - 'qa/smoke-new-project.cjs'
+      - 'qa/smoke-overlays.cjs'
+      - 'qa/smoke-multiple-overlays.cjs'
+      - 'qa/smoke-overlays-device-review.cjs'
       - 'qa/smoke-drive.cjs'
       - '.github/workflows/pages.yml'
   push:
@@ -37,6 +40,9 @@ on:
       - 'qa/smoke-recovery-discard.cjs'
       - 'qa/smoke-startup-choice.cjs'
       - 'qa/smoke-new-project.cjs'
+      - 'qa/smoke-overlays.cjs'
+      - 'qa/smoke-multiple-overlays.cjs'
+      - 'qa/smoke-overlays-device-review.cjs'
       - 'qa/smoke-drive.cjs'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -59,6 +65,7 @@ jobs:
       - name: Verify JavaScript syntax
         run: |
           node --check editor.js
+          node --check overlay-engine.js
           node --check shared.js
           node --check pwa-client.js
           node --check service-worker.js
@@ -71,6 +78,9 @@ jobs:
           node --check qa/smoke-recovery-discard.cjs
           node --check qa/smoke-startup-choice.cjs
           node --check qa/smoke-new-project.cjs
+          node --check qa/smoke-overlays.cjs
+          node --check qa/smoke-multiple-overlays.cjs
+          node --check qa/smoke-overlays-device-review.cjs
           node --check google-drive.js
           node --check google-drive-config.js
           node --check qa/smoke-drive.cjs
@@ -102,6 +112,9 @@ jobs:
           node qa/smoke-recovery-discard.cjs
           node qa/smoke-startup-choice.cjs
           node qa/smoke-new-project.cjs
+          node qa/smoke-overlays.cjs
+          node qa/smoke-multiple-overlays.cjs
+          node qa/smoke-overlays-device-review.cjs
           node qa/smoke-drive.cjs
 
   publish:

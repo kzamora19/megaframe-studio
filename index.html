@@ -309,6 +309,13 @@ button.danger:hover{background:#ffe9ec}
 .recoveryDetails .draftStatus{margin-top:9px}
 #projectSaveStatus{margin:8px 0 0}
 @media(max-width:720px){.savedProjectsBody{padding:14px}.savedProjectActions{width:100%}}
+.overlaySelectMode{cursor:move}
+#overlayEditor[hidden]{display:none!important}
+#overlayLayerList{width:100%;min-height:100px}
+#overlayContent{display:block;width:100%;min-height:74px;box-sizing:border-box;resize:vertical}
+#overlayPanel .field input[type="number"]{width:100%;min-width:0}
+#overlayPanel .draftActions{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+#overlayPanel .check{font-size:12px}
 </style>
 </head>
 <body>
@@ -331,7 +338,7 @@ button.danger:hover{background:#ffe9ec}
  <button type="button" data-panel="2">3 · Import photos</button>
  <button type="button" data-panel="3">4 · Collage layout</button>
  <button type="button" data-panel="4">5 · Photo adjustments</button>
- <button type="button" data-panel="5">6 · Export images</button>
+ <button type="button" data-panel="5">6 · Export images</button><button type="button" data-panel="6">7 · Captions &amp; Overlays</button>
  </div>
 </nav>
 
@@ -474,6 +481,31 @@ button.danger:hover{background:#ffe9ec}
    <button id="downloadZip" class="btn wide" style="margin-top:3px">↓ Download ZIP (optional)</button>
    <div id="exportProgress" class="progress"><div id="exportBar"></div></div>
    <div class="status" id="status" aria-live="polite"></div>
+  </section>
+
+  <div class="sep"></div>
+  <section class="section" id="overlayPanel">
+   <div class="sectionHead"><span class="step">7</span><h2>Captions &amp; Overlays</h2></div>
+   <p class="help">Add as many captions, word art elements, logos and image overlays as your project needs. Each new element becomes its own editable layer; shared elements can have different positions, sizes and rotations on every photo.</p>
+   <div class="field"><label for="overlayScope">Apply new overlay to</label><select id="overlayScope"><option value="all">All photos (independent layouts)</option><option value="photo">Selected photo only</option><option value="canvas">Entire canvas</option></select></div>
+   <div class="draftActions"><button id="addTextOverlay" class="btn small primary" type="button">＋ Add Caption / Word Art</button><button id="addImageOverlay" class="btn small" type="button">＋ Add Image / Caption Graphic</button></div>
+   <input id="overlayImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+   <div class="field"><label for="overlayLayerList">Overlay layers</label><select id="overlayLayerList" size="4" aria-label="Select overlay"></select></div>
+   <div id="overlayEditor" hidden>
+    <div class="field"><label for="overlayContent">Text / Word art</label><textarea id="overlayContent" rows="3" maxlength="600"></textarea></div>
+    <div class="inline"><div class="field" style="flex:1"><label for="overlayFont">Font</label><select id="overlayFont"><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Impact</option><option>Trebuchet MS</option><option>Tahoma</option></select></div><div class="field" style="flex:1"><label for="overlayColor">Text color</label><input id="overlayColor" type="color" value="#ffffff" /></div></div>
+    <div class="inline"><label class="check"><input id="overlayBold" type="checkbox" checked /> Bold</label><label class="check"><input id="overlayOutline" type="checkbox" /> Outline</label><label class="check"><input id="overlayShadow" type="checkbox" checked /> Shadow</label></div>
+    <div class="field"><label for="overlayFontSize">Font size (% of photo height)</label><input id="overlayFontSize" type="number" min="2" max="45" value="10" /></div>
+    <div class="inline"><div class="field" style="flex:1"><label for="overlayX">Position X (%)</label><input id="overlayX" type="number" min="-50" max="150" value="50" /></div><div class="field" style="flex:1"><label for="overlayY">Position Y (%)</label><input id="overlayY" type="number" min="-50" max="150" value="75" /></div></div>
+    <div class="inline"><div class="field" style="flex:1"><label for="overlayWidth">Width (%)</label><input id="overlayWidth" type="number" min="3" max="250" value="55" /></div><div class="field" style="flex:1"><label for="overlayHeight">Height (%)</label><input id="overlayHeight" type="number" min="3" max="250" value="18" /></div></div>
+    <label class="check"><input id="overlayAspectLock" type="checkbox" checked /> Keep aspect ratio while resizing</label>
+    <div class="inline"><div class="field" style="flex:1"><label for="overlayRotation">Rotate (degrees)</label><input id="overlayRotation" type="number" min="-360" max="360" value="0" /></div><div class="field" style="flex:1"><label for="overlayOpacity">Opacity (%)</label><input id="overlayOpacity" type="number" min="0" max="100" value="100" /></div></div>
+    <div class="inline"><label class="check"><input id="overlayVisible" type="checkbox" checked /> Visible on this photo</label><label class="check"><input id="overlayLocked" type="checkbox" /> Lock</label></div>
+    <div class="draftActions"><button id="overlayRotateLeft" class="btn small" type="button">↶ 90°</button><button id="overlayRotateRight" class="btn small" type="button">↷ 90°</button><button id="overlayDuplicate" class="btn small" type="button">Duplicate</button><button id="overlayDelete" class="btn small danger" type="button">Delete</button></div>
+    <div class="draftActions"><button id="overlayFront" class="btn small" type="button">Bring forward</button><button id="overlayBack" class="btn small" type="button">Send backward</button><button id="overlayReset" class="btn small" type="button">Reset layout</button></div>
+    <button id="overlayApplyAll" class="btn small" type="button">Apply this layout to all photos</button>
+    <p id="overlayStatus" class="help" role="status">Drag to move, drag corners to resize, use the round handle to rotate.</p>
+   </div>
   </section>
   <div class="footer">Photos are processed locally in your browser. No account, internet connection, or server upload is required. Templates can be backed up as JSON, including the shape, appearance and collage settings.</div>
 </aside>
@@ -724,6 +756,7 @@ button.danger:hover{background:#ffe9ec}
 <script src="./gold_image-1.js" defer></script>
 <script src="./gold_image-2.js" defer></script>
 <script src="./gold_image-3.js" defer></script>
+<script src="./overlay-engine.js" defer></script>
 <script src="./editor.js" defer></script>
 <script src="./cloud-config.js" defer></script>
 <script src="./google-drive-config.js" defer></script>
