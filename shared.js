@@ -4,7 +4,7 @@
   const cfg = window.megaFrameCloudConfig;
   const configured = /^https:\/\/[a-z0-9]+\.supabase\.co$/.test(cfg?.url || '') &&
     /^sb_publishable_[A-Za-z0-9_-]+$/.test(cfg?.key || '');
-  let session = null, role = '', generation = 0, refreshing, checking, entries = [], busy = false, offset = 0, loaded = false, adminFormOpen = false;
+  let session = null, role = '', generation = 0, refreshing, checking, entries = [], busy = false, offset = 0, loaded = false, loadError = '', adminFormOpen = false;
   let activeTab = 'shared', privateEntries = [], privateLoaded = false, memberEntries = [];
   // Thumbnails are loaded only for visible cards; private artwork stays in memory.
   let previewObserver = null, previewGeneration = 0, previewActive = 0;
@@ -193,14 +193,15 @@
       if (g !== generation) throw Error('The session changed. Try again.');
       return result;
     } catch (err) {
-      if (g === generation && err.status === 401) signedOut();
+      if (g === generation && !isPublicRead && err.status === 401) signedOut();
       throw err;
     }
   }
   async function sync() {
     if (checking) return checking;
-    const g = generation, page = offset;
-    checking = (async () => {
+    const page = offset;
+    let pending;
+    pending = (async () => {
       lastFetchOnline = false;
       try {
         if (!navigator.onLine) throw Error('No network connection.');
@@ -223,11 +224,20 @@
         await publicCacheWrite('pages', offset, entries);
         await reconcileCachedDetails(entries);
         lastFetchOnline = true;
+        loadError = '';
         loaded = true;
         paint();
         message('Online · shared templates synchronized at ' + new Date().toLocaleTimeString());
       } catch (err) {
-        if (!canUseOfflineCopy(err)) throw err;
+        if (!canUseOfflineCopy(err)) {
+          // HTTP auth/permission failures must not masquerade as an endless load.
+          entries = [];
+          loaded = true;
+          loadError = 'Unable to load published frames (HTTP ' + err.status + '). Select Refresh library to retry.';
+          paint();
+          throw err;
+        }
+        loadError = '';
         const cached = await publicCacheRead('pages', offset);
         if (!cached) {
           entries = [];
@@ -241,7 +251,8 @@
         paint();
         message('Offline: showing the last synchronized shared-template list. Previously opened frames are available.');
       }
-    })().finally(() => { if (g === generation) checking = null; });
+    })().finally(() => { if (checking === pending) checking = null; });
+    checking = pending;
     return checking;
   }
   function btn(label, handler, danger = false) {
@@ -469,7 +480,7 @@
     if (!configured) return;
     if (!entries.length) {
       const empty = document.createElement('p');
-      empty.textContent = loaded ? 'No shared templates yet.' : 'Loading published frames…';
+      empty.textContent = loadError || (loaded ? 'No shared templates yet.' : 'Loading published frames…');
       el('list').append(empty);
     }
     for (const row of entries.slice(0, pageSize).filter(item=>matchesCloudFilter('shared',item))) {
