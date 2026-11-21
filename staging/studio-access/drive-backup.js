@@ -100,7 +100,7 @@
       if(e?.name==="AbortError")throw Error("Google Drive operation cancelled because Studio access ended.");
       throw Error("Could not connect to Google Drive. Your local project is unchanged.");
     }
-    if(!response.ok){
+    if(!response.ok&&!(options.allowIncomplete&&response.status===308)){
       if(response.status===401){clear();throw Error("Google Drive authorization expired. Reconnect.");}
       if(response.status===403)throw Error("Google Drive denied this operation. Check Google Drive API and drive.file consent.");
       throw Error("Google Drive returned HTTP "+response.status+". No local projects were changed.");
@@ -230,10 +230,56 @@
     const location=start.headers.get("Location")||"";
     if(!/^https:\/\/www\.googleapis\.com\/upload\/drive\/v3\/files(?:\?|\/)/.test(location))
       throw Error("Google Drive did not provide a secure upload session. Retry without changing the local project.");
-    await request(location,{method:"PUT",headers:{"Content-Type":"application/json",
-      "Content-Range":"bytes 0-"+(body.size-1)+"/"+body.size},body});
+    await uploadResumable(location,body);
     await refresh();
     note("Encrypted Google Drive backup created. Previous versions and local projects are unchanged.");
+  }
+  // Google Drive reports 308 (not complete) and a server-confirmed Range
+  // after each chunk. Never assume bytes reached the server if a PUT failed.
+  // Resume only while the same PTG session and Google consent remain valid.
+  async function uploadResumable(sessionUrl,body){
+    const chunkSize=8*1024*1024; // 256 KiB multiple, except final chunk
+    let offset=0,stalls=0;
+    const acknowledged=response=>{
+      const range=response.headers.get("Range")||"";
+      const match=/^bytes=0-([0-9]+)$/.exec(range);
+      const next=match?Number(match[1])+1:0;
+      if(!Number.isSafeInteger(next)||next<0||next>body.size)
+        throw Error("Google Drive upload progress is invalid.");
+      return next;
+    };
+    while(offset<body.size){
+      await verify();
+      const end=Math.min(offset+chunkSize,body.size);
+      let response;
+      try{
+        response=await request(sessionUrl,{method:"PUT",allowIncomplete:true,
+          headers:{"Content-Type":"application/json",
+            "Content-Range":"bytes "+offset+"-"+(end-1)+"/"+body.size},
+          body:body.slice(offset,end)});
+      }catch(error){
+        if(!enabled())throw error;
+        // Ask Google which bytes it received, rather than re-sending the
+        // entire project or risking duplicate backup files.
+        const check=await request(sessionUrl,{method:"PUT",allowIncomplete:true,
+          headers:{"Content-Range":"bytes */"+body.size}});
+        if(check.ok)return;
+        if(check.status!==308)throw error;
+        const resumed=acknowledged(check);
+        if(resumed<=offset&&++stalls>3)throw Error("Google Drive upload stalled. Local project is unchanged.");
+        if(resumed>offset)stalls=0;
+        offset=resumed;
+        continue;
+      }
+      if(response.ok)return;
+      if(response.status!==308)throw Error("Google Drive upload stopped unexpectedly.");
+      const next=acknowledged(response);
+      if(next<=offset&&++stalls>3)throw Error("Google Drive upload stalled. Local project is unchanged.");
+      if(next>offset)stalls=0;
+      offset=next;
+      note("Encrypted Drive upload: "+Math.min(99,Math.floor(100*offset/body.size))+"%.");
+    }
+    throw Error("Google Drive did not confirm upload completion. Local project is unchanged.");
   }
   async function restore(){
     await verify();
