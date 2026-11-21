@@ -24,6 +24,8 @@
       if(el(name))el(name).disabled=!connected;
     if(el("driveConnect"))el("driveConnect").hidden=connected;
     if(el("driveDisconnect"))el("driveDisconnect").hidden=!connected;
+    if(el("driveDisconnect"))el("driveDisconnect").disabled=false;
+    if(el("driveConnect"))el("driveConnect").disabled=false;
   }
   function clear(){
     if(controller)controller.abort();
@@ -260,9 +262,9 @@
     if(el("drivePanel"))el("drivePanel").hidden=false;
     el("driveConnect").onclick=connect;
     el("driveDisconnect").onclick=disconnect;
-    el("driveRefresh").onclick=()=>void action(refresh);
-    el("driveBackup").onclick=()=>void action(backup);
-    el("driveRestore").onclick=()=>void action(restore);
+    el("driveRefresh").onclick=()=>action(refresh);
+    el("driveBackup").onclick=()=>action(backup);
+    el("driveRestore").onclick=()=>action(restore);
     await renderLocal();
     note("Optional Google Drive backups. Connect, then choose a project and back up manually.");
     paint();
