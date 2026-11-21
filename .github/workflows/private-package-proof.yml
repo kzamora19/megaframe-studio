@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'staging/**'
+      - 'index.html'
+      - '*.js'
+      - 'icons/**'
       - 'supabase/functions/**'
       - 'supabase/config.toml'
       - '.github/workflows/private-package-proof.yml'
