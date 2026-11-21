@@ -383,7 +383,7 @@ function scaleHandles(){if(!hasPhotoShape())return[];const b=app.rect,d=Math.max
 function resetScaleUI(){app.sliderStart=null;app.editingSlider=null;if($('shapeScale')){$('shapeScale').value=100;$('shapeScaleValue').textContent='100%'}}
 // v2.1: unfinished sessions are LOCAL ONLY. Customer photo data is never sent to the cloud.
 const DRAFT_DB_NAME = 'megaframe_studio_recovery_v1';
-let draftDatabasePromise, draftEnabled = false, draftTimer = null, draftWriting = false, draftQueued = false;
+let draftDatabasePromise, draftEnabled = false, draftTimer = null, draftWriting = false, draftQueued = false, draftWritePromise = null;
 function draftStatus(message) { const node = $('draftStatus'); if (node) node.textContent = message; }
 function openDraftDatabase() {
  if (draftDatabasePromise) return draftDatabasePromise;
@@ -469,13 +469,14 @@ async function saveCurrentDraft() {
    draftStatus('Recovery copy not saved: this batch is over 80 MB. Export your photos before closing.');
    return;
   }
-  await draftWrite(draft);
+  draftWritePromise=draftWrite(draft);
+  await draftWritePromise;
   draftStatus('Draft saved on this device · '+new Date(draft.savedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
  }catch(err) {
   console.warn('Local draft recovery unavailable',err);
   draftStatus('Draft not saved (storage unavailable or full). Export your work before closing.');
  }finally {
-  draftWriting = false;
+  draftWriting = false;draftWritePromise=null;
   if (draftQueued) { draftQueued = false; scheduleDraftSave(); }
  }
 }
@@ -575,6 +576,29 @@ async function projectRemove(id){
   tx.onabort=()=>reject(tx.error||Error('Project delete aborted'));
  });
 }
+// A recovered session has two local representations. An archive named
+// recovery_<savedAt> is recreated at launch if the corresponding draft remains.
+function recoveryArchiveId(draft){
+ return draft?.format==='MegaFrameDraftV1'&&draft.template
+  ?'recovery_'+String(draft.savedAt||'unknown'):null;
+}
+async function deleteLinkedRecovery(id){
+ const current=await draftRead();
+ const matchesCurrent=!!id&&recoveryArchiveId(current)===id;
+ if(matchesCurrent){
+  clearTimeout(draftTimer);
+  const wasEnabled=draftEnabled;draftEnabled=false;
+  try{
+   // Do not allow an unfinished auto-save to rewrite a discarded draft.
+   if(draftWriting&&draftWritePromise)await draftWritePromise;
+   const latest=await draftRead();
+   if(recoveryArchiveId(latest)===id&&!await draftDelete())
+    throw Error('Could not remove the matching automatic recovery copy');
+  }finally{draftEnabled=wasEnabled}
+ }
+ await projectRemove(id);
+ return matchesCurrent;
+}
 function projectSize(record){
  return (record?.template?.data?.length||0)+(record?.photos||[]).reduce((n,p)=>n+(p?.data?.length||0),0);
 }
@@ -615,8 +639,16 @@ async function renderSavedProjects(){
    };
    const remove=document.createElement('button');remove.type='button';remove.className='btn small danger';remove.textContent='Delete';
    remove.onclick=async()=>{
-    if(!await confirmAction('Delete saved project?','Permanently delete "'+row.name+'" from this browser? This does not remove any downloaded backup.','Delete project'))return;
-    try{await projectRemove(row.id);await renderSavedProjects();notify('Saved project deleted.')}catch(e){notify('Delete failed: '+e.message)}
+    const current=await draftRead(),linked=recoveryArchiveId(current)===row.id;
+    const message=linked
+     ?'Permanently delete "'+row.name+'" AND its matching automatic recovery copy? Both must be removed to prevent the project from reappearing. Other saved projects remain untouched.'
+     :'Permanently delete "'+row.name+'" from this browser? This does not remove downloaded backups or newer recovery copies.';
+    if(!await confirmAction('Delete saved project?',message,'Delete project'))return;
+    try{
+     await deleteLinkedRecovery(row.id);
+     await renderSavedProjects();
+     notify(linked?'Recovered session and matching automatic copy deleted.':'Saved project deleted.');
+    }catch(e){notify('Delete failed: '+e.message)}
    };
    actions.append(open,backup,remove);card.append(info,actions);list.append(card);
   }
@@ -649,13 +681,13 @@ async function importProjectBackup(file){
 
 async function initializeDraftRecovery() {
  const saved=await draftRead();
- const hasRecovery=saved?.format==='MegaFrameDraftV1'&&!!saved.template;
+ const hasRecovery=!!recoveryArchiveId(saved);
  let canAutosave=true;
  // A fresh blank session must not erase yesterday's unfinished editing.
  // Archive the rolling recovery as a named local project before new editing.
  if(hasRecovery){
   try{
-   const id='recovery_'+String(saved.savedAt||'unknown');
+   const id=recoveryArchiveId(saved);
    if(!await projectRead(id)){
     await projectWrite({format:'MegaFrameProjectV1',id,
      name:'Recovered session · '+(saved.savedAt?new Date(saved.savedAt).toLocaleString():'previous session'),
@@ -675,6 +707,20 @@ async function initializeDraftRecovery() {
   if(hasUnsavedChanges()&&!await confirmAction('Restore recovery copy?','You have changes that have not been saved as a named project. Save Project first if you want to keep them, or confirm replacement.','Restore recovery'))return;
   try{await restoreLocalDraft(record);$('savedProjectsDialog').close();showPanel(4);notify('Unfinished editing session restored.');}
   catch(err){draftStatus('Saved draft could not be restored: '+err.message);notify('Could not restore recovery copy.');}
+ };
+ $('discardRecoveryDraft').onclick=async()=>{
+  const existing=await draftRead();
+  const id=recoveryArchiveId(existing);
+  if(!id){await renderSavedProjects();return notify('No automatic recovery copy found.');}
+  if(!await confirmAction('Discard unfinished recovery?',
+   'Permanently discard the automatic recovery copy and its matching recovered-session archive? Other named projects will stay saved.',
+   'Discard recovery'))return;
+  try{
+   await deleteLinkedRecovery(id);
+   await renderSavedProjects();
+   draftStatus('Previous recovery discarded. New edits will be saved locally.');
+   notify('Recovery copy and matching recovered session discarded.');
+  }catch(err){notify('Could not discard recovery: '+err.message);}
  };
  $('startBlankProject').onclick=()=>$('savedProjectsDialog').close();
  try{
