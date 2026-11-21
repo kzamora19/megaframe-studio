@@ -47,6 +47,7 @@ const assert = require('node:assert/strict');
   });
   assert.ok(images.different&&images.rawBytes>100&&images.editedBytes>100,'Saved image must contain emoji pixels');
   assert.ok(!await page.evaluate(()=>drawFaceCovers.toString().includes('#ffdb91')),'No opaque yellow backing circle');
+  await page.locator('[data-panel="4"]').click();
   await page.locator('#removeEmojiCover').click();
   assert.equal(await page.evaluate(()=>app.photos[0].covers.length),0);
   await page.keyboard.press('Control+z');
