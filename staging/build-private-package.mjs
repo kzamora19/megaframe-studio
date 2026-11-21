@@ -40,6 +40,11 @@ for (const name of scriptNames) {
       "",
     ].join("\n");
     code = code.slice(0, begin) + replacement + code.slice(finish);
+    const restoredNote = "notify('Restored your unfinished editing session from this device.');";
+    if (code.split(restoredNote).length !== 2)
+      throw Error("MegaFrame restore UI changed; review the private bundle.");
+    code = code.replace(restoredNote,
+      restoredNote + " draftStatus('Draft restored on this device.');");
     const bridge = readFileSync(join(root, "staging/editor-draft-bridge.js"), "utf8")
       .replace(/<\/script/gi, "<\\/script");
     injected = "<script>" + bridge + "</script>";
