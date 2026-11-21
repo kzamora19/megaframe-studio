@@ -1152,3 +1152,5 @@ window.addEventListener('beforeunload',event=>{
 });
 async function start(){overlayInitialState();setupAccordion();setupMobileDrawer();setupPinnedNav();setupEvents();overlayInit();loadHiddenSamples();loadFavoriteFrames();app.templates=await dbAll();await openBlankWorkspace();cleanProjectFingerprint=projectFingerprint();updateUnsavedIndicator();status('Ready · v2.7. Blank workspace. Customer photos are processed on this device.');await initializeDraftRecovery();}
 start().catch(err=>{console.error(err);notify('App could not initialize: '+err.message)});
+// Optional presentation-only two-level navigation, independent of editor state.
+(()=>{const script=document.createElement('script');script.src='./chat-sidebar.js';script.defer=true;document.head.append(script)})();
