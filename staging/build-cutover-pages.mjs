@@ -78,7 +78,7 @@ if(/PRIVATE MEGAFRAME EDITOR BUNDLE|id="photosInput"|<canvas/.test(launcher))
  throw Error("Editor bytes are not allowed in public launcher");
 mkdirSync(join(target,"studio"),{recursive:true});
 writeFileSync(join(target,"studio","index.html"),launcher);
-for(const asset of ["launch.js","draft-vault.js"])
+for(const asset of ["launch.js","draft-vault.js","drive-backup.js"])
  copyFileSync(join(root,"staging","studio-access",asset),join(target,"studio",asset));
 
 console.log("Created DEVELOPMENT cutover preview only; Pages production untouched.");
