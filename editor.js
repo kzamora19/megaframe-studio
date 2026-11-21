@@ -120,7 +120,7 @@ function addEmojiCover(){
  saveHistory();p.covers=safeCovers(p.covers);
  p.covers.push({symbol:$('emojiCoverChoice').value||'😎',x:.5,y:.43,size:.28});
  app.activeCoverIndex=p.covers.length-1;
- setLiveExportPreview(false);setMode('adjust');updateEmojiControls();render();
+ setLiveExportPreview(false);setMode('adjust');showPanel(4);updateEmojiControls();render();
  notify('Emoji added. Drag it over the face; use Size to adjust. Add another for another face.');
 }
 function coverGeometry(cover,cell){
