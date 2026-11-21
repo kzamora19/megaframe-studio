@@ -207,7 +207,8 @@
     const location=start.headers.get("Location")||"";
     if(!/^https:\/\/www\.googleapis\.com\/upload\/drive\/v3\/files(?:\?|\/)/.test(location))
       throw Error("Google Drive did not provide a secure upload session. Retry without changing the local project.");
-    await request(location,{method:"PUT",headers:{"Content-Type":"application/json"},body});
+    await request(location,{method:"PUT",headers:{"Content-Type":"application/json",
+      "Content-Range":"bytes 0-"+(body.size-1)+"/"+body.size},body});
     await refresh();
     note("Encrypted Google Drive backup created. Previous versions and local projects are unchanged.");
   }
