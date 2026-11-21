@@ -5,6 +5,7 @@ on:
     paths:
       - 'staging/**'
       - 'supabase/functions/**'
+      - 'supabase/config.toml'
       - '.github/workflows/private-package-proof.yml'
   workflow_dispatch:
 permissions:
@@ -22,8 +23,15 @@ jobs:
           node --check staging/build-private-package.mjs
           node --test staging/private-package.test.mjs
           node --test staging/private-delivery-policy.test.mjs
-      - name: Check private launcher JavaScript syntax
-        run: node --check staging/studio-access/launch.js
+      - name: Check private launcher and vault JavaScript syntax
+        run: |
+          node --check staging/studio-access/launch.js
+          node --check staging/studio-access/draft-vault.js
+          node --check staging/editor-draft-bridge.js
+      - uses: denoland/setup-deno@v2
+        with: {deno-version: v2.x}
+      - name: Typecheck undeployed Supabase private-editor delivery
+        run: deno check supabase/functions/megaframe-editor-delivery/index.ts
   verify-protected-browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
