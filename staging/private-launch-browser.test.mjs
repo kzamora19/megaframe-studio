@@ -153,6 +153,8 @@ try {
   await frame.locator("#saveDraftNow").click({timeout:20000});
   const draftText=await frame.locator("#draftStatus").textContent();
   console.log("STAGED_DRAFT_STATUS:",String(draftText||"").slice(0,350));
+  assert.match(String(draftText||""),/Draft saved on this device/i,
+    "Protected-editor photo drafts must survive a closed/revoked session. Do not release without secure persistence.");
   mode="revoked";
   await page.waitForFunction(()=>document.getElementById("studio-editor-frame")===null,
     {timeout:90000});
