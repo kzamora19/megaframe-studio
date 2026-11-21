@@ -18,6 +18,26 @@ const assert=require('node:assert/strict');
   assert.equal(desktop.railPosition,'sticky','Right queue should stay pinned to viewport');
   assert.ok(desktop.scrollWidth<=desktop.viewport+3,'Desktop horizontal overflow');
 
+  // All PWA window widths must keep the slide navigator alongside the editor.
+  for(const width of [800,900,1024,1366]){
+   await page.setViewportSize({width,height:768});
+   const placement=await page.evaluate(()=>{
+    const r=selector=>document.querySelector(selector).getBoundingClientRect();
+    const p=r('.photoQueueSidebar'),w=r('.workspace'),g=r('.galleryWrap');
+    return {sidebarLeft:p.left,workspaceRight:w.right,sidebarTop:p.top,
+      galleryHeight:g.height,sidebarWidth:p.width,viewport:innerWidth,
+      horizontalOverflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.ok(placement.sidebarLeft>=placement.workspaceRight-2,
+    width+': slide navigator must stay in rightmost column '+JSON.stringify(placement));
+   assert.ok(placement.sidebarTop<220,
+    width+': slide navigator should appear at the top '+JSON.stringify(placement));
+   assert.ok(placement.sidebarWidth>=190&&placement.galleryHeight>100,
+    width+': photo navigation must have usable space '+JSON.stringify(placement));
+   assert.ok(placement.horizontalOverflow<=3,
+    width+': no horizontal overflow '+JSON.stringify(placement));
+  }
+
   // Populate synthetic (non-customer) pictures to verify queue scrolling and photo selection.
   await page.evaluate(async()=>{
    const paint=document.createElement('canvas');paint.width=240;paint.height=160;
@@ -31,6 +51,12 @@ const assert=require('node:assert/strict');
    selectPhoto(0);
   });
   assert.equal(await page.locator('#gallery .thumb').count(),9);
+  const firstSlideVisible=await page.evaluate(()=>{
+   const r=document.querySelector('#gallery .thumb').getBoundingClientRect();
+   const a=document.querySelector('.photoQueueSidebar').getBoundingClientRect();
+   return r.width>50&&r.height>30&&r.top<innerHeight&&r.left>=a.left;
+  });
+  assert.ok(firstSlideVisible,'First slide thumbnail appears in visible right sidebar');
   const railScroll=await page.evaluate(()=>{
    const queue=document.querySelector('.photoQueueSidebar .galleryWrap');
    const top=document.querySelector('.photoQueuePinned').getBoundingClientRect().top;
