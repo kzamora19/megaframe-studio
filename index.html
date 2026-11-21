@@ -678,6 +678,11 @@ button.danger:hover{background:#ffe9ec}
    <div class="exportInspectScroll"><canvas id="exportInspectCanvas" aria-label="Rendered export at its actual pixel dimensions"></canvas></div>
    <p class="exportInspectNote">Scroll to examine the actual output pixels. The fit-to-screen preview may look the same size at different resolutions.</p>
   </dialog>
+<dialog id="studioInfoDialog" class="actionModal" aria-labelledby="studioInfoTitle" aria-describedby="studioInfoMessage">
+ <div class="actionModalHeader"><h2 id="studioInfoTitle">MegaFrame Studio</h2></div>
+ <div class="actionModalBody"><p id="studioInfoMessage"></p></div>
+ <div class="actionModalFooter"><button id="studioInfoClose" class="btn primary" type="button" autofocus>OK</button></div>
+</dialog>
 <dialog id="reloadStudioDialog" class="actionModal exitStudioDialog" aria-labelledby="reloadStudioTitle" aria-describedby="reloadStudioWarning">
  <div class="actionModalHeader"><h2 id="reloadStudioTitle">Reload MegaFrame Studio?</h2></div>
  <div class="actionModalBody">

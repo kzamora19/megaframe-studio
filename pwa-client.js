@@ -18,12 +18,16 @@
   };
   const help = () => {
     const ua = navigator.userAgent;
+    let instructions;
     if (/iphone|ipad|ipod/i.test(ua))
-      alert('To install MegaFrame Studio: open this website in Safari, tap Share, then Add to Home Screen.');
+      instructions = 'Open this website in Safari, tap Share, then Add to Home Screen.';
     else if (/android/i.test(ua))
-      alert('To install MegaFrame Studio: open the browser menu and choose Install app or Add to Home screen.');
+      instructions = 'Open the browser menu and choose Install app or Add to Home screen.';
     else
-      alert('To install MegaFrame Studio on Windows or Ubuntu: use Chrome or Edge browser menu → Install MegaFrame Studio or Create shortcut → Open as window.');
+      instructions = 'In Chrome or Edge, use the browser menu to choose Install MegaFrame Studio, or Create shortcut and Open as window.';
+    if (typeof window.megaFrameShowInfoModal === 'function')
+      window.megaFrameShowInfoModal('Install MegaFrame Studio', instructions);
+    else if (status) status.textContent = instructions; // no native alert fallback
   };
   if (install) install.addEventListener('click', async () => {
     if (!pendingPrompt) return help();
@@ -46,28 +50,58 @@
   const secureOrigin = location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname);
   if (!('serviceWorker' in navigator) || !secureOrigin) return;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+    let registration = null;
+    let updateApproved = false;
+    let reloading = false;
+    let hadController = !!navigator.serviceWorker.controller;
+    const banner = document.getElementById('pwa-update');
+    const button = document.getElementById('pwa-update-reload');
+
+    function showUpdateBanner() {
+      if (!banner || !button) return;
+      banner.hidden = false;
+      button.onclick = () => {
+        if (typeof window.megaFrameOpenReloadModal === 'function')
+          window.megaFrameOpenReloadModal('update');
+        else if (typeof window.megaFrameShowInfoModal === 'function')
+          window.megaFrameShowInfoModal('App update ready',
+            'Save your project before restarting the application.');
+      };
+    }
+    function reloadApproved() {
+      if (reloading) return;
+      reloading = true;
+      if (typeof window.megaFrameReloadApproved === 'function')
+        window.megaFrameReloadApproved();
+      else window.location.reload();
+    }
+    // The confirmation and optional named save live in editor.js. Do not
+    // SKIP_WAITING or reload until the user confirms that dialog.
+    window.megaFrameApplyUpdate = () => {
+      updateApproved = true;
+      if (registration?.waiting) {
+        registration.waiting.postMessage({type:'SKIP_WAITING'});
+      } else {
+        reloadApproved(); // already activated in another tab
+      }
+    };
+    navigator.serviceWorker.register('./service-worker.js', {scope:'./'})
       .then(reg => {
+        registration = reg;
         const notifyUpdate = () => {
           if (!navigator.serviceWorker.controller || !reg.waiting) return;
-          const banner = document.getElementById('pwa-update');
-          const button = document.getElementById('pwa-update-reload');
-          if (!banner || !button) return;
-          banner.hidden = false;
-          button.onclick = () => reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
+          showUpdateBanner();
         };
         if (reg.waiting) notifyUpdate();
         reg.addEventListener('updatefound', () => {
           reg.installing?.addEventListener('statechange', notifyUpdate);
         });
       }).catch(() => {});
-    // A first-time installation calls clients.claim() and changes the controller.
-    // Do not reload and interrupt an active photo import on that first claim.
-    // Only reload when an existing service worker has been replaced by an update.
-    let reloading = false, hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!hadController) { hadController = true; return; }
-      if (!reloading) { reloading = true; location.reload(); }
+      // First install: claim control without interrupting imports or edits.
+      if (!hadController) {hadController = true;return;}
+      if (updateApproved) reloadApproved();
+      else showUpdateBanner(); // other tabs may activate updates; do not force reload
     });
   });
 })();
