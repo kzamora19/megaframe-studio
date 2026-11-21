@@ -236,7 +236,9 @@ try {
     "Named projects must survive PTG revocation and new authorized launch.");
   await restored.locator(".savedProjectCard").first().getByRole("button",{name:"Open"}).click();
   await restored.locator("#actionModalConfirm").click();
-  await restored.locator("#photoCount").getByText(/1 photo/i).waitFor({timeout:20000});
+  await restored.locator("#savedProjectsDialog").waitFor({state:"hidden",timeout:20000});
+  assert.match(await restored.locator("#photoCount").textContent(),/1 photo/i,
+    "Named project restored the real customer image even if counter panel is collapsed");
   const namedCover=await restored.locator("#previewCanvas").evaluate(()=>
     app.photos[0]?.covers?.[0]?.symbol);
   assert.equal(namedCover,"🙈","Opening encrypted named project restores customer photo edits.");
