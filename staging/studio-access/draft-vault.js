@@ -78,8 +78,14 @@
     };
     // Explicit, opt-in encrypted cloud transfer. The PTG service receives
     // ONLY this ciphertext envelope, never raw customer photos or draft keys.
-    const b64=buffer=>btoa(String.fromCharCode(...new Uint8Array(buffer)))
-      .replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+    const b64=buffer=>{
+      const bytes=new Uint8Array(buffer),parts=[];
+      // Spread arguments must be chunked: full-resolution project payloads
+      // would otherwise exceed the browser's maximum call-stack size.
+      for(let offset=0;offset<bytes.length;offset+=8192)
+        parts.push(String.fromCharCode(...bytes.subarray(offset,offset+8192)));
+      return btoa(parts.join("")).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+    };
     const unb64=value=>{
       if(typeof value!=="string"||!value.length||!/^[A-Za-z0-9_-]+$/.test(value))
         throw Error("Invalid encrypted cloud envelope.");
