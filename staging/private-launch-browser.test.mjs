@@ -18,6 +18,7 @@ try {
     {cwd:root,stdio:"pipe",timeout:60000});
   const privateHtml=readFileSync(join(tmp,"private/studio.html"),"utf8");
   const manifest=JSON.parse(readFileSync(join(tmp,"manifest.json"),"utf8"));
+  const draftScope="S".repeat(43),draftKey=Buffer.alloc(32,77).toString("base64url");
   const sha=value=>createHash("sha256").update(value).digest("hex");
   assert.equal(sha(privateHtml),manifest.sha256);
   const original=readFileSync(join(staging,"index.html"),"utf8");
@@ -30,9 +31,9 @@ try {
       res.writeHead(200,{"Content-Type":"text/html","Cache-Control":"no-store"});
       res.end(html);return;
     }
-    if(path==="/launch.js"){
+    if(path==="/launch.js"||path==="/draft-vault.js"){
       res.writeHead(200,{"Content-Type":"application/javascript","Cache-Control":"no-store"});
-      res.end(readFileSync(join(staging,"launch.js")));return;
+      res.end(readFileSync(join(staging,path.slice(1))));return;
     }
     res.writeHead(404,{"Content-Type":"text/plain"});res.end("Not available.");
   });
@@ -57,8 +58,8 @@ try {
         body:JSON.stringify({ok:false,error:"Revoked"})});
       if(body.action==="load"){
         const payload=mode==="bad-hash"
-          ? {ok:true,html:privateHtml,sha256:"f".repeat(64),expiresAt:new Date(Date.now()+600000).toISOString()}
-          : {ok:true,html:privateHtml,sha256:manifest.sha256,expiresAt:new Date(Date.now()+600000).toISOString()};
+          ? {ok:true,html:privateHtml,sha256:"f".repeat(64),draftScope,draftKey,expiresAt:new Date(Date.now()+600000).toISOString()}
+          : {ok:true,html:privateHtml,sha256:manifest.sha256,draftScope,draftKey,expiresAt:new Date(Date.now()+600000).toISOString()};
         return route.fulfill({status:200,contentType:"application/json",headers,body:JSON.stringify(payload)});
       }
       return route.fulfill({status:200,contentType:"application/json",headers,
@@ -94,7 +95,7 @@ try {
   assert.equal(await frame.locator("#frameLibrary").isHidden(),true);
   assert.match(await frame.locator("title").textContent(),/MegaFrame Studio/);
   // A CSP hash is required for each private script. Do not broaden to unsafe-inline.
-  assert.equal(manifest.inlineScriptHashes,15);
+  assert.equal(manifest.inlineScriptHashes,16);
   assert.match(privateHtml,/script-src[^;]*'sha256-/);
   assert.doesNotMatch(privateHtml,/script-src[^;]*'unsafe-inline'/);
   const canvas=await frame.locator("#previewCanvas").evaluate(el=>({
@@ -151,6 +152,7 @@ try {
   // visible in CI rather than silently claiming it works in opaque origin.
   await frame.locator('#pinNav button[data-panel="0"]').click({timeout:10000});
   await frame.locator("#saveDraftNow").click({timeout:20000});
+  await frame.locator("#draftStatus").getByText(/Draft saved on this device/i).waitFor({timeout:20000});
   const draftText=await frame.locator("#draftStatus").textContent();
   console.log("STAGED_DRAFT_STATUS:",String(draftText||"").slice(0,350));
   assert.match(String(draftText||""),/Draft saved on this device/i,
