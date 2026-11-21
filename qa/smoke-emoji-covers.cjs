@@ -43,6 +43,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.evaluate(()=>app.photos[0].covers.length),0);
   await page.keyboard.press('Control+z');
   assert.equal(await page.evaluate(()=>app.photos[0].covers.length),1,'Undo restores removed emoji');
+  await page.locator('[data-panel="0"]').click();
   await page.locator('#saveDraftNow').click();
   await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Draft saved'),{timeout:35000});
   await page.reload({waitUntil:'domcontentloaded'});
