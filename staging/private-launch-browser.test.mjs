@@ -101,6 +101,40 @@ try {
     width:el.width,height:el.height
   }));
   assert.ok(canvas.width>1000&&canvas.height>1000,"Actual editor canvas is present");
+  // Exercise real editor photo loading and PNG export, not just DOM mounting.
+  const encoded=await page.evaluate(()=>{
+    const image=document.createElement("canvas");
+    image.width=320;image.height=320;
+    const ctx=image.getContext("2d");
+    ctx.fillStyle="#e1e7fb";ctx.fillRect(0,0,320,320);
+    ctx.fillStyle="#2c5de4";ctx.fillRect(55,45,215,230);
+    ctx.fillStyle="#ffe0a8";ctx.beginPath();ctx.arc(160,145,70,0,Math.PI*2);ctx.fill();
+    return image.toDataURL("image/png").split(",")[1];
+  });
+  await frame.locator("#photosInput").setInputFiles({
+    name:"qa-photo.png",mimeType:"image/png",buffer:Buffer.from(encoded,"base64"),
+  });
+  const started=Date.now();
+  let photoLabel="";
+  while(Date.now()-started<30000){
+    photoLabel=await frame.locator("#photoCount").textContent();
+    if(/1 photo/i.test(photoLabel||""))break;
+    await new Promise(resolve=>setTimeout(resolve,300));
+  }
+  assert.match(photoLabel,/1 photo/i,"Protected editor should import a real user image");
+  await frame.locator("#exportType").selectOption("image/png");
+  const [download]=await Promise.all([
+    page.waitForEvent("download",{timeout:90000}),
+    frame.locator("#downloadOne").click({timeout:20000}),
+  ]);
+  const bytes=readFileSync(await download.path());
+  assert.equal(bytes.subarray(0,8).toString("hex"),"89504e470d0a1a0a");
+  assert.ok(bytes.readUInt32BE(16)>=200,"Exported PNG needs valid output width");
+  // Offline draft saving is a separate release gate. Keep its observed status
+  // visible in CI rather than silently claiming it works in opaque origin.
+  await frame.locator("#saveDraftNow").click({timeout:20000});
+  const draftText=await frame.locator("#draftStatus").textContent();
+  console.log("STAGED_DRAFT_STATUS:",String(draftText||"").slice(0,350));
   mode="revoked";
   await page.waitForFunction(()=>document.getElementById("studio-editor-frame")===null,
     {timeout:90000});
