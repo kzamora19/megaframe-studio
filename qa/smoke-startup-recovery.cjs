@@ -8,6 +8,7 @@ const assert=require('node:assert/strict');
  try{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'));
+  await page.locator('#createNewProject').click();
   assert.equal(await page.locator('#savedProjectsDialog').evaluate(el=>el.open),false,'No recovery modal on fresh device');
   assert.match(await page.locator('#previewTitle').textContent(),/Blank workspace/);
   assert.equal(await page.evaluate(()=>app.template.id),'new');
@@ -28,6 +29,8 @@ const assert=require('node:assert/strict');
   // Playwright handles the native browser beforeunload dialog for reload.
   page.once('dialog',async dialog=>dialog.accept());
   await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#startupChoiceDialog[open]').waitFor();
+  await page.locator('#retrieveStartupProject').click();
   await page.locator('#savedProjectsDialog[open]').waitFor({timeout:30000});
   assert.match(await page.locator('#previewTitle').textContent(),/Blank workspace/);
   await page.locator('#automaticRecoveryCard').waitFor({state:'visible'});
