@@ -122,6 +122,7 @@ try {
     await new Promise(resolve=>setTimeout(resolve,300));
   }
   assert.match(photoLabel,/1 photo/i,"Protected editor should import a real user image");
+  await frame.locator('#pinNav button[data-panel="5"]').click({timeout:10000});
   const exportVisible=await frame.locator("#exportType").isVisible();
   if(!exportVisible){
     const chain=await frame.locator("#exportType").evaluate(element=>{
@@ -148,6 +149,7 @@ try {
   assert.ok(bytes.readUInt32BE(16)>=200,"Exported PNG needs valid output width");
   // Offline draft saving is a separate release gate. Keep its observed status
   // visible in CI rather than silently claiming it works in opaque origin.
+  await frame.locator('#pinNav button[data-panel="0"]').click({timeout:10000});
   await frame.locator("#saveDraftNow").click({timeout:20000});
   const draftText=await frame.locator("#draftStatus").textContent();
   console.log("STAGED_DRAFT_STATUS:",String(draftText||"").slice(0,350));
