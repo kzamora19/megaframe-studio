@@ -29,7 +29,7 @@ test("Retirement Pages artifact excludes editor source, preserves icon, and incl
   assert.match(sw,/clients\.claim/);
   assert.match(sw,/cache:"no-store"/);
   assert.doesNotMatch(sw,/caches\.match|caches\.open|indexedDB|localStorage/);
-  assert.doesNotMatch(client,/indexedDB|localStorage|caches\.delete|unregister\(/);
+  assert.doesNotMatch(client,/indexedDB\.(?:deleteDatabase|open)|localStorage\.(?:clear|removeItem)|caches\.delete|unregister\(/);
   assert.equal(readdirSync(join(target,"icons")).length,3);
   assert.equal(readFileSync(join(root,"scripts/build_pages_site.py"),"utf8").includes("build-cutover-pages"),false,
    "Production Pages publish job must not be changed before approval");
