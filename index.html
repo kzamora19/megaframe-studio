@@ -282,6 +282,20 @@ button.danger:hover{background:#ffe9ec}
 .emojiPickerPrivacy{padding:7px 12px 12px;margin:0;color:#aaa;font-size:10px}
 .emojiCoverRow button#emojiPickerOpen{max-width:none;white-space:nowrap}
 @media(max-width:410px){.emojiPickerItem{font-size:26px}.emojiPickerGrid{height:270px}.emojiPickerDialog{max-height:89dvh}}
+
+.savedProjectsDialog{max-width:760px;width:calc(100vw - 24px)}
+.savedProjectsBody{padding:18px 24px 22px}
+.savedProjectList{display:grid;gap:10px;margin:13px 0 20px}
+.savedProjectCard{border:1px solid #e2e8f2;padding:13px;border-radius:11px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;background:#fff}
+.savedProjectCard strong{display:block;font-size:14px;overflow-wrap:anywhere;max-width:400px}
+.savedProjectCard small{display:block;font-size:11px;color:#697a96;margin-top:5px}
+.savedProjectActions{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.savedProjectActions button{min-height:35px}
+.recoveryDetails{margin-top:12px;border-top:1px solid #dfe6f4;padding-top:10px}
+.recoveryDetails summary{cursor:pointer;font-size:12px;font-weight:750;color:#4261aa}
+.recoveryDetails .draftStatus{margin-top:9px}
+#projectSaveStatus{margin:8px 0 0}
+@media(max-width:720px){.savedProjectsBody{padding:14px}.savedProjectActions{width:100%}}
 </style>
 </head>
 <body>
@@ -315,7 +329,7 @@ button.danger:hover{background:#ffe9ec}
    <button class="btn ghost libraryOpen" id="openOnlineTemplates" type="button">⌕ Search online for frames</button>
    <div class="inline" style="margin-top:9px"><button id="changeTemplate" class="btn wide">＋ Upload frame</button><button id="saveTemplate" class="btn wide primary">Save template</button></div>
    <input type="file" id="templateInput" accept="image/png,image/jpeg,image/webp" />
-   <div class="draftTools"><div class="draftStatus" id="draftStatus" role="status" aria-live="polite">Local recovery: checking for a saved draft…</div><div class="draftActions"><button id="saveDraftNow" class="btn small" type="button">Save draft now</button><button id="clearSavedDraft" class="btn small" type="button">Clear recovery copy</button></div><p class="help" style="margin:7px 0 0">Your unfinished photos and edits are saved only on this device—not uploaded to Supabase. Back up important images separately.</p></div>
+   <div class="draftTools"><strong>Unfinished projects</strong><div class="draftActions" style="margin-top:9px"><button id="saveProject" class="btn primary small" type="button">💾 Save Project</button><button id="openProjects" class="btn small" type="button">📂 Open Projects</button></div><p id="projectSaveStatus" class="help" role="status">Name and retrieve multiple unfinished projects on this device.</p><details class="recoveryDetails"><summary>Automatic recovery options</summary><div class="draftStatus" id="draftStatus" role="status" aria-live="polite">Local recovery: checking for a saved draft…</div><div class="draftActions"><button id="saveDraftNow" class="btn small" type="button">Save draft now</button><button id="clearSavedDraft" class="btn small" type="button">Clear recovery copy</button></div><p class="help" style="margin:7px 0 0">Auto-recovery keeps one temporary local draft. Named projects are separate and remain saved. All project data, including original customer photos, stays on this browser unless you export a backup.</p></details></div>
    <div class="inline" style="margin-top:9px"><button id="renameTemplate" class="btn small">Rename</button><button id="duplicateTemplate" class="btn small">Duplicate</button></div>
    <div class="inline" style="margin-top:9px"><button id="backupTemplate" class="btn small">↓ Backup template</button><button id="restoreTemplate" class="btn small">↑ Restore backup</button></div>
    <input type="file" id="backupInput" accept=".json,application/json" />
@@ -467,6 +481,15 @@ button.danger:hover{background:#ffe9ec}
  <div id="emojiPickerGrid" class="emojiPickerGrid" role="group" aria-label="Emoji choices"></div>
  <div id="emojiPickerTabs" class="emojiPickerTabs" role="group" aria-label="Emoji categories"></div>
  <p class="emojiPickerPrivacy">Transparent emoji overlay. Check face coverage before sharing.</p>
+</dialog>
+<dialog id="savedProjectsDialog" class="frameLibrary savedProjectsDialog" aria-labelledby="savedProjectsTitle">
+ <div class="frameLibHead"><div><h2 id="savedProjectsTitle">Saved projects</h2><p>Open unfinished frames, collages and customer-photo edits</p></div><button id="closeSavedProjects" class="btn small" type="button">Close</button></div>
+ <div class="savedProjectsBody">
+  <div class="inline"><button id="importProject" class="btn small" type="button">↑ Import project backup</button><input hidden type="file" id="importProjectFile" accept=".json,application/json" /></div>
+  <p id="projectListStatus" class="help" role="status">Loading saved projects…</p>
+  <div id="projectList" class="savedProjectList"></div>
+  <p class="help">Only saved on this device by default. Clearing browser data may erase projects; use Backup for a portable copy. Backups contain original customer photos—handle them privately.</p>
+ </div>
 </dialog>
 <dialog id="frameLibrary" class="frameLibrary" aria-labelledby="frameLibTitle">
  <div class="frameLibHead"><div><h2 id="frameLibTitle">Frame Library</h2><p>Open a saved frame or reuse its photo-opening shape</p></div><button id="closeFrameLibrary" class="btn small" type="button">✕ Close</button></div>
