@@ -28,6 +28,15 @@ test("private MegaFrame build leaves the public output editor-free", () => {
     assert.match(editor,/<script>/);
     assert.doesNotMatch(editor,/megaframe_named_projects_v1/, "The public named-project IndexedDB must be replaced in the private bundle");
     assert.match(editor,/project-list/, "Named projects use a protected parent vault bridge");
+    assert.match(editor,/function recoveryArchiveId\(draft\)/,
+      "Protected editor must keep latest recovery archive ID helper");
+    assert.match(editor,/async function deleteLinkedRecovery\(id\)/,
+      "Recovery deletion must coordinate auto-draft and archived project");
+    assert.match(editor,/startupChoiceDialog/,
+      "Current v2.7 startup Create New / Retrieve chooser must remain bundled");
+    const vault=readFileSync(join(root,"staging/studio-access/draft-vault.js"),"utf8");
+    assert.match(vault,/recovery_/,
+      "Protected encrypted named-project vault must allow archived recovery records");
     assert.doesNotMatch(editor,/<script\s+src=["']\.\//);
     assert.doesNotMatch(editor,/<img[^>]+src=["']\.\//);
     assert.ok(publicEntry.length<1400);
