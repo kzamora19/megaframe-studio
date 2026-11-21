@@ -214,7 +214,7 @@ try {
     {waitUntil:"domcontentloaded"});
   await page.locator("#studio-editor-frame").waitFor({timeout:90000});
   const other=page.frameLocator("#studio-editor-frame");
-  await other.locator("#photoCount").waitFor({timeout:30000});
+  await other.locator("#photoCount").waitFor({state:"attached",timeout:30000});
   assert.match(await other.locator("#photoCount").textContent(),/0 photos/i);
   assert.equal(await other.locator("#actionModal").isVisible(),false);
   // Stored bytes must be opaque ciphertext rather than a plaintext photo record.
