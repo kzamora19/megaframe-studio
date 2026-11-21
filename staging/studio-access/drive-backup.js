@@ -14,7 +14,7 @@
   const CLIENT=/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/;
   const OWNER=/^[A-Za-z0-9_-]{43}$/;
   let context=null,token="",tokenUntil=0,controller=null,connectClient=null;
-  let driveFiles=[],folderId="",busy=false;
+  let driveFiles=[],folderId="",busy=false,setupVersion=0;
   const el=id=>document.getElementById(id);
   const note=value=>{if(el("driveMessage"))el("driveMessage").textContent=String(value);};
   const enabled=()=>!!context&&!!token&&Date.now()<tokenUntil;
@@ -303,8 +303,13 @@
     if(!input||!["megaframe","flyer"].includes(input.studio)||
        !OWNER.test(input.scope)||typeof input.verify!=="function"||!input.vault)
       throw Error("Invalid PTG account Google Drive configuration.");
-    clear();
-    context={...input,ownerScope:await scopeHash(input.scope)};
+    const version=++setupVersion;
+    clear();context=null;
+    const ownerScope=await scopeHash(input.scope);
+    // A revoked PTG session may lock the launcher while hashing the owner
+    // scope. Never remount the Drive controls after that asynchronous lock.
+    if(version!==setupVersion)return;
+    context={...input,ownerScope};
     if(el("driveLocalWrap"))el("driveLocalWrap").hidden=input.studio!=="megaframe";
     if(el("drivePanel"))el("drivePanel").hidden=false;
     el("driveConnect").onclick=connect;
@@ -317,6 +322,7 @@
     paint();
   }
   function lock(){
+    ++setupVersion;
     clear();context=null;
     if(el("drivePanel"))el("drivePanel").hidden=true;
   }
