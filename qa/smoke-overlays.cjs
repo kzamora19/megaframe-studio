@@ -70,6 +70,37 @@ const assert=require('node:assert/strict');
    overlayPointerUp();
   });
   assert.equal(await page.evaluate(()=>app.overlays[0].overrides[app.photos[1].id].x),before,'Dragging photo 1 does not move photo 2');
+  // Corner resize and rotation handle are also per-photo, not merely numeric fields.
+  const b=await page.evaluate(()=>({...app.overlays[0].overrides[app.photos[1].id]}));
+  const changes=await page.evaluate(()=>{
+   const o=app.overlays[0],p=app.photos[0],cell=overlayCurrentCell(o);
+   const before={...overlayTransform(o,p)},g=overlayGeo(before,cell);
+   const rightTop={
+    x:g.cx+Math.cos(g.angle)*g.w/2+Math.sin(g.angle)*g.h/2,
+    y:g.cy+Math.sin(g.angle)*g.w/2-Math.cos(g.angle)*g.h/2
+   };
+   overlayPointerDown(rightTop);
+   overlayPointerMove({x:rightTop.x+cell.w*.13,y:rightTop.y-cell.h*.09});
+   overlayPointerUp();
+   const afterResize={...overlayTransform(o,p)};
+   const updated=overlayGeo(afterResize,cell);
+   const ry=-updated.h/2-Math.max(Math.max(14,app.frame.width/90)*2,app.frame.height/40);
+   const sx=updated.cx-Math.sin(updated.angle)*ry;
+   const sy=updated.cy+Math.cos(updated.angle)*ry;
+   overlayPointerDown({x:sx,y:sy});
+   overlayPointerMove({x:updated.cx+100,y:updated.cy-100});
+   overlayPointerUp();
+   return {before,afterResize,afterRotate:{...overlayTransform(o,p)}};
+  });
+  assert.notEqual(changes.afterResize.w,changes.before.w,'Corner resize changes width');
+  assert.notEqual(changes.afterResize.h,changes.before.h,'Aspect-lock resize changes height');
+  assert.notEqual(changes.afterRotate.rotation,changes.afterResize.rotation,'Rotation handle changes angle');
+  assert.deepEqual(await page.evaluate(()=>({...app.overlays[0].overrides[app.photos[1].id]})),b,'Resizing/rotating photo 1 leaves photo 2 untouched');
+  assert.equal(await page.evaluate(()=>app.overlays[0].locked),false);
+  await page.locator('#overlayLocked').check();
+  assert.equal(await page.evaluate(()=>app.overlays[0].locked),true,'Layer can be locked');
+  await page.locator('#overlayLocked').uncheck();
+
 
   // Shared text/image and per-photo overrides persist through saves and backups.
   const saved=await page.evaluate(()=>serializeDraft());
