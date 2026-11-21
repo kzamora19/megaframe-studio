@@ -90,7 +90,8 @@ try {
     "allow-scripts allow-downloads");
   const frame=page.frameLocator("#studio-editor-frame");
   await frame.locator("#previewCanvas").waitFor({timeout:90000});
-  await frame.locator("#frameLibrary").waitFor({timeout:90000});
+  await frame.locator("#frameLibrary").waitFor({state:"attached",timeout:30000});
+  assert.equal(await frame.locator("#frameLibrary").isHidden(),true);
   assert.match(await frame.locator("title").textContent(),/MegaFrame Studio/);
   // A CSP hash is required for each private script. Do not broaden to unsafe-inline.
   assert.equal(manifest.inlineScriptHashes,15);
