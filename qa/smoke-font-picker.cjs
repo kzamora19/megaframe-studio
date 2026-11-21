@@ -20,6 +20,8 @@ async function testFonts(browser,mobile){
   assert.equal(await page.locator('#overlayFontButton').getAttribute('aria-expanded'),'false');
   await page.locator('#overlayFontButton').click();
   await page.locator('#overlayFontMenu').waitFor({state:'visible'});
+  const fontMenuImage=await page.locator('#overlayFontMenu').screenshot({type:'jpeg',quality:55,animations:'disabled'});
+  console.log('FONT_PICKER_VISUAL_'+(mobile?'MOBILE':'DESKTOP')+'='+fontMenuImage.toString('base64'));
   assert.equal(await page.locator('#overlayFontButton').getAttribute('aria-expanded'),'true');
   assert.ok(await page.locator('#overlayFontList [data-font]').count()>=40);
   const names=await page.locator('#overlayFontList [data-font]').evaluateAll(els=>els.map(el=>el.dataset.font));
