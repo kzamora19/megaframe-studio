@@ -159,7 +159,7 @@ try {
   assert.equal(await frame.locator("#frameLibrary").isHidden(),true);
   assert.match(await frame.locator("title").textContent(),/MegaFrame Studio/);
   // A CSP hash is required for each private script. Do not broaden to unsafe-inline.
-  assert.equal(manifest.inlineScriptHashes,16);
+  assert.equal(manifest.inlineScriptHashes,18);
   assert.match(privateHtml,/script-src[^;]*'sha256-/);
   assert.doesNotMatch(privateHtml,/script-src[^;]*'unsafe-inline'/);
   const canvas=await frame.locator("#previewCanvas").evaluate(el=>({
