@@ -30,6 +30,7 @@ async function review(browser,device){
    selectPhoto(0);
   });
   await page.locator('[data-panel="6"]').click();
+  assert.match(await page.locator('#modeTag').textContent(),/Overlay editing/,'Canvas identifies editing mode');
   await page.locator('#overlayScope').selectOption('all');
   await page.locator('#addTextOverlay').click();
   await page.locator('#overlayContent').fill('BIG SAVINGS!');
