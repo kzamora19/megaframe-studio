@@ -257,13 +257,13 @@ try {
   await frame.locator("#projectSaveStatus").getByText(/Protected Customer Project/).waitFor({timeout:30000});
   await frame.locator("#openProjects").click();
   await frame.locator("#savedProjectsDialog[open]").waitFor();
-  await frame.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:20000});
-  assert.equal(await frame.locator(".savedProjectCard").count(),1);
+  await frame.locator("#projectList .savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:20000});
+  assert.equal(await frame.locator("#projectList .savedProjectCard").count(),1);
   // Simulate migrating a portable project saved by the old public MegaFrame:
   // same JSON format, with unencrypted original customer photo in the export.
   const [backupDownload]=await Promise.all([
     page.waitForEvent("download",{timeout:30000}),
-    frame.locator(".savedProjectCard").first().getByRole("button",{name:"Backup"}).click(),
+    frame.locator("#projectList .savedProjectCard").first().getByRole("button",{name:"Backup"}).click(),
   ]);
   const oldProjectBackup=readFileSync(await backupDownload.path());
   const oldBackupRecord=JSON.parse(oldProjectBackup.toString("utf8"));
@@ -298,10 +298,10 @@ try {
   assert.match(await restored.locator("#draftStatus").textContent(),/Draft saved|Auto-save|Restored/i);
   await restored.locator("#openProjects").click();
   await restored.locator("#savedProjectsDialog[open]").waitFor();
-  await restored.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:25000});
-  assert.ok(await restored.locator(".savedProjectCard").count()>=1,
+  await restored.locator("#projectList .savedProjectCard").filter({hasText:"Protected Customer Project"}).waitFor({timeout:25000});
+  assert.ok(await restored.locator("#projectList .savedProjectCard").count()>=1,
     "Named projects and archived recovery must survive PTG revocation and relaunch.");
-  await restored.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"})
+  await restored.locator("#projectList .savedProjectCard").filter({hasText:"Protected Customer Project"})
     .getByRole("button",{name:"Open"}).click();
   await restored.locator("#actionModalConfirm").click();
   await restored.locator("#savedProjectsDialog").waitFor({state:"hidden",timeout:20000});
@@ -331,7 +331,7 @@ try {
   assert.match(await other.locator("#photoCount").textContent(),/0 photos/i);
   assert.equal(await other.locator("#actionModal").isVisible(),false);
   await other.locator("#projectListStatus").getByText(/No saved projects yet/i).waitFor({timeout:25000});
-  assert.equal(await other.locator(".savedProjectCard").count(),0,
+  assert.equal(await other.locator("#projectList .savedProjectCard").count(),0,
     "Another PTG account must not see saved customer projects.");
   // User-directed migration is different from unauthorized account access:
   // a consciously imported portable JSON backup must become newly encrypted
@@ -339,9 +339,9 @@ try {
   await other.locator("#importProjectFile").setInputFiles({
     name:"legacy-megaframe-backup.json",mimeType:"application/json",buffer:oldProjectBackup
   });
-  await other.locator(".savedProjectCard").filter({hasText:"Protected Customer Project"})
+  await other.locator("#projectList .savedProjectCard").filter({hasText:"Protected Customer Project"})
     .waitFor({timeout:30000});
-  assert.equal(await other.locator(".savedProjectCard").count(),1,
+  assert.equal(await other.locator("#projectList .savedProjectCard").count(),1,
     "Legacy portable project backup imports to new authorized account.");
   const newlyEncrypted=await page.evaluate(async()=>{
     return new Promise((resolve,reject)=>{
@@ -365,7 +365,7 @@ try {
     });
   });
   assert.equal(newlyEncrypted,true,"Imported old portable project must be re-encrypted to new PTG account.");
-  await other.locator(".savedProjectCard").first().getByRole("button",{name:"Open"}).click();
+  await other.locator("#projectList .savedProjectCard").first().getByRole("button",{name:"Open"}).click();
   await other.locator("#actionModalConfirm").click();
   await other.locator("#savedProjectsDialog").waitFor({state:"hidden",timeout:20000});
   const migrated=await other.locator("#previewCanvas").evaluate(() => ({
