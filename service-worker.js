@@ -1,3 +1,16 @@
+const protectedVercelHost = self.location.hostname === "megaframe-studio.vercel.app"
+  || self.location.hostname.endsWith(".vercel.app");
+if (protectedVercelHost) {
+  // Protected Vercel requests must reach the authorization proxy every time.
+  self.addEventListener("install",event=>event.waitUntil(self.skipWaiting()));
+  self.addEventListener("activate",event=>event.waitUntil((async()=>{
+    for(const name of await caches.keys()){
+      if(name.startsWith("megaframe-shell-"))await caches.delete(name);
+    }
+    await self.clients.claim();
+  })()));
+  // No fetch listener or static cache on the protected host.
+} else {
 /* MegaFrame Studio PWA — application shell only. Never cache API calls, auth or credentials. */
 const VERSION = 'mf-pwa-v28-static-sidebar-nav-20261121';
 const CACHE = 'megaframe-shell-' + VERSION;
@@ -65,3 +78,5 @@ self.addEventListener('fetch', event => {
     }
   })());
 });
+
+}
