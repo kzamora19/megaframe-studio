@@ -1,7 +1,7 @@
-name: Staging ${w.name} private bundle digest (NO deployment)
+name: Staging MegaFrame private bundle digest (NO deployment)
 on:
   push:
-    branches: [${w.branch}]
+    branches: [feature/ptg-private-pages-package-20261121]
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,10 +14,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: "22"}
       - name: Build private editor only under isolated temporary runner path
-        run: ${w.run}
+        run: node staging/build-private-package.mjs "$RUNNER_TEMP/megaframe-private"
       - name: Validate SHA-256 and record manifest (never upload editor)
         env:
-          BUNDLE_DIR: ${{ runner.temp }}/${w.folder}
+          BUNDLE_DIR: ${{ runner.temp }}/megaframe-private
         run: |
           node --input-type=module - <<'NODE'
           import {readFileSync,appendFileSync} from "node:fs";
@@ -28,7 +28,9 @@ jobs:
           const digest=createHash("sha256").update(bytes).digest("hex");
           if(manifest.sha256!==digest||manifest.bytes!==bytes.length)throw Error("Private hash/byte mismatch");
           const prefix="releases/"+digest.slice(0,16)+"/studio.html";
-          console.log("Verified PRIVATE staging digest "+digest+" bytes "+bytes.length+" target "+prefix);
-          appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-            "### ${w.name} staging-only private editor\nSHA-256: \`"+digest+"\`\nBytes: "+bytes.length+"\nPrivate Storage path: \`"+prefix+"\`\nNOT uploaded or publicly deployed.\n");
+          console.log("Verified private staging digest "+digest+" bytes "+bytes.length+" target "+prefix);
+          const summary=["### MegaFrame private editor staging digest",
+            "SHA-256: "+digest, "Bytes: "+bytes.length,
+            "Private storage object: "+prefix, "NOT uploaded or publicly deployed."].join("\n")+"\n";
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY,summary);
           NODE
