@@ -31,10 +31,10 @@ try {
  if(!existsSync(join(protectedCutover,"studio","launch.js")))
    throw Error("Private editor launcher missing from protected preview");
  // The ONLY addition over the existing deployed editor files is /studio/.
- if(existsSync(join(publicSite,"studio")))throw Error("Public baseline already contains studio route");
+ const liveLauncher=existsSync(join(publicSite,"studio"));
  rmSync(output,{recursive:true,force:true});
  cpSync(publicSite,output,{recursive:true});
- cpSync(join(protectedCutover,"studio"),join(output,"studio"),{recursive:true});
+ if(!liveLauncher)cpSync(join(protectedCutover,"studio"),join(output,"studio"),{recursive:true});
  const entry=readFileSync(join(output,"studio","index.html"),"utf8");
  if(!entry.includes("MEGAFRAME_STUDIO_PRIVATE_CONFIG")||
    !entry.includes(process.env.MEGAFRAME_STUDIO_PUBLISHABLE_KEY)||
