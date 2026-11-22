@@ -26,9 +26,17 @@ function all(rootDir,prefix=""){
  });
 }
 function identicalPublicTree(a,b){
- const files=all(a);
- assert.deepEqual(files,all(b).filter(x=>!x.startsWith("studio/")));
+ const nonStudio=files=>files.filter(x=>!x.startsWith("studio/"));
+ const files=nonStudio(all(a));
+ assert.deepEqual(files,nonStudio(all(b)));
  for(const file of files){
+  assert.deepEqual(readFileSync(join(a,file)),readFileSync(join(b,file)),file+" changed in shadow preview");
+ }
+ // If the protected launcher is already installed on the live site, a
+ // shadow rebuild must preserve *those* files byte-for-byte as well.
+ const deployedStudio=all(a).filter(x=>x.startsWith("studio/"));
+ for(const file of deployedStudio){
+  assert.ok(all(b).includes(file),"Previously published launcher file disappeared");
   assert.deepEqual(readFileSync(join(a,file)),readFileSync(join(b,file)),file+" changed in shadow preview");
  }
 }
