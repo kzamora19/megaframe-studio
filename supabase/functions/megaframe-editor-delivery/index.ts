@@ -6,7 +6,7 @@ import {studioTicketOk,deliveryConfigured,exactHttpsOrigin,validPtgGatewayUrl,va
 import {studioSupabaseKey} from "../_shared/studio-supabase-keys.mjs";
 
 const MEGAFRAME_URL=Deno.env.get("SUPABASE_URL")||"";
-const MEGAFRAME_SERVICE=studioSupabaseKey(name=>Deno.env.get(name),"secret");
+const MEGAFRAME_SERVICE=studioSupabaseKey((name: string)=>Deno.env.get(name),"secret");
 const VERIFY_SECRET=Deno.env.get("MEGAFRAME_PTG_STUDIO_GATEWAY_SECRET")||"";
 const ALLOWED_ORIGIN=Deno.env.get("MEGAFRAME_STUDIO_ALLOWED_ORIGIN")||"";
 // Immutable OIDC-built private release hash, verified through signed Storage upload.
