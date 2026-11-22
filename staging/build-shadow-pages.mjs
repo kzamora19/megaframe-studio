@@ -8,6 +8,11 @@ import {execFileSync} from "node:child_process";
 import {fileURLToPath} from "node:url";
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"..");
 const output=resolve(process.argv[2]||join(root,"staging",".shadow-pages"));
+// Restrict removal/copy operations to explicitly named disposable preview
+// folders. No run may delete an arbitrary path, repository root or live source.
+const approved=(output.startsWith(join(root,"staging",".shadow-"))||
+ output.startsWith(join(tmpdir(),"branchline-shadow-artifact-")));
+if(!approved)throw Error("Shadow output must be an approved disposable directory");
 if(process.env.PTG_STUDIO_SHADOW_PREVIEW!=="1")
  throw Error("Shadow build requires explicit PTG_STUDIO_SHADOW_PREVIEW=1");
 if(output===root||output===join(root,"_site")||output===join(root,"icons")||
