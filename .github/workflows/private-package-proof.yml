@@ -31,6 +31,8 @@ jobs:
         run: |
           node --check staging/build-cutover-pages.mjs
           node --test staging/cutover-pages.test.mjs
+          node --check staging/build-shadow-pages.mjs
+          node --test staging/shadow-pages.test.mjs
       - name: Check private launcher and vault JavaScript syntax
         run: |
           node --check staging/studio-access/launch.js
