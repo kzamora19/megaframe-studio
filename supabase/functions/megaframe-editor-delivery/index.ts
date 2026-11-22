@@ -8,7 +8,8 @@ const MEGAFRAME_URL=Deno.env.get("SUPABASE_URL")||"";
 const MEGAFRAME_SERVICE=Deno.env.get("SUPABASE_SECRET_KEY")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const VERIFY_SECRET=Deno.env.get("MEGAFRAME_PTG_STUDIO_GATEWAY_SECRET")||"";
 const ALLOWED_ORIGIN=Deno.env.get("MEGAFRAME_STUDIO_ALLOWED_ORIGIN")||"";
-// Immutable OIDC-built private release hash, verified through signed Storage upload.\nconst BUNDLE_PATH=Deno.env.get("MEGAFRAME_PRIVATE_BUNDLE_PATH")||"releases/d427621376f4db4c/studio.html";
+// Immutable OIDC-built private release hash, verified through signed Storage upload.
+const BUNDLE_PATH=Deno.env.get("MEGAFRAME_PRIVATE_BUNDLE_PATH")||"releases/d427621376f4db4c/studio.html";
 const BUNDLE_SHA=Deno.env.get("MEGAFRAME_PRIVATE_BUNDLE_SHA256")||"d427621376f4db4cd6afaa53226aca7971ff32d1da1daa81d4e3ec6da694f7f6";
 const BUNDLE_BUCKET="megaframe-editor-release"; // Never reuse the live shared-assets bucket.
 // Never connect a staging Studio to a live PTG authorization authority.
