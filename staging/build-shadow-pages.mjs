@@ -15,7 +15,7 @@ if(output===root||output===join(root,"_site")||output===join(root,"icons")||
  throw Error("Refusing to overwrite public MegaFrame deployment inputs");
 if(!/^sb_publishable_[A-Za-z0-9_-]{20,}$/.test(process.env.MEGAFRAME_STUDIO_PUBLISHABLE_KEY||""))
  throw Error("Shadow launcher requires the actual public MegaFrame publishable key");
-const temp=mkdtempSync(join(tmpdir(),"branchline-megaframe-shadow-"));
+const temp=mkdtempSync(join(root,"staging",".shadow-build-"));
 try {
  const publicSite=join(temp,"public"),protectedCutover=join(temp,"cutover");
  execFileSync("python3",[join(root,"scripts/build_pages_site.py"),publicSite],{cwd:root,stdio:"pipe"});
