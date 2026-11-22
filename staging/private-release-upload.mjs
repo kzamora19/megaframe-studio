@@ -29,6 +29,24 @@ async function action(operation){
  if(!tokenResponse.ok)throw Error("Unable to obtain GitHub job identity attestation.");
  const token=(await tokenResponse.json()).value;
  if(typeof token!=="string")throw Error("GitHub attestation did not include an ID token");
+ if(operation==="request"){
+  // Diagnostics are booleans only: never log the JWT, token payload or keys.
+  const fields=token.split(".");
+  const claim=JSON.parse(Buffer.from(fields[1],"base64url").toString("utf8"));
+  const head=JSON.parse(Buffer.from(fields[0],"base64url").toString("utf8"));
+  console.log("GitHub OIDC eligibility (booleans):",JSON.stringify({
+   algOk:head.alg==="RS256",typJwt:head.typ==="JWT",
+   subOk:claim.sub==="repo:"+process.env.GITHUB_REPOSITORY+":ref:"+process.env.GITHUB_REF,
+   audienceOk:claim.aud===audience,
+   repositoryOk:claim.repository===process.env.GITHUB_REPOSITORY,
+   repositoryIdOk:String(claim.repository_id)==="1461566255",
+   refOk:claim.ref===process.env.GITHUB_REF,
+   workflowRefOk:claim.workflow_ref===process.env.GITHUB_REPOSITORY+"/.github/workflows/private-release-upload.yml@"+process.env.GITHUB_REF,
+   eventPush:claim.event_name==="push",shaOk:claim.sha===process.env.GITHUB_SHA,
+   tokenLifetimeSeconds:claim.exp-claim.iat
+  }));
+ }
+
  const response=await fetch(endpoint,{method:"POST",headers:{
   "Content-Type":"application/json",Authorization:"Bearer "+token
  },body:JSON.stringify({operation,sha256,bytes,commit:process.env.GITHUB_SHA}),
