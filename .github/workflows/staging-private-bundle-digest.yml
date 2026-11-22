@@ -1,0 +1,34 @@
+name: Staging ${w.name} private bundle digest (NO deployment)
+on:
+  push:
+    branches: [${w.branch}]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-bundle-digest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - name: Build private editor only under isolated temporary runner path
+        run: ${w.run}
+      - name: Validate SHA-256 and record manifest (never upload editor)
+        env:
+          BUNDLE_DIR: ${{ runner.temp }}/${w.folder}
+        run: |
+          node --input-type=module - <<'NODE'
+          import {readFileSync,appendFileSync} from "node:fs";
+          import {createHash} from "node:crypto";
+          import {join} from "node:path";
+          const manifest=JSON.parse(readFileSync(join(process.env.BUNDLE_DIR,"manifest.json"),"utf8"));
+          const bytes=readFileSync(join(process.env.BUNDLE_DIR,"private","studio.html"));
+          const digest=createHash("sha256").update(bytes).digest("hex");
+          if(manifest.sha256!==digest||manifest.bytes!==bytes.length)throw Error("Private hash/byte mismatch");
+          const prefix="releases/"+digest.slice(0,16)+"/studio.html";
+          console.log("Verified PRIVATE staging digest "+digest+" bytes "+bytes.length+" target "+prefix);
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            "### ${w.name} staging-only private editor\nSHA-256: \`"+digest+"\`\nBytes: "+bytes.length+"\nPrivate Storage path: \`"+prefix+"\`\nNOT uploaded or publicly deployed.\n");
+          NODE
