@@ -29,3 +29,14 @@ for name in files:
 copytree(root / "icons", destination / "icons")
 (destination / ".nojekyll").touch()
 print(f"GitHub Pages site staged at {destination} ({len(files)} HTML/JS files + icons)")
+
+# Additive PTG-protected launcher. Existing editor, PWA and user drafts are
+# preserved byte-for-byte; private editor HTML is NEVER copied to Pages.
+launcher = root / "studio"
+required = ["index.html", "launch.js", "draft-vault.js", "central-drive.js"]
+if not launcher.is_dir() or any(not (launcher / name).is_file() for name in required):
+    raise SystemExit("Protected Studio launcher assets missing")
+copytree(launcher, destination / "studio")
+
+# Protected /studio/ launcher's optional backup panels are hidden by CSS.
+# The underlying encrypted backup services and current public editor are unchanged.

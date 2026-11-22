@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<title>MegaFrame Studio — PTG Protected Launch (STAGING ONLY)</title>
+<style>
+body{font:16px/1.5 system-ui;color:#22314e;background:#f0f4fb;margin:0}
+header{background:#fff;padding:14px 22px;font-weight:700}
+main{padding:20px}
+#status{max-width:650px;margin:30px auto;padding:22px;background:white;border:1px solid #dce4f0;border-radius:12px}
+#studio-editor-frame{width:100%;height:86vh;background:white;border:0}
+#cloudPanel{display:flex;align-items:center;flex-wrap:wrap;gap:9px;background:white;
+  padding:12px 16px;border-bottom:1px solid #dae3f0;font:13px/1.5 system-ui}
+#cloudPanel[hidden]{display:none}
+#cloudPanel strong{font-size:13px;color:#1d2836}
+#cloudPanel small{font-size:11px;color:#526174;max-width:330px}
+#cloudPanel button{font:600 12px system-ui;padding:8px 11px;border-radius:7px;
+ background:#355ee8;color:white;border:1px solid #2348c7}
+#cloudPanel select{min-width:140px;max-width:220px;padding:7px;border:1px solid #b7c4d5;border-radius:7px}
+#cloudPanel label{font:600 11px system-ui;color:#34455d;display:flex;align-items:center;gap:5px}
+#cloudMessage{width:100%;color:#34455d;font-size:12px}
+@media(max-width:700px){#cloudPanel{padding:10px;gap:6px}#cloudPanel small{width:100%}}
+</style>
+<style>
+#drivePanel{display:flex;align-items:center;flex-wrap:wrap;gap:9px;background:#f8fbff;
+  padding:12px 16px;border-bottom:1px solid #dae3f0;font:13px/1.5 system-ui}
+#drivePanel[hidden],#drivePanel [hidden]{display:none!important}
+#drivePanel strong{font-size:13px;color:#1d2836}
+#drivePanel small{font-size:11px;color:#526174;max-width:330px}
+#drivePanel button{font:600 12px system-ui;padding:8px 11px;border-radius:7px;
+ background:#355ee8;color:white;border:1px solid #2348c7}
+#drivePanel button:disabled{opacity:.55;cursor:not-allowed}
+#drivePanel select{min-width:140px;max-width:220px;padding:7px;border:1px solid #b7c4d5;border-radius:7px}
+#drivePanel label{font:600 11px system-ui;color:#34455d;display:flex;align-items:center;gap:5px}
+#driveMessage{width:100%;color:#34455d;font-size:12px}
+@media(max-width:700px){#drivePanel{padding:10px;gap:6px}#drivePanel small{width:100%}}
+</style><style id="branchline-hide-archive-panels">#cloudPanel,#drivePanel{display:none!important}</style>
+</head>
+<body>
+<header>MegaFrame Studio — PTG protected test access</header>
+<main>
+<div id="status" role="status">Checking PTG Studio authorization…</div>
+<section id="cloudPanel" hidden aria-label="Manual encrypted cloud project backups">
+  <strong>Encrypted Cloud Project Backup</strong>
+  <small>Manual only. Your PTG account owns the archive. No automatic photo upload.</small>
+  <button type="button" id="cloudRefresh">Refresh projects</button>
+  <label>Saved on this device <select id="cloudLocalProject"></select></label>
+  <button type="button" id="cloudBackup">Back up selected project</button>
+  <label>Saved in cloud <select id="cloudRemoteProject"></select></label>
+  <button type="button" id="cloudRestore">Retrieve cloud project</button>
+  <output id="cloudMessage" role="status" aria-live="polite"></output>
+ </section>
+
+<section id="drivePanel" hidden aria-label="Manual Google Drive encrypted project backups">
+  <strong>Company Google Drive Backups</strong>
+  <small>Centralized encrypted backups in the approved owner Google Drive. Staff sign in with PTG only. Supabase saving is unchanged.</small>
+  <button type="button" id="driveConnect" hidden>Owner authorization (admin only)</button>
+  <button type="button" id="driveDisconnect" hidden>Disconnect</button>
+  <button type="button" id="driveRefresh">Refresh Drive backups</button>
+  <label id="driveLocalWrap">Local project <select id="driveLocalProject"></select></label>
+  <button type="button" id="driveBackup">Back up to Google Drive</button>
+  <label>Drive backups <select id="driveRemoteProject"></select></label>
+  <button type="button" id="driveRestore">Retrieve from Google Drive</button>
+  <output id="driveMessage" role="status" aria-live="polite"></output>
+</section>
+<div id="mount"></div>
+</main>
+<script>
+window.MEGAFRAME_STUDIO_PRIVATE_CONFIG = {
+  endpoint: "https://vmyoxoiygfcecgkbavgg.supabase.co/functions/v1/megaframe-editor-delivery",
+  publishableKey: "sb_publishable_jyCflrfvPnPb6O3ncmlG2w_w4FeKz40",
+  googleDriveClientId: "873550026587-clo2e2vrthc8621unnmjio3des0nehfm.apps.googleusercontent.com",
+  checkIntervalMs: 30000,
+};
+</script>
+<script src="./draft-vault.js" defer></script><script src="./central-drive.js" defer></script>
+<script src="./launch.js" defer></script>
+</body>
+</html>
