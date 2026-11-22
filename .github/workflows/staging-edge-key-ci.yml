@@ -1,0 +1,21 @@
+name: Staging-only MegaFrame key compatibility validation
+on:
+  push:
+    branches: [fix/staging-edge-key-dictionaries-20261122]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-key-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - name: Validate named Supabase Edge keys and backwards compatibility
+        run: node --test tests/studio-supabase-keys.test.mjs
+      - uses: denoland/setup-deno@v2
+        with: {deno-version: v2.x}
+      - name: Verify staged editor delivery TypeScript
+        run: deno check supabase/functions/megaframe-editor-delivery/index.ts

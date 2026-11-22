@@ -3,9 +3,10 @@
 // GET text/html is not used: default Supabase Edge domains rewrite HTML responses.
 import {createClient} from "npm:@supabase/supabase-js@2.49.8";
 import {studioTicketOk,deliveryConfigured,exactHttpsOrigin,validPtgGatewayUrl,validStudioBackendUrl} from "../_shared/studio-private-policy.mjs";
+import {studioSupabaseKey} from "../_shared/studio-supabase-keys.mjs";
 
 const MEGAFRAME_URL=Deno.env.get("SUPABASE_URL")||"";
-const MEGAFRAME_SERVICE=Deno.env.get("SUPABASE_SECRET_KEY")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+const MEGAFRAME_SERVICE=studioSupabaseKey((name: string)=>Deno.env.get(name),"secret");
 const VERIFY_SECRET=Deno.env.get("MEGAFRAME_PTG_STUDIO_GATEWAY_SECRET")||"";
 const ALLOWED_ORIGIN=Deno.env.get("MEGAFRAME_STUDIO_ALLOWED_ORIGIN")||"";
 // Immutable OIDC-built private release hash, verified through signed Storage upload.
