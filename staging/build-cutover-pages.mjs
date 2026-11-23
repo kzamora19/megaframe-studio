@@ -70,14 +70,26 @@ if(process.env.PTG_STUDIO_PRODUCTION_RELEASE==="1" &&
  throw Error("Missing explicit production MegaFrame publishable key");
 const source=readFileSync(join(root,"staging","studio-access","index.html"),"utf8");
 if(!source.includes('publishableKey: ""'))throw Error("Launcher config drift");
+const officialNavCss=readFileSync(join(root,"staging","studio-access","unified-navigation.css"),"utf8")
+ .replace("./official/four-apps.png","data:image/png;base64,"+
+   readFileSync(join(root,"staging","studio-access","official","four-apps.png")).toString("base64"));
+const officialNavJs=readFileSync(join(root,"staging","studio-access","unified-navigation.js"),"utf8")
+ .replace('const BRAND_SRC = "./official/branchline.png";',
+   'const BRAND_SRC = "data:image/png;base64,'+
+   readFileSync(join(root,"staging","studio-access","official","branchline.png")).toString("base64")+'";');
 const launcher=source
  .replace("— PTG Protected Launch (STAGING ONLY)","— Branchline protected access")
  .replace("MegaFrame Studio — development preview","MegaFrame Studio — Branchline protected editor")
  .replace('publishableKey: ""',"publishableKey: "+JSON.stringify(publishableKey));
-if(/PRIVATE MEGAFRAME EDITOR BUNDLE|id="photosInput"|<canvas/.test(launcher))
+const bundledLauncher=launcher
+ .replace('<link rel="stylesheet" href="./unified-navigation.css">','<style>'+officialNavCss+'</style>')
+ .replace('<script src="./unified-navigation.js" defer></script>','<script>'+officialNavJs+'</script>');
+if(bundledLauncher===launcher || bundledLauncher.includes('src="./unified-navigation.js"'))
+ throw Error("Official app rail must be inline in the editor-free public launcher");
+if(/PRIVATE MEGAFRAME EDITOR BUNDLE|id="photosInput"|<canvas/.test(bundledLauncher))
  throw Error("Editor bytes are not allowed in public launcher");
 mkdirSync(join(target,"studio"),{recursive:true});
-writeFileSync(join(target,"studio","index.html"),launcher);
+writeFileSync(join(target,"studio","index.html"),bundledLauncher);
 for(const asset of ["launch.js","draft-vault.js","central-drive.js"])
  copyFileSync(join(root,"staging","studio-access",asset),join(target,"studio",asset));
 

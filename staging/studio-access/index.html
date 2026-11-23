@@ -37,8 +37,8 @@ main{padding:20px}
 #drivePanel label{font:600 11px system-ui;color:#34455d;display:flex;align-items:center;gap:5px}
 #driveMessage{width:100%;color:#34455d;font-size:12px}
 @media(max-width:700px){#drivePanel{padding:10px;gap:6px}#drivePanel small{width:100%}}
-</style></head>
-<body>
+</style><link rel="stylesheet" href="./unified-navigation.css"></head>
+<body data-bl-studio="megaframe">
 <header>MegaFrame Studio — development preview</header>
 <main>
 <div id="status" role="status">Checking PTG Studio authorization…</div>
@@ -77,5 +77,5 @@ window.MEGAFRAME_STUDIO_PRIVATE_CONFIG = {
 </script>
 <script src="./draft-vault.js" defer></script><script src="./central-drive.js" defer></script>
 <script src="./launch.js" defer></script>
-</body>
+<script src="./unified-navigation.js" defer></script></body>
 </html>
