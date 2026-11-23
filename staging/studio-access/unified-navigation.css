@@ -1,0 +1,49 @@
+/* Branchline official 2026 navigation, scoped to PTG-protected public shell only. */
+body.bl-protected-shell{--bl-outer-rail:78px;padding-left:var(--bl-outer-rail);box-sizing:border-box}
+.bl-protected-app-rail{position:fixed;z-index:51;inset:0 auto 0 0;width:var(--bl-outer-rail);
+ padding:10px 7px;box-sizing:border-box;background:linear-gradient(180deg,#0d3466,#082853);
+ border-right:1px solid #2b5687;display:flex;flex-direction:column;gap:9px;overflow-y:auto}
+.bl-protected-brand{min-height:62px;display:grid;place-items:center;padding:5px;border:1px solid transparent;
+ border-bottom-color:#315786;border-radius:10px;background:transparent;cursor:pointer;margin-bottom:10px}
+.bl-protected-brand img{width:43px;height:43px;object-fit:contain}
+.bl-protected-brand:hover,.bl-protected-brand[aria-expanded="true"]{border-color:#0dd9eb;background:#123e73}
+.bl-protected-app-link{min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:5px;padding:5px 3px;border:1px solid transparent;border-radius:10px;background:transparent;
+ color:#e7f5ff;text-decoration:none;font:600 10px/1.2 "Segoe UI",sans-serif}
+.bl-protected-app-link:hover{border-color:#79b9ee}
+.bl-protected-app-link.is-active{border-color:#0dd9eb;box-shadow:inset 3px 0 #0dd9eb}
+.bl-protected-icon{display:inline-block;width:42px;height:42px;flex:0 0 42px;border-radius:9px;
+ background-image:url("./official/four-apps.png");background-repeat:no-repeat;background-size:84px 84px;background-position:0 0}
+.bl-protected-icon.sales{background-position:-42px 0}
+.bl-protected-icon.megaframe{background-position:0 -42px}
+.bl-protected-icon.flyer{background-position:-42px -42px}
+.bl-protected-mobile-brand{display:none;align-items:center;justify-content:center;min-width:44px;height:44px;
+ padding:4px;border:1px solid #79b9ee;border-radius:9px;background:#123e73;cursor:pointer}
+.bl-protected-mobile-brand img{display:block;width:36px;height:36px;object-fit:contain}
+.bl-protected-app-overlay[hidden]{display:none!important}
+.bl-protected-app-overlay{position:fixed;z-index:50;inset:0 0 0 var(--bl-outer-rail);
+ background:#051e439d;display:flex;align-items:stretch}
+.bl-protected-app-drawer{width:min(85vw,310px);height:100%;padding:22px 15px;box-sizing:border-box;overflow-y:auto;
+ background:linear-gradient(180deg,#0c3264,#082853);box-shadow:8px 0 24px #051b3552;color:#fff}
+.bl-protected-app-drawer h2{font:700 17px/1.35 "Segoe UI",sans-serif;margin:0 0 18px;color:#fff}
+.bl-protected-app-drawer nav{display:grid;gap:9px}
+.bl-protected-app-list-link{display:flex;align-items:center;gap:12px;min-height:64px;
+ padding:9px 12px;border:1px solid #79b9ee;border-radius:12px;color:#fff;text-decoration:none;
+ background:transparent;font:600 14px/1.3 "Segoe UI",sans-serif}
+.bl-protected-app-list-link:hover,.bl-protected-app-list-link.is-active{border-color:#0dd9eb}
+.bl-protected-app-list-link.is-active{box-shadow:inset 3px 0 #0dd9eb}
+.bl-protected-brand:focus-visible,.bl-protected-app-link:focus-visible,
+.bl-protected-mobile-brand:focus-visible,.bl-protected-app-list-link:focus-visible{outline:3px solid #0dd9eb;outline-offset:2px}
+body.bl-protected-shell > header{box-sizing:border-box}
+@media(max-width:720px){
+ body.bl-protected-shell{padding-left:0}
+ .bl-protected-app-rail{display:none}
+ .bl-protected-mobile-brand{display:inline-flex;flex:0 0 44px}
+ body.bl-protected-shell > header{display:flex;align-items:center;gap:12px;min-height:68px}
+ .bl-protected-app-overlay{inset:68px 0 0;z-index:53}
+ body.bl-protected-shell > header{position:relative;z-index:54}
+}
+@media print{
+ body.bl-protected-shell{padding-left:0}
+ .bl-protected-app-rail,.bl-protected-mobile-brand,.bl-protected-app-overlay{display:none!important}
+}
