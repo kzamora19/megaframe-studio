@@ -41,7 +41,7 @@ body.bl-protected-shell > header{box-sizing:border-box}
  .bl-protected-mobile-brand{display:inline-flex;flex:0 0 44px}
  body.bl-protected-shell > header{display:flex;align-items:center;gap:12px;min-height:68px}
  .bl-protected-app-overlay{inset:68px 0 0;z-index:53}
- body.bl-protected-shell > header{position:relative;z-index:54}
+ body.bl-protected-shell > header{position:sticky;top:0;z-index:54;min-height:68px;box-shadow:0 2px 8px #051b3524;background:#fff}
 }
 @media print{
  body.bl-protected-shell{padding-left:0}
