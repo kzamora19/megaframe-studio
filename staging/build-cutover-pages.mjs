@@ -83,7 +83,7 @@ const launcher=source
  .replace('publishableKey: ""',"publishableKey: "+JSON.stringify(publishableKey));
 const bundledLauncher=launcher
  .replace('<link rel="stylesheet" href="./unified-navigation.css">','<style>'+officialNavCss+'</style>')
- .replace('<script src="./unified-navigation.js" defer></script>','<script>'+officialNavJs.replace(/<\\/script/gi,'<\\\\/script')+'</script>');
+ .replace('<script src="./unified-navigation.js" defer></script>','<script>'+officialNavJs+'</script>');
 if(bundledLauncher===launcher || bundledLauncher.includes('src="./unified-navigation.js"'))
  throw Error("Official app rail must be inline in the editor-free public launcher");
 if(/PRIVATE MEGAFRAME EDITOR BUNDLE|id="photosInput"|<canvas/.test(bundledLauncher))
