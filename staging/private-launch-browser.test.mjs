@@ -125,7 +125,7 @@ try {
     background:getComputedStyle(el).backgroundColor,
     subtitle:getComputedStyle(el.querySelector(".brandtag")).color,
   }));
-  assert.equal(headerChrome.background,"rgb(29, 40, 54)",
+  assert.equal(headerChrome.background,"rgb(9, 38, 79)",
     "Protected MegaFrame uses the Branchline navy header.");
   assert.equal(headerChrome.subtitle,"rgb(220, 230, 255)");
   await frame.locator("#previewCanvas").waitFor({timeout:90000});
