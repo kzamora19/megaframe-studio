@@ -117,3 +117,33 @@ body.frameChatLayout #mobileDrawerToggle{display:none!important;}
  }
  body.frameChatLayout .sidebar>.section.activePanel{width:100%;padding:9px 14px 23px;}
 }
+
+/* BRANCHLINE UNIFIED UI STAGE — 2026-11-23: visual-only, development branch. */
+body.frameChatLayout{
+  --branchline-navy:#09264f;--branchline-royal:#075cf5;
+  --branchline-cyan:#0dd9eb;--branchline-teal:#00e4c1;
+}
+body.frameChatLayout #pinNav{
+  background:linear-gradient(180deg,#0b356a,var(--branchline-navy));
+  border-right-color:#315a89;color:#fff;
+}
+body.frameChatLayout #mfRailToggle{color:#fff;}
+body.frameChatLayout #mfRailToggle:hover,
+body.frameChatLayout #mfRailToggle:focus-visible{background:#155093;outline-color:var(--branchline-cyan);}
+body.frameChatLayout #pinNav button[data-panel]{color:#e6f3ff;}
+body.frameChatLayout #pinNav button[data-panel]:hover{background:#1a518b;color:#fff;}
+body.frameChatLayout #pinNav button[data-panel].active{
+  background:#0862dc;color:#fff;box-shadow:inset 3px 0 var(--branchline-cyan);
+}
+body.frameChatLayout #mfChatTitle{color:#0c315e;}
+body.frameChatLayout #mfChatItems button.is-current{
+  color:#084cb8;background:#eaf2ff;box-shadow:inset 3px 0 #0dd9eb;
+}
+body.frameChatLayout #pinNav button:focus-visible,
+body.frameChatLayout #mfChatItems button:focus-visible{
+  outline:3px solid var(--branchline-cyan);outline-offset:1px;
+}
+@media(max-width:720px){
+  body.frameChatLayout #pinNav{border-right:0;border-bottom-color:#315a89;}
+  body.frameChatLayout .sidebar:not(.mobileDrawerClosed){max-height:min(58dvh,490px);}
+}
