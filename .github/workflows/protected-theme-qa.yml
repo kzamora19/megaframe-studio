@@ -1,0 +1,38 @@
+name: MegaFrame protected Branchline theme QA (NO DEPLOY)
+on:
+  push:
+    branches: [feature/protected-branchline-theme-20261123]
+    paths:
+      - 'chat-sidebar.css'
+      - 'staging/**'
+      - '.github/workflows/protected-theme-qa.yml'
+permissions:
+  contents: read
+jobs:
+  protected-source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify protected bundle references approved sidebar styling
+        run: |
+          node -e "const fs=require('fs');const css=fs.readFileSync('chat-sidebar.css','utf8');const builder=fs.readFileSync('staging/build-private-package.mjs','utf8');if(!css.includes('BRANCHLINE UNIFIED UI STAGE') || !css.includes('#pinNav') || !builder.includes('chat-sidebar.css'))throw Error('Protected theme not packaged');"
+          node --test staging/private-package.test.mjs staging/private-delivery-policy.test.mjs staging/cutover-pages.test.mjs
+  protected-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install disposable browser only
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install chromium --only-shell
+      - name: Verify protected editing, revocation, cloud backups and PWA cutover rehearsal
+        run: |
+          node staging/private-launch-browser.test.mjs
+          node staging/cloud-backup-browser.test.mjs
+          node staging/cloud-launcher-browser.test.mjs
+          node staging/cutover-browser.test.mjs
