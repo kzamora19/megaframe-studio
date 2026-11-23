@@ -1,0 +1,185 @@
+// PTG-protected Google Drive contract test — local mock only, never real Google data.
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {runInNewContext} from "node:vm";
+import {webcrypto} from "node:crypto";
+
+const source=readFileSync("staging/studio-access/drive-backup.js","utf8");
+for(const studio of ["megaframe","flyer"])test("manual Drive backup, recovery, and revocation: "+studio,async()=>{
+  const nodes=new Map(),buttons=["driveConnect","driveDisconnect","driveRefresh","driveBackup","driveRestore"];
+  function node(id){
+    if(!nodes.has(id)){
+      let value="";
+      const e={id,hidden:false,disabled:false,textContent:"",children:[],
+        get value(){return value||this.children[0]?.value||"";},
+        set value(v){value=v;},
+        append(...items){this.children.push(...items);},
+        replaceChildren(){this.children=[];value="";},
+        querySelectorAll(sel){return sel==="button"?buttons.map(node):[];}};
+      nodes.set(id,e);
+    }
+    return nodes.get(id);
+  }
+  let proofAllowed=true,proofChecks=0,exported=0,imported=0;
+  let driveCalls=0,uploaded=null,metadata=null,transferred="",interruptNext=false,large=false,resumeChecks=0;
+  const scope="a".repeat(43);
+  const projectId=studio==="flyer"?"p:current":"project_abc";
+  const mockExport=async(id,opts)=>{assert.equal(id,projectId);assert.equal(opts.drive,true);
+      exported++;return {iv:"x".repeat(16),encrypted:large?"Q".repeat(9*1024*1024):"ciphertext-only-data"};};
+  const mockImport=async(id,record,opts)=>{assert.equal(id,projectId);
+      assert.equal(opts.drive,true);assert.equal(record.encrypted,"ciphertext-only-data");imported++;};
+  const vault={
+    ["project-list"]:async()=>[{id:projectId,name:"Test layout",savedAt:1}],
+    ["project-read"]:async()=>({format:"local"}),
+    read:async()=>({format:"local"}),
+    ["cloud-export"]:mockExport,cloudExport:mockExport,
+    ["cloud-import"]:mockImport,cloudImport:mockImport
+  };
+  const uploadUrl="https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=test";
+  function response(data,extra={},status=200){
+    return {ok:status>=200&&status<300,status,headers:{get:k=>extra[k]||null},
+      json:async()=>data,blob:async()=>new Blob([uploaded||""]),text:async()=>String(uploaded||"")};
+  }
+  async function fetchMock(url,opts={}){
+    driveCalls++;
+    const u=new URL(url),m=opts.method||"GET";
+    assert.equal(opts.credentials,"omit");
+    assert.match(opts.headers.Authorization,/^Bearer test-google-token$/);
+    if(m==="POST"&&u.pathname.endsWith("/files")&&u.searchParams.has("uploadType")){
+      metadata=JSON.parse(opts.body);transferred="";uploaded=null;
+      return response({},{"Location":uploadUrl});
+    }
+    if(m==="PUT"&&url===uploadUrl){
+      const range=opts.headers["Content-Range"];
+      if(range.startsWith("bytes */")){
+        resumeChecks++;
+        return response({},{"Range":transferred?"bytes=0-"+(transferred.length-1):null},308);
+      }
+      const m=/^bytes ([0-9]+)-([0-9]+)\/([0-9]+)$/.exec(range);
+      assert.ok(m,"Chunk must include a Google Drive Content-Range");
+      const start=Number(m[1]),end=Number(m[2]),size=Number(m[3]);
+      assert.equal(start,transferred.length,"Upload may only resume from server-confirmed byte");
+      assert.equal(end-start+1,opts.body.size);
+      const chunk=await opts.body.text();
+      assert.equal(chunk.length,opts.body.size);
+      if(interruptNext){
+        interruptNext=false;
+        transferred+=chunk.slice(0,524288);
+        throw Error("Simulated network interruption after partial upload");
+      }
+      transferred+=chunk;
+      if(transferred.length<size)return response({},{"Range":"bytes=0-"+(transferred.length-1)},308);
+      assert.equal(transferred.length,size);
+      uploaded=transferred;
+      return response({id:"fileEncrypted123"});
+    }
+    if(m==="POST"&&u.pathname.endsWith("/files")){
+      return response({id:"folderEncrypted123"});
+    }
+    if(m==="GET"&&u.pathname.endsWith("/files")){
+      const q=u.searchParams.get("q")||"";
+      if(q.includes("appProperties has")){
+        assert.match(q,/ownerScope/);
+        // A partial first Drive results page must not hide recoverable backups.
+        if(!u.searchParams.has("pageToken"))return response({files:[],nextPageToken:"page2"});
+        return response({files:uploaded?[{id:"fileEncrypted123",
+          name:metadata.name,modifiedTime:"2026-11-21T00:00:00Z",
+          appProperties:metadata.appProperties,size:String(uploaded.length)}]:[]});
+      }
+      return response({files:[]});
+    }
+    if(m==="GET"&&u.pathname.endsWith("/files/fileEncrypted123")){
+      if(u.searchParams.has("alt"))return response({});
+      return response({id:"fileEncrypted123",trashed:false,mimeType:"application/json",
+        appProperties:metadata.appProperties,size:uploaded.length});
+    }
+    throw Error("Unmocked Google Drive request: "+m+" "+url);
+  }
+  const fakeGoogle={accounts:{oauth2:{
+    initTokenClient:({callback,scope:requested})=>{
+      assert.equal(requested,"https://www.googleapis.com/auth/drive.file");
+      return {requestAccessToken:()=>callback({access_token:"test-google-token",
+        scope:requested,expires_in:3600})};
+    },revoke:(_,callback)=>callback()
+  }}};
+  const context={window:{google:fakeGoogle,confirm:()=>true},document:{
+    getElementById:node,createElement:()=>({value:"",textContent:""}),
+    head:{append:()=>{throw Error("GIS was already available");}}
+  },crypto:webcrypto,TextEncoder,Blob,AbortController,URL,URLSearchParams,
+    fetch:fetchMock,Date,Promise,Error,Uint8Array,console};
+  runInNewContext(source,context,{filename:"drive-backup.js"});
+  const api=context.window.BRANCHLINE_GOOGLE_DRIVE_BACKUP;
+  assert.equal(typeof api.setup,"function");
+  await api.setup({studio,scope,clientId:"873550026587-test.apps.googleusercontent.com",
+    vault,verify:async()=>{proofChecks++;if(!proofAllowed)throw Error("PTG revoked");}});
+  assert.equal(node("driveBackup").disabled,true,"Google consent is mandatory");
+  assert.equal(driveCalls,0);
+  node("driveConnect").onclick();
+  assert.equal(node("driveBackup").disabled,false);
+  await node("driveBackup").onclick();
+  assert.equal(exported,1);
+  assert.ok(proofChecks>=2,"A fresh PTG proof is required before Drive upload");
+  assert.ok(uploaded);
+  assert.match(uploaded,/"format":"BranchlineStudioDriveBackupV1"/);
+  assert.ok(!uploaded.includes("Test layout"),"No local project title/plaintext in Drive metadata");
+  assert.equal(metadata.appProperties.studio,studio);
+  assert.equal(metadata.appProperties.recordKey,projectId);
+  assert.match(metadata.appProperties.ownerScope,/^[a-f0-9]{64}$/);
+  assert.ok(!metadata.appProperties.ownerScope.includes(scope));
+  await node("driveRestore").onclick();
+  assert.equal(imported,1,"Encrypted Drive retrieval uses the authenticated local vault");
+  large=true;interruptNext=true;
+  await node("driveBackup").onclick();
+  assert.ok(resumeChecks>=1,"Interrupted large upload must ask Google for the received byte range");
+  assert.ok(uploaded&&uploaded.includes('"encrypted":"'+ "Q".repeat(128)),
+    "Interrupted upload must resume and complete the encrypted payload");
+  assert.match(node("driveMessage").textContent,/backup created/i);
+  const previousCalls=driveCalls;
+  proofAllowed=false;
+  await node("driveBackup").onclick();
+  assert.equal(driveCalls,previousCalls,"PTG revocation must stop Drive operations");
+  assert.match(node("driveMessage").textContent,/revoked/);
+  api.lock();
+  assert.equal(node("drivePanel").hidden,true);
+  assert.equal(node("driveBackup").disabled,true);
+  assert.equal(node("driveDisconnect").hidden,true);
+});
+test("Drive files are never automatically synchronized or stored as OAuth tokens",()=>{
+  assert.doesNotMatch(source,/localStorage|sessionStorage|indexedDB/);
+  assert.match(source,/window\.confirm/);
+  assert.match(source,/PTG proof/);
+  assert.match(source,/appProperties/);
+  assert.match(source,/uploadType=resumable/);
+  assert.match(source,/uploadResumable/);
+  assert.match(source,/Range.+bytes|bytes.+Range/);
+  assert.match(source,/reader\.cancel\(\)/);
+  assert.match(source,/More than 1,000 Drive backups/);
+  assert.match(source,/Refusing Google Drive authorization to an untrusted destination/);
+});
+
+test("PTG revocation during asynchronous Drive setup cannot reopen controls",async()=>{
+  const nodes=new Map();
+  const node=id=>{
+    if(!nodes.has(id))nodes.set(id,{hidden:false,disabled:false,textContent:"",
+      replaceChildren(){},querySelectorAll(){return[];}});
+    return nodes.get(id);
+  };
+  let unblock;
+  const fakeCrypto={subtle:{digest:()=>new Promise(resolve=>{unblock=resolve;})}};
+  const context={window:{},document:{getElementById:node},
+    crypto:fakeCrypto,TextEncoder,Uint8Array,AbortController,URL,URLSearchParams,
+    Blob,Date,Promise,Error,console};
+  runInNewContext(source,context);
+  const api=context.window.BRANCHLINE_GOOGLE_DRIVE_BACKUP;
+  const pending=api.setup({studio:"megaframe",scope:"a".repeat(43),
+    clientId:"873550026587-test.apps.googleusercontent.com",
+    vault:{},verify:async()=>{}});
+  assert.equal(typeof unblock,"function");
+  api.lock();
+  unblock(new Uint8Array(32));
+  await pending;
+  assert.equal(node("drivePanel").hidden,true,
+    "Revoked account cannot make stale Google Drive setup visible again");
+  assert.equal(node("driveBackup").disabled,true);
+});

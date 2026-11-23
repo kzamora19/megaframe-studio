@@ -1,0 +1,6 @@
+# STAGING ONLY. This setting applies to the un-deployed private editor Edge function.
+# PTG ticket exchange and signed continuation are validated inside the function,
+# allowing the browser to invoke it without a MegaFrame Supabase Auth JWT.
+# Never disable JWT verification on other unrelated functions.
+[functions.megaframe-editor-delivery]
+verify_jwt = false
