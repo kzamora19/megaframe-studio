@@ -30,3 +30,15 @@ test("mobile toolbar presentation retains every control and is applied after pri
  const launch=read("studio/launch.js");assert.ok(launch.indexOf("if (sha !== data.sha256)")<launch.indexOf("BranchlineFrameDeviceLayout?.apply(data.html)"));
  assert.ok(!launch.includes('allow-same-origin allow-scripts'));assert.ok(!read("studio/index.html").includes("PTG protected test access"));
 });
+test("protected Settings uses native markup before editor scripts bind their controls", () => {
+ const {apply}=require("../studio/device-layout.js");
+ const source='<!-- PRIVATE MEGAFRAME EDITOR BUNDLE --><html><body>'
+  +'<header class="appbar"><div class="brand"><small class="brandtag">Original</small></div>'
+  +'<div class="inline"><button id="newProject">New Project</button><button id="pwa-install">Install</button></div></header>'
+  +'<nav id="pinNav"><div><button data-panel="5">Export images</button><button data-panel="6">Captions</button></div></nav></body></html>';
+ const result=apply(source);
+ assert.match(result,/<section id="studioSettings" popover[^>]*>[\s\S]*?id="newProject"/);
+ assert.match(result,/<button id="pwa-install" hidden>/);
+ assert.match(result,/data-panel="6">6 · Caption and Overlays[\s\S]*?data-panel="5">7 · Export Images[\s\S]*?popovertarget="studioSettings"/);
+ assert.doesNotMatch(result.match(/<header class="appbar">[\s\S]*?<\/header>/)[0],/newProject|pwa-install/);
+});
