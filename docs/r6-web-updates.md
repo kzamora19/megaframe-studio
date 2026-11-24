@@ -1,0 +1,3 @@
+# Branchline web updates — megaframe
+
+Production origin only. Release sequence is per module under a common production schema; each release must increase sequence (including rollback). Change the module's release.json, versioned update asset references and entry stamp together. No native payload. Existing app installation manifest is unchanged. The protected Studio parent only mounts the checker; the private editor remains opaque. Restart verifies the new shell and returns to the PTG portal for a fresh ticket. The existing public editor and its own PWA remain unchanged. Save confirmation is explicit, not automatic save. Production device acceptance and complete asset-coherence validation remain required.

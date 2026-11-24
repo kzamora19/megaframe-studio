@@ -5,7 +5,8 @@ on:
     branches: [main]
     paths:
       - 'index.html'
-      - 'studio/index.html'
+      - 'studio/**'
+      - 'tests/r6-web-updates.test.cjs'
       - '*.js'
       - 'manifest.webmanifest'
       - 'icons/**'
@@ -34,7 +35,8 @@ on:
     branches: [main]
     paths:
       - 'index.html'
-      - 'studio/index.html'
+      - 'studio/**'
+      - 'tests/r6-web-updates.test.cjs'
       - '*.js'
       - 'manifest.webmanifest'
       - 'icons/**'
@@ -82,6 +84,7 @@ jobs:
           node --check overlay-engine.js
           node --check shared.js
           node --check pwa-client.js
+          node --test tests/r6-web-updates.test.cjs
           node --check service-worker.js
           node --check qa/smoke-pages.cjs
           node --check qa/smoke-previews.cjs
