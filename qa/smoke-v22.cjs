@@ -21,6 +21,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#mf-title').textContent(),'Shared templates');
   assert.equal(await page.locator('#mf-tools').isVisible(),true);
   await page.locator('#mf-close').click();
+  await page.locator('[data-panel="0"]').click();
   await page.locator('#openFrameLibrary').click();
   await page.locator('#frameLibGrid .favoriteBtn').first().click();
   await page.locator('#frameFavoritesOnly').check();
