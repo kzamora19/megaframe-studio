@@ -21,11 +21,17 @@ body.frameChatLayout #pinNav,body.flyerChatLayout #sidebarFixed{background:#102b
   header.appbar>.inline>[hidden]{display:none!important}
  }
  `;
+ function wireWorkspaceMenu(){
+  window.addEventListener("message",event=>{
+   if(event.source!==window.parent||event.origin!=="https://kzamora19.github.io"||event.data?.kind!=="branchline-workspace-menu"||typeof event.data.open!=="boolean")return;
+   document.documentElement.dataset.blNativeMenu=event.data.open?"open":"closed";
+  });
+ }
  function apply(html){
   if(typeof html!=="string"||!(html.includes("PRIVATE MEGAFRAME EDITOR BUNDLE")||(/class=["\'][^"\']*appbar/.test(html)&&html.includes("newProject"))))return html;
   const at=html.toLowerCase().lastIndexOf("</body>");
   if(at<0||html.includes('id="bl-frame-device-layout"'))return html;
-  return html.slice(0,at)+'<style id="bl-frame-device-layout">'+css+'</style>'+html.slice(at);
+  return html.slice(0,at)+'<style id="bl-frame-device-layout">'+css+'</style><script>('+wireWorkspaceMenu.toString()+')();<\/script>'+html.slice(at);
  }
  if(typeof module==="object"&&module.exports)module.exports={apply};else root.BranchlineFrameDeviceLayout=Object.freeze({apply});
 })(typeof window!=="undefined"?window:globalThis);
