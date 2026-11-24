@@ -24,7 +24,18 @@
     }
     status.hidden = false;
   };
+function renderWorkspaceIdentity(identity) {
+  const account = document.getElementById("workspace-account");
+  if (!account) return;
+  const name = typeof identity?.name === "string" ? identity.name.trim() : "";
+  const role = typeof identity?.role === "string" ? identity.role.trim() : "";
+  account.querySelector("strong").textContent = name;
+  account.querySelector("small").textContent = role;
+  account.hidden = !name || !role;
+  if (account.hidden) account.open = false;
+}
   const stop = message => {
+    renderWorkspaceIdentity(null);
     active = false;
     expired = true;
     if (interval) clearInterval(interval);
@@ -110,6 +121,7 @@
       const data = await withProof(()=>gateway("check"));
       if (!active || expired) return;
       deadlineAt(data.expiresAt);
+      renderWorkspaceIdentity(data.workspaceIdentity);
       warn();
     } catch {
       stop("PTG access has expired, been revoked, or cannot be verified.");
@@ -224,6 +236,7 @@
         throw Error("Verified account's encrypted local recovery is unavailable.");
       const vault = window.MEGAFRAME_LOCAL_DRAFT_VAULT.session(data.draftScope, data.draftKey);
       deadlineAt(data.expiresAt);
+      renderWorkspaceIdentity(data.workspaceIdentity);
       const frame = document.createElement("iframe");
       frame.id = "studio-editor-frame";
       frame.title = "Authorized MegaFrame editor";

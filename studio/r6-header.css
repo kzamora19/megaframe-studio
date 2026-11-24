@@ -1,0 +1,16 @@
+.bl-studio-web-r6 .bl-r6-app-icon{width:42px;height:42px;flex:0 0 auto;object-fit:contain}
+@media(min-width:761px){
+ .bl-studio-web-r6>header>.bl-protected-app-rail{gap:clamp(4px,1vw,12px)}
+ .bl-studio-web-r6 .bl-protected-brand img,.bl-studio-web-r6 .bl-protected-app-link .bl-r6-app-icon{width:clamp(44px,6vw,64px);height:clamp(44px,6vw,64px)}
+ .bl-studio-web-r6 .bl-studio-megasaver{height:56px;object-position:left center}
+ .bl-studio-web-r6 .bl-protected-app-link{flex:0 0 auto}
+ .bl-studio-web-r6 .bl-protected-app-link>span:last-child{display:none}
+}
+#workspace-account{position:relative;color:#fff;text-align:right;flex:0 1 180px;min-width:0}
+#workspace-account[hidden]{display:none}
+#workspace-account summary{cursor:pointer;list-style:none}
+#workspace-account summary::-webkit-details-marker{display:none}
+#workspace-account strong,#workspace-account small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#workspace-account strong::after{content:" ▾"}
+#workspace-account small{color:#d5e4ef}
+#workspace-account a{position:absolute;top:100%;right:0;min-width:155px;padding:10px;background:#102847;color:#fff;border:1px solid #7894b3;border-radius:8px}
