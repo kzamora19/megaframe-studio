@@ -19,7 +19,7 @@ const assert = require('node:assert/strict');
   await page.locator('#mfRailToggle').waitFor({state:'visible'});
   assert.equal(await page.locator('#mfChatTitle').textContent(),'Frame template');
   assert.equal(await page.locator('#mfChatItems button').count(),4,'Contextual navigation entries loaded');
-  assert.equal(await page.locator('#pinNav .pinNavGrid [data-panel]').count(),7);
+  assert.deepEqual(await page.locator('#pinNav .pinNavGrid [data-panel]').evaluateAll(buttons=>buttons.map(button=>Number(button.dataset.panel))),[0,1,2,3,4,6,5,7]);
   assert.equal(await page.locator('#pinNav .mfName').first().isVisible(),false);
   await page.locator('#mfRailToggle').click();
   assert.equal(await page.locator('#pinNav .mfName').first().isVisible(),true,'Expanded icon rail shows labels');
