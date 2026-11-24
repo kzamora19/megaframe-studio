@@ -733,6 +733,7 @@ async function saveNamedProject({forNewProject=false}={}){
   if(draftEnabled)await draftDelete();
   notify('Project saved: '+record.name);
   $('projectSaveStatus').textContent='Saved '+record.name+' on this device.';
+  updateUnsavedIndicator();
   return true;
  }catch(err){
   notify('Project not saved: '+err.message);
@@ -819,7 +820,7 @@ async function openSavedProjects(onStartup=false){
 async function openNamedProject(id){
  const saved=await projectRead(id);if(!saved?.payload)return notify('Project could not be found.');
  if(!await confirmAction('Open saved project?','This replaces your currently open frame and photos. Save your current work first if you need it later.','Open saved project'))return;
- try{await restoreLocalDraft(saved.payload);cleanProjectFingerprint=projectFingerprint();activeNamedProjectId=saved.id;activeNamedProjectName=saved.name;$('savedProjectsDialog').close();showPanel(4);
+ try{await restoreLocalDraft(saved.payload);cleanProjectFingerprint=projectFingerprint();activeNamedProjectId=saved.id;activeNamedProjectName=saved.name;updateUnsavedIndicator();$('savedProjectsDialog').close();showPanel(4);
   notify('Project restored: '+saved.name);
  }catch(err){notify('Project could not be restored: '+err.message)}
 }
@@ -1168,7 +1169,10 @@ function hasUnsavedChanges(){return cleanProjectFingerprint!==null&&projectFinge
 function updateUnsavedIndicator(){
  const node=$('projectSaveStatus');
  if(!node||cleanProjectFingerprint===null)return;
- if(hasUnsavedChanges())node.textContent='Unsaved edits · Choose Save Project to keep a named copy. Automatic local recovery is also available.';
+ const unsaved=hasUnsavedChanges();
+ const context=$('contextProjectStatus');
+ if(context)context.textContent=unsaved?'Unsaved changes':activeNamedProjectId?'Saved':'Local processing';
+ if(unsaved)node.textContent='Unsaved edits · Choose Save Project to keep a named copy. Automatic local recovery is also available.';
  else if(node.textContent.startsWith('Unsaved edits'))node.textContent='All changes saved or workspace ready.';
 }
 window.addEventListener('beforeunload',event=>{
@@ -1253,5 +1257,5 @@ function setupEditableEditorValues(){
  }
 }
 
-async function start(){overlayInitialState();setupAccordion();setupMobileDrawer();setupPinnedNav();setupEvents();setupEditableEditorValues();overlayInit();loadHiddenSamples();loadFavoriteFrames();app.templates=await dbAll();await openBlankWorkspace();cleanProjectFingerprint=projectFingerprint();updateUnsavedIndicator();status('Ready · v2.7. Blank workspace. Customer photos are processed on this device.');await initializeDraftRecovery();}
+async function start(){const version=$('studioVersion');if(version)version.textContent=document.title.match(/\bv[\d.]+/)?.[0]||'';overlayInitialState();setupAccordion();setupMobileDrawer();setupPinnedNav();setupEvents();setupEditableEditorValues();overlayInit();loadHiddenSamples();loadFavoriteFrames();app.templates=await dbAll();await openBlankWorkspace();cleanProjectFingerprint=projectFingerprint();updateUnsavedIndicator();status('Ready · v2.7. Blank workspace. Customer photos are processed on this device.');await initializeDraftRecovery();}
 start().catch(err=>{console.error(err);notify('App could not initialize: '+err.message)});

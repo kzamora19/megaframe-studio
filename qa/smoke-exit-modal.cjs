@@ -13,6 +13,7 @@ const assert=require('node:assert/strict');
   await page.locator('#createNewProject').click();
   await page.evaluate(()=>{window.__testCloseRequests=0;window.close=()=>{window.__testCloseRequests++}});
   // Clean workspace: a custom modal opens; save is not needed.
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#exitStudio').click();
   await page.locator('#exitStudioDialog[open]').waitFor();
   assert.equal(await page.locator('#exitStudioSave').isVisible(),false);
@@ -25,6 +26,7 @@ const assert=require('node:assert/strict');
   await page.locator('#shapePreset').selectOption('rect');
   await page.locator('#photosInput').setInputFiles({name:'unsaved-exit.png',mimeType:'image/png',buffer:png});
   await page.waitForFunction(()=>app.photos.length===1&&hasUnsavedChanges());
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#exitStudio').click();
   await page.locator('#exitStudioDialog[open]').waitFor();
   assert.equal(await page.locator('#exitStudioSave').isVisible(),true);
@@ -33,6 +35,7 @@ const assert=require('node:assert/strict');
   assert.equal(await page.evaluate(()=>app.photos.length),1,'Cancel preserves the editor');
 
   // Save & Exit must persist a named project before attempting to close.
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#exitStudio').click();
   await page.locator('#exitStudioSave').click();
   await page.locator('#actionModal[open]').waitFor();
@@ -51,6 +54,7 @@ const assert=require('node:assert/strict');
   assert.equal(await page.evaluate(()=>{
    const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented;
   }),true,'Browser unload guard still protects unsaved edits');
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#exitStudio').click();
   await page.locator('#exitStudioLeave').click();
   await page.waitForFunction(()=>window.__testCloseRequests===2);

@@ -1,5 +1,5 @@
 /* MegaFrame: icon rail + contextual chatroom-style section navigation.
-   Builds a presentation layer around the existing seven panels without moving
+   Builds a presentation layer around the existing editor panels without moving
    or replacing any editing inputs, overlay layers, photo queue, or commands. */
 (()=>{
  'use strict';
@@ -9,8 +9,9 @@
   {name:'Import photos',icon:'⇧',links:[['Upload customer photos','#dropzone'],['Manage photo batch','#clearPhotos']]},
   {name:'Collage layout',icon:'▦',links:[['Photos per frame','#collageCount'],['Collage arrangement','#collageLayout'],['Photo spacing','#collageGap']]},
   {name:'Photo adjustments',icon:'◐',links:[['Photo fitting','#fitMode'],['Zoom & rotation','#zoom'],['Filters','#filterPreset'],['Photo enhancement','#enhanceSharpness'],['Privacy covers','#emojiPickerOpen']]},
-  {name:'Export images',icon:'⇩',links:[['Filename & format','#prefix'],['Resolution','#exportSize'],['Download selected image','#downloadOne'],['Save all photos','#prepareAll']]},
-  {name:'Captions & Overlays',icon:'T',links:[['Add captions','#addTextOverlay'],['Add image overlay','#addImageOverlay'],['Overlay layers','#overlayLayerList'],['Font styles','#overlayFontButton'],['Position, size & rotation','#overlayX']]}
+  {name:'Export Images',icon:'⇩',links:[['Filename & format','#prefix'],['Resolution','#exportSize'],['Download selected image','#downloadOne'],['Save all photos','#prepareAll']]},
+  {name:'Caption and Overlays',icon:'T',links:[['Add captions','#addTextOverlay'],['Add image overlay','#addImageOverlay'],['Overlay layers','#overlayLayerList'],['Font styles','#overlayFontButton'],['Position, size & rotation','#overlayX']]},
+  {name:'Settings',icon:'⚙',links:[['Project and studio controls','#newProject'],['Shared templates','#mf-open'],['Google Drive backup','#drive-open'],['About MegaFrame Studio','#studioVersion']]}
  ];
  const init=()=>{
   const sidebar=document.querySelector('main.appbody > aside.sidebar');

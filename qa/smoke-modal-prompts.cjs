@@ -13,6 +13,7 @@ const assert=require('node:assert/strict');
   await page.locator('#createNewProject').click();
   // Explicitly fail if an app-owned install alert escapes to the browser.
   await page.evaluate(()=>{window.alert=()=>{throw Error('Native alert is forbidden for app guidance')}});
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#pwa-install').click();
   await page.locator('#studioInfoDialog[open]').waitFor();
   assert.match(await page.locator('#studioInfoTitle').textContent(),/Install MegaFrame Studio/);

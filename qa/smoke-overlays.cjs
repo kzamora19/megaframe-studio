@@ -112,6 +112,7 @@ const assert=require('node:assert/strict');
   await page.locator('#actionModalInput').fill('Editable overlays');
   await page.locator('#actionModalConfirm').click();
   await page.waitForFunction(()=>document.getElementById('projectSaveStatus')?.textContent?.includes('Editable overlays'));
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#newProject').click();
   await page.waitForFunction(()=>app.overlays.length===0&&app.photos.length===0);
   await page.locator('#openProjects').click();

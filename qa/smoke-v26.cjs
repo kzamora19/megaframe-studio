@@ -35,6 +35,7 @@ const assert=require('node:assert/strict');
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'));
   await page.locator('#createNewProject').click();
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#mf-open').click();
   assert.equal(await page.locator('#mf-show-members').isHidden(),true,'Membership management is hidden from the public');
   await signin('admin@example.com');

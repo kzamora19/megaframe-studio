@@ -4,17 +4,19 @@
   const install = document.getElementById('pwa-install');
   const status = document.getElementById('pwa-status');
   let pendingPrompt = null;
+  const embedded = window.parent !== window;
 
   const installed = () => matchMedia('(display-mode: standalone)').matches ||
     !!window.navigator.standalone;
   const refreshStatus = () => {
     if (status) {
-      status.textContent = navigator.onLine ? 'Online · local editing ready' : 'Offline · local editing ready';
+      status.textContent = embedded ? 'Running in Branchline Workspace' :
+        installed() ? 'Running in an installed app window' : 'Running in browser mode';
       status.title = navigator.onLine
         ? 'Published templates synchronize with Supabase while connected.'
         : 'Photos and local templates work offline. Shared templates use previously cached copies.';
     }
-    if (install) install.hidden = installed();
+    if (install) install.hidden = embedded || installed();
   };
   const help = () => {
     const ua = navigator.userAgent;
@@ -38,6 +40,7 @@
     refreshStatus();
   });
   window.addEventListener('beforeinstallprompt', event => {
+    if (embedded) return;
     event.preventDefault();
     pendingPrompt = event;
     refreshStatus();

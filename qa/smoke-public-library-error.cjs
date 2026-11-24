@@ -27,6 +27,7 @@ const assert = require('node:assert/strict');
   try {
     await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
     await page.locator('#createNewProject').click();
+    await page.locator('[data-panel="7"]').click();
     await page.locator('#mf-open').click();
     await page.waitForFunction(() => document.querySelector('#mf-list')?.textContent?.includes('HTTP 401'));
     assert.ok(!(await page.locator('#mf-list').textContent()).includes('Loading published frames'), 'Loading must stop on 401');

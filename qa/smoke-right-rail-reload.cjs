@@ -68,6 +68,8 @@ const assert=require('node:assert/strict');
   await page.locator('#gallery .thumb').nth(1).click();
   assert.equal(await page.evaluate(()=>app.selected),1,'Clicking a right-side thumbnail selects photo');
 
+  await page.locator('[data-panel="7"]').click();
+
   await page.locator('#reloadStudio').click();
   await page.locator('#reloadStudioDialog[open]').waitFor();
   assert.equal(await page.locator('#reloadStudioSave').isVisible(),true,'Unsaved work offers Save & Reload');
@@ -109,6 +111,8 @@ const assert=require('node:assert/strict');
   assert.equal(await page.locator('.photoQueueSidebar').isVisible(),false);
 
   // Named project is persisted before a deliberate in-app reload.
+  await page.locator('#mobileEditToggle').click();
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#reloadStudio').click();
   await page.locator('#reloadStudioSave').click();
   await page.locator('#actionModal[open]').waitFor();

@@ -91,6 +91,7 @@ const assert = require('node:assert/strict');
   await page.locator('#drive-close').click();
   await page.locator('#photosInput').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:png});
   await page.waitForFunction(()=>document.querySelector('#photoCount')?.textContent?.includes('1 photo'));
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#drive-open').click();
   await page.locator('#drive-photos').check();
   await page.locator('#drive-backup').click();

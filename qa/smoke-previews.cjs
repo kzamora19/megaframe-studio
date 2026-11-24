@@ -41,6 +41,7 @@ const assert = require('node:assert/strict');
     await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.getElementById('draftStatus')?.textContent?.includes('Auto-save ready'),{timeout:30000});
     await page.locator('#createNewProject').click();
+    await page.locator('[data-panel="7"]').click();
     await page.locator('#mf-open').click();
     const sharedImage = page.locator('#mf-list .frameLibCard > img');
     await sharedImage.waitFor({state:'visible',timeout:20000});
@@ -52,6 +53,8 @@ const assert = require('node:assert/strict');
     // Real artwork still opens into the editor rather than only being a decorative thumbnail.
     await page.locator('#mf-list .frameLibCard button').first().click();
     await page.waitForFunction(()=>document.getElementById('previewTitle')?.textContent==='Published Preview Test',{timeout:20000});
+
+    await page.locator('[data-panel="7"]').click();
 
     await page.locator('#mf-open').click();
     await page.locator('#mf-admin-toggle').click();

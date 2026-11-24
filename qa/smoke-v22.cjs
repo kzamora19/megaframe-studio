@@ -10,6 +10,7 @@ const assert = require('node:assert/strict');
   await page.locator('#draftStatus').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'));
   await page.locator('#createNewProject').click();
+  await page.locator('[data-panel="7"]').click();
   await page.locator('#mf-open').click();
   await page.locator('#mf-dialog[open]').waitFor();
   await page.locator('#mf-show-private').click();
