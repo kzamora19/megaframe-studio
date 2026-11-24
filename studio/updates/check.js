@@ -46,13 +46,14 @@
     function escape(e){if(e.key==="Escape"&&!panel.hidden){togglePanel(false);bell.focus();}}
     doc.addEventListener("click",outside);doc.addEventListener("keydown",escape);
     function mountBell(){
+      if(doc.documentElement.classList.contains("bl-parent-bell")){if(box.parentElement!==doc.body)doc.body.append(box);box.classList.remove("bl-bell-fallback");return;}
       const selectors=["body > header"];
       const header=selectors.map(s=>doc.querySelector(s)).find(e=>e&&e.getClientRects().length);
       if(header){if(box.parentElement!==header)header.append(box);box.classList.remove("bl-bell-fallback");}
       else{if(box.parentElement!==doc.body)doc.body.append(box);box.classList.add("bl-bell-fallback");}
     }
     mountBell();
-    const observer=new MutationObserver(()=>mountBell());observer.observe(doc.body,{subtree:true,childList:true,attributes:true,attributeFilter:["hidden"]});
+    const observer=new MutationObserver(()=>mountBell());observer.observe(doc.body,{subtree:true,childList:true,attributes:true,attributeFilter:["hidden"]});observer.observe(doc.documentElement,{attributes:true,attributeFilter:["class"]});
     async function publishedWorkspace(){
       try{
         const r=await root.fetch("/branchline/updates/index.json",{cache:"no-store",credentials:"omit",redirect:"error"});

@@ -13,6 +13,7 @@
   let proofQueue=Promise.resolve();
   const withProof=fn=>{const next=proofQueue.then(fn);proofQueue=next.catch(()=>{});return next;};
   const show = (message, addPortal = false) => {
+    status.removeAttribute("data-loading");
     status.replaceChildren(document.createTextNode(message));
     if (addPortal) {
       const a = document.createElement("a");
