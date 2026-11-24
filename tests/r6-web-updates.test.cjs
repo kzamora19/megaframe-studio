@@ -20,3 +20,13 @@ test("protected entry stamps match and fresh authorization is required after res
  assert.ok(!code.includes("location.hash"));
  assert.ok(!code.includes("contentWindow"));
 });
+
+test("mobile toolbar presentation retains every control and is applied after private integrity verification",()=>{
+ const {apply}=require("../studio/device-layout.js");
+ const raw='<!doctype html><body><!-- PRIVATE MEGAFRAME EDITOR BUNDLE --><header class="appbar"><div class="inline"><button id="newProject">New Project</button><button id="exitStudio">Exit</button></div></header></body></html>';
+ const patched=apply(raw);assert.ok(patched.includes('id="bl-frame-device-layout"'));assert.equal(apply(patched),patched);
+ assert.ok(patched.includes('<button id="newProject">New Project</button>'));assert.ok(patched.includes('<button id="exitStudio">Exit</button>'));
+ assert.equal(apply("<body>unrecognized</body>"),"<body>unrecognized</body>");
+ const launch=read("studio/launch.js");assert.ok(launch.indexOf("if (sha !== data.sha256)")<launch.indexOf("BranchlineFrameDeviceLayout?.apply(data.html)"));
+ assert.ok(!launch.includes('allow-same-origin allow-scripts'));assert.ok(!read("studio/index.html").includes("PTG protected test access"));
+});

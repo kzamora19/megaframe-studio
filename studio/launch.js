@@ -255,7 +255,9 @@
         if (active && !expired && frame.contentWindow)
           frame.contentWindow.postMessage({kind:"megaframe-private-draft-port"},"*",[channel.port2]);
       }, {once:true});
-      frame.srcdoc = data.html;
+      // Raw bytes have already passed SHA-256 verification. Apply only the local,
+      // deterministic presentation overlay inside the unchanged opaque sandbox.
+      frame.srcdoc = window.BranchlineFrameDeviceLayout?.apply(data.html) ?? data.html;
       mount.replaceChildren(frame);
       active = true;
       status.hidden = true;

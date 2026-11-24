@@ -138,6 +138,7 @@ jobs:
           node qa/smoke-exit-modal.cjs
           node qa/smoke-right-rail-reload.cjs
           node qa/smoke-mobile-panels.cjs
+          node qa/smoke-protected-mobile-layout.cjs
           node qa/smoke-modal-prompts.cjs
           node qa/smoke-overlays.cjs
           node qa/smoke-multiple-overlays.cjs
