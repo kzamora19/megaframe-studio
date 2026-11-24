@@ -10,8 +10,9 @@
     !!window.navigator.standalone;
   const refreshStatus = () => {
     if (status) {
-      status.textContent = embedded ? 'Running in Branchline Workspace' :
+      const installation = embedded ? 'Running in Branchline Workspace' :
         installed() ? 'Running in an installed app window' : 'Running in browser mode';
+      status.textContent = (navigator.onLine ? 'Online' : 'Offline') + ' · ' + installation;
       status.title = navigator.onLine
         ? 'Published templates synchronize with Supabase while connected.'
         : 'Photos and local templates work offline. Shared templates use previously cached copies.';
