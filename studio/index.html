@@ -139,6 +139,9 @@ body.bl-protected-shell>header .bl-update-bell svg{stroke:currentColor!important
 @keyframes bl-load-progress{from{transform:translateX(-10%)}to{transform:translateX(190%)}}
 @media(prefers-reduced-motion:reduce){#status[data-loading] .ldr-bar,#status[data-loading] .workspace-progress:after{animation:none}}
 #status[hidden]{display:none!important}
+</style><style>
+@media(min-width:1001px){.bl-studio-web-r6 .bl-studio-megasaver{height:78px;max-width:580px;object-fit:cover;object-position:center;filter:grayscale(1) contrast(5);mix-blend-mode:screen}}
+@media(min-width:721px) and (max-width:1000px){.bl-studio-web-r6 .bl-studio-megasaver{object-fit:contain;filter:grayscale(1) contrast(5);mix-blend-mode:screen}}
 </style></head>
 <body data-bl-studio="megaframe">
 <header><span class="protected-shell-title">MegaFrame Studio</span></header>
@@ -255,7 +258,7 @@ window.MEGAFRAME_STUDIO_PRIVATE_CONFIG = {
   if(!window.chrome?.webview){
     document.body.classList.add("bl-studio-web-r6");
     const wordmark=document.createElement("span");wordmark.className="bl-studio-wordmark";wordmark.textContent="Branchline.";
-    const mega=document.createElement("img");mega.className="bl-studio-megasaver";mega.src="/first-megasaver-ptg/legacy-ptg/price-tag-header.png";mega.alt="1st Megasaver";
+    const mega=document.createElement("img");mega.className="bl-studio-megasaver";mega.src="/first-megasaver-ptg/legacy-ptg/login-logo.png";mega.alt="1st Megasaver";
     desktopLogo.after(wordmark,mega);
     header.append(rail);
   }else document.body.prepend(rail);
