@@ -64,16 +64,18 @@ body.frameChatLayout #pinNav,body.flyerChatLayout #sidebarFixed{background:#102b
  }
  function apply(html){
   if(typeof html!=="string"||!(html.includes("PRIVATE MEGAFRAME EDITOR BUNDLE")||(/class=["\'][^"\']*appbar/.test(html)&&html.includes("newProject"))))return html;
-  if(html.includes('id="bl-frame-device-layout-r6"'))return html;
+  if(html.includes('id="bl-megaframe-menu-bridge"'))return html;
   const adjusted=applyProtectedSettings(html);
-  if(adjusted===html&&html.includes('id="bl-frame-device-layout"'))return html;
   html=adjusted;
   const closing=html.match(/(?:<\/body\s*>\s*)?<\/html\s*>\s*$/i)
     ||html.match(/<\/body\s*>\s*$/i);
   const at=closing?.index??html.length;
   const styleId=html.includes('id="bl-frame-device-layout"')?"bl-frame-device-layout-r6":"bl-frame-device-layout";
-  const overlay='<style id="'+styleId+'">'+css+'</style><script>('+wireWorkspaceMenu.toString()+')();<\/script>';
-  return html.slice(0,at)+overlay+html.slice(at);
+  const style='<style id="'+styleId+'">'+css+'</style>';
+  const bridge='<script id="bl-megaframe-menu-bridge">('+wireWorkspaceMenu.toString()+')();<\/script>';
+  const withStyle=html.slice(0,at)+style+html.slice(at);
+  const head=/<head\b[^>]*>/i;
+  return head.test(withStyle)?withStyle.replace(head,tag=>tag+bridge):withStyle.slice(0,at)+bridge+withStyle.slice(at);
  }
  if(typeof module==="object"&&module.exports)module.exports={apply};else root.BranchlineFrameDeviceLayout=Object.freeze({apply});
 })(typeof window!=="undefined"?window:globalThis);
