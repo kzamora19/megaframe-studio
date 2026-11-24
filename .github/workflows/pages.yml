@@ -170,6 +170,8 @@ jobs:
         with:
           name: github-pages-${{ github.run_attempt }}
           path: _site
+      - name: Wait for Pages artifact metadata
+        run: sleep 20
       - id: deployment
         name: Publish app to GitHub Pages
         uses: actions/deploy-pages@v4
