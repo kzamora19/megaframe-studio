@@ -168,7 +168,10 @@ jobs:
         run: python3 scripts/build_pages_site.py _site
       - uses: actions/upload-pages-artifact@v3
         with:
+          name: github-pages-${{ github.run_attempt }}
           path: _site
       - id: deployment
         name: Publish app to GitHub Pages
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
