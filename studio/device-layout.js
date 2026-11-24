@@ -32,13 +32,13 @@ body.frameChatLayout #pinNav,body.flyerChatLayout #sidebarFixed{background:#102b
   }, true);
  }
  function installProtectedSettings(){
-  const header=document.querySelector("header.appbar");
-  const toolbar=header?.querySelector(":scope > .inline");
-  const nav=document.querySelector("#pinNav .pinNavGrid");
-  if(!toolbar?.querySelector("#newProject")||!nav||document.getElementById("studioSettings"))return;
-  const captions=nav.querySelector('[data-panel="6"]');
-  const exports=nav.querySelector('[data-panel="5"]');
-  if(!captions||!exports)return;
+  const newProject=document.getElementById("newProject");
+  const toolbar=newProject?.parentElement;
+  const header=newProject?.closest("header")||document.querySelector(".appbar");
+  const captions=document.querySelector('#pinNav [data-panel="6"]');
+  const exports=document.querySelector('#pinNav [data-panel="5"]');
+  const nav=captions?.parentElement;
+  if(!header||!toolbar||!nav||exports?.parentElement!==nav||document.getElementById("studioSettings"))return;
   nav.insertBefore(captions,exports);
   for(const [button,label] of [[captions,"Caption and Overlays"],[exports,"Export Images"]]){
    const name=button.querySelector(".mfName");
@@ -93,11 +93,14 @@ body.frameChatLayout #pinNav,body.flyerChatLayout #sidebarFixed{background:#102b
  }
  function apply(html){
   if(typeof html!=="string"||!(html.includes("PRIVATE MEGAFRAME EDITOR BUNDLE")||(/class=["\'][^"\']*appbar/.test(html)&&html.includes("newProject"))))return html;
-  if(html.includes('id="bl-frame-device-layout"'))return html;
+  if(html.includes('id="bl-frame-r6-settings"'))return html;
   const closing=html.match(/(?:<\/body\s*>\s*)?<\/html\s*>\s*$/i)
     ||html.match(/<\/body\s*>\s*$/i);
   const at=closing?.index??html.length;
-  return html.slice(0,at)+'<style id="bl-frame-device-layout">'+css+'</style><script>('+wireWorkspaceMenu.toString()+')();document.addEventListener("DOMContentLoaded",()=>queueMicrotask('+installProtectedSettings.toString()+'));<\/script>'+html.slice(at);
+  const styleId=html.includes('id="bl-frame-device-layout"')?"bl-frame-device-layout-r6":"bl-frame-device-layout";
+  const overlay='<style id="'+styleId+'">'+css+'</style><script>('+wireWorkspaceMenu.toString()+')();<\/script>';
+  const settings='<script id="bl-frame-r6-settings">const installR6Settings='+installProtectedSettings.toString()+';document.addEventListener("DOMContentLoaded",()=>queueMicrotask(installR6Settings),{once:true});window.addEventListener("load",installR6Settings,{once:true});<\/script>';
+  return html.slice(0,at)+overlay+settings+html.slice(at);
  }
  if(typeof module==="object"&&module.exports)module.exports={apply};else root.BranchlineFrameDeviceLayout=Object.freeze({apply});
 })(typeof window!=="undefined"?window:globalThis);
