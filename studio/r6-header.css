@@ -29,10 +29,13 @@
 @media (prefers-reduced-motion: no-preference) {
   body.bl-studio-web-r6 > header { view-transition-name: branchline-header; }
   ::view-transition-group(root) { animation-duration: 120ms; }
-  ::view-transition-old(branchline-header) { display: none; }
+  ::view-transition-old(branchline-header) { animation-duration: 120ms; }
   ::view-transition-group(branchline-header),
   ::view-transition-new(branchline-header) { animation-duration: 0s; }
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*) { animation-duration: 0s; }
 }
+
+.bl-r6-branchline-wordart img{display:block;width:100%;height:100%;object-fit:contain;border-radius:0}
+.bl-r6-branchline-wordart:focus-visible{outline:2px solid #12d3e4;outline-offset:3px}
