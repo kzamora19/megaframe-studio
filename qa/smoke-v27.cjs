@@ -11,7 +11,7 @@ const pixel=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQ
   await page.waitForFunction(()=>document.querySelector('#draftStatus')?.textContent?.includes('Auto-save ready'));
   await page.locator('#createNewProject').click();
   await page.locator('#mfChatNav').waitFor({state:'attached'});
-  assert.equal(await page.locator('#pinNav [data-panel]').count(),7,'All original main menu actions remain');
+  assert.equal(await page.locator('#pinNav [data-panel]').count(),8,'All eight current main menu actions remain');
   assert.equal(await page.locator('#mfChatTitle').textContent(),'Frame template');
   await page.locator('#mfRailToggle').click();
   assert.equal(await page.locator('#pinNav .mfName').first().isVisible(),true,'Desktop rail expands names');
