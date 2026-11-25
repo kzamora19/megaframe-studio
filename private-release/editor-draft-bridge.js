@@ -25,7 +25,7 @@
     resolveReady();
   });
   async function request(action, record) {
-    if (!["read", "write", "delete", "project-list", "project-read", "project-write", "project-delete"].includes(action))
+    if (!["read", "write", "delete", "project-list", "project-read", "project-write", "project-delete", "template-list", "template-write", "template-delete"].includes(action))
       throw Error("Unsupported draft operation.");
     await Promise.race([
       ready,
@@ -38,7 +38,7 @@
         reject(Error("Protected draft operation timed out."));
       }, 45000);
       pending.set(id,{resolve,reject,timeout});
-      try { port.postMessage({id,action,record: ["write", "project-read", "project-write", "project-delete"].includes(action) ? record : undefined}); }
+      try { port.postMessage({id,action,record: ["write", "project-read", "project-write", "project-delete", "template-write", "template-delete"].includes(action) ? record : undefined}); }
       catch {clearTimeout(timeout);pending.delete(id);reject(Error("Private draft request failed."));}
     });
   }
