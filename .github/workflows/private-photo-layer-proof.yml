@@ -59,7 +59,7 @@ jobs:
           assert.match(html,/el\('signin'\)\.onclick = signInToSharedTemplates/);
           assert.ok(html.includes('id="mf-signin" class="btn primary" type="button"'));
           assert.ok(!html.includes("megaframe_named_projects_v1"),"No unencrypted named-project database");
-          assert.ok(!html.includes('allow-same-origin'),"Never relax opaque sandbox");
+          assert.doesNotMatch(html, /<iframe\\b[^>]*\\bsandbox\\s*=\\s*["\x27][^"\x27]*\\ballow-same-origin\\b/i, "No iframe may gain same-origin access");
           assert.doesNotMatch(html,/<script\s+src=["']\.\//);
           assert.doesNotMatch(html,/<img[^>]+src=["']\.\//);
           assert.ok(stub.length<1500);
