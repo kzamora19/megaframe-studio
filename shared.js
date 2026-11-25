@@ -590,6 +590,8 @@
   async function saveShared(row) {
     requirePublisher();
     if (!app.template || !app.frame) throw Error('Open or import a frame first.');
+    if (!Array.isArray(app.shape?.points) || app.shape.points.length < 3)
+      throw Error('Define a transparent photo opening before publishing this frame.');
     // This payload is built only from the template artwork and frame settings.
     const artwork = checkArtwork(app.template.data), settings = cleanSettings(app);
     const name = await popupAction({ title: row ? 'Replace shared template' : 'Publish shared template',
@@ -676,6 +678,8 @@
   async function savePrivate(row) {
     requirePersonalCloud(true);
     if (!app.template || !app.frame) throw Error('Select or import a frame first.');
+    if (!Array.isArray(app.shape?.points) || app.shape.points.length < 3)
+      throw Error('Define a transparent photo opening before saving this template to private cloud.');
     const name=await popupAction({
       title:row?'Replace private cloud template':'Save private cloud template',
       message:'Only approved frame artwork and layout settings will be uploaded to your private account. Imported customer photos stay on this device.',
