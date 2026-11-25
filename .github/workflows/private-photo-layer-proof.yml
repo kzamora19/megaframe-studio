@@ -1,0 +1,63 @@
+name: Private MegaFrame photo-layer package build proof (no upload)
+on:
+  push:
+    branches: [release/protected-photo-layer-package-20261125]
+    paths:
+      - 'private-release/**'
+      - '.github/workflows/private-photo-layer-proof.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-private-bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - name: Check packaging script and encrypted draft bridge syntax
+        run: |
+          node --check private-release/build-private-package.mjs
+          node --check private-release/editor-draft-bridge.js
+      - name: Compile self-contained private editor ONLY in ephemeral runner directory
+        run: node private-release/build-private-package.mjs "$RUNNER_TEMP/megaframe-private"
+      - name: Validate privacy, source integrity, photo layering and R6 features
+        env:
+          PRIVATE_DIR: ${{ runner.temp }}/megaframe-private
+        run: |
+          node --input-type=module - <<'NODE'
+          import {readFileSync} from "node:fs";
+          import {join} from "node:path";
+          import {createHash} from "node:crypto";
+          import assert from "node:assert/strict";
+          const base=process.env.PRIVATE_DIR;
+          const html=readFileSync(join(base,"private","studio.html"),"utf8");
+          const manifest=JSON.parse(readFileSync(join(base,"manifest.json"),"utf8"));
+          const stub=readFileSync(join(base,"public","index.html"),"utf8");
+          const sha=createHash("sha256").update(html).digest("hex");
+          assert.equal(sha,manifest.sha256);
+          assert.equal(Buffer.byteLength(html),manifest.bytes);
+          assert.ok(html.startsWith("<!-- PRIVATE MEGAFRAME EDITOR BUNDLE"));
+          assert.match(html,/photoLayerMode/);
+          assert.match(html,/Behind frame/);
+          assert.match(html,/detectNativePhotoOpening/);
+          assert.match(html,/transparentPhotoFrameArtwork/);
+          assert.match(html,/window\.__MEGAFRAME_PRIVATE_DRAFT__/);
+          assert.match(html,/function recoveryArchiveId\(draft\)/);
+          assert.match(html,/async function deleteLinkedRecovery\(id\)/);
+          assert.match(html,/const MENUS=\[/);
+          assert.ok(html.includes('id="photoLayerControls"'));
+          assert.ok(!html.includes("megaframe_named_projects_v1"),"No unencrypted named-project database");
+          assert.ok(!html.includes('allow-same-origin'),"Never relax opaque sandbox");
+          assert.doesNotMatch(html,/<script\s+src=["']\.\//);
+          assert.doesNotMatch(html,/<img[^>]+src=["']\.\//);
+          assert.ok(stub.length<1500);
+          assert.ok(!stub.includes("editor.js")&&!stub.includes("photoLayerMode"));
+          console.log("PASS: Private bundle, SHA-256, alpha-layer controls, account-scoped encrypted drafts and public separation");
+          NODE
+      - name: Keep bundle off Actions artifacts and all public folders
+        run: |
+          test ! -e _site/private/studio.html
+          test ! -e studio/private/studio.html
+          test ! -e private-release/studio.html
