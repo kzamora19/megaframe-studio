@@ -533,7 +533,8 @@
         !bounded(collage.gap) || collage.gap < 0 || collage.gap > 5) throw Error('Invalid collage layout.');
     return { rect: { x: rect.x, y: rect.y, w: rect.w, h: rect.h }, shape: shape(source.shape),
       frameOpening: shape(source.frameOpening), appearance: { borderColor: appearance.borderColor,
-        openingFill: appearance.openingFill, borderWidth: appearance.borderWidth, replaceOpening: appearance.replaceOpening },
+        openingFill: appearance.openingFill, borderWidth: appearance.borderWidth, replaceOpening: appearance.replaceOpening,
+        photoLayerMode: appearance.photoLayerMode === 'front' ? 'front' : 'behind' },
       collage: { count: collage.count, layout: collage.layout, gap: collage.gap } };
   }
   function checkArtwork(artwork) {

@@ -52,6 +52,9 @@ const assert = require('node:assert/strict');
   await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
   await page.waitForTimeout(100);
+  assert.equal(await page.locator('#photoLayerMode').inputValue(), 'behind', 'Behind frame is the default.');
+  assert.match(await page.locator('#frameLayerStatus').textContent(), /no transparent photo opening/i,
+   'Opaque frame sources must raise a useful warning.');
 
   const pixel = async (x, y) => page.evaluate(({ x, y }) => {
    const ctx = document.querySelector('#previewCanvas').getContext('2d');
@@ -84,17 +87,45 @@ const assert = require('node:assert/strict');
    name: 'transparent-frame.png', mimeType: 'image/png', buffer: await makeArtwork(true)
   });
   await page.waitForFunction(() => app.template?.name === 'transparent-frame');
+  assert.equal(await page.evaluate(() => app.shape.type), 'rect',
+   'A large enclosed native transparent opening should be identified automatically on upload.');
+  const detected = await page.evaluate(() => ({...app.rect}));
+  assert.ok(detected.x >= 30 && detected.x <= 60 && detected.y >= 65 && detected.y <= 100,
+   'Automatically inferred photo slot should align with the transparent region.');
   await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
   await page.waitForTimeout(100);
+  assert.match(await page.locator('#frameLayerStatus').textContent(), /Transparent opening detected/i,
+   'Native alpha frames must be recognized without a false warning.');
   const ribbon = await pixel(200, 175);
   assert.ok(ribbon[0] > ribbon[1] + 80,
    'An existing transparent PNG must retain its foreground ribbon in the photo opening.');
   const photoUnderRibbon = await pixel(200, 220);
   assert.ok(photoUnderRibbon[1] > photoUnderRibbon[0] + 60,
    'The imported photo must remain beneath the native transparent foreground layer.');
+  await page.locator('#photoLayerMode').selectOption('front');
+  await page.waitForTimeout(100);
+  const inFront = await pixel(200, 175);
+  assert.ok(inFront[1] > inFront[0] + 60,
+   'Front mode must allow the imported photo to cover the red foreground ribbon.');
+  const savedMode = await page.evaluate(() => serializeDraft().template.appearance.photoLayerMode);
+  assert.equal(savedMode, 'front', 'The selected layer order must persist in draft/template data.');
+  await page.locator('#photoLayerMode').selectOption('behind');
+  await page.waitForTimeout(100);
+  const behindAgain = await pixel(200, 175);
+  assert.ok(behindAgain[0] > behindAgain[1] + 80,
+   'Switching back to Behind frame must restore the ribbon above the imported photo.');
+  await page.locator('#photoLayerMode').selectOption('front');
+  await page.locator('#photoLayerMode').selectOption('behind');
+  await page.locator('#undo').click();
+  assert.equal(await page.locator('#photoLayerMode').inputValue(), 'front',
+   'Undo must restore the earlier layer choice.');
+  await page.locator('#redo').click();
+  assert.equal(await page.locator('#photoLayerMode').inputValue(), 'behind',
+   'Redo must restore the last layer choice.');
+
   assert.deepEqual(errors, [], 'Unexpected browser exceptions: ' + errors.join('; '));
-  console.log('PASS: transparent photo slots, foreground art protection, alpha PNG export and shape-required save.');
+  console.log('PASS: transparent photo slots, automatic alpha opening detection, stacking toggle, undo/redo, export and shape-required save.');
  } finally {
   await browser.close();
  }

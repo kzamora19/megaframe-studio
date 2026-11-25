@@ -527,6 +527,15 @@ button.danger:hover{background:#ffe9ec}
    <div class="scaleControls"><div class="rangerow"><label for="shapeScale">Proportional shape size</label><span class="value" id="shapeScaleValue">100%</span></div><input id="shapeScale" type="range" min="30" max="180" step="1" value="100"/><p class="help" style="margin-bottom:0">Resize without distorting the outline. You can also drag the square handles at its corners.</p></div>
    <div class="shapeInfo"><span class="tag" id="shapeType">Custom polygon</span><span class="counter" id="pointCount">8 points</span></div>
    <div class="scaleControls borderControls"><div class="rangerow"><label for="borderWidth">Opening border</label><span class="value" id="borderWidthValue">8 px</span></div><div class="borderRow"><input id="borderColor" type="color" value="#d7b34a" aria-label="Choose border color" /><input id="borderWidth" type="range" min="0" max="30" step="1" value="8" /></div><p class="help" style="margin-bottom:0">This border follows the current shape. Set width to 0 to hide it.</p></div>
+   <div class="field" id="photoLayerControls">
+     <label for="photoLayerMode">Photo layer order</label>
+     <select id="photoLayerMode" aria-describedby="frameLayerStatus">
+      <option value="behind">Behind frame — recommended</option>
+      <option value="front">In front of frame — legacy</option>
+     </select>
+     <p class="help" style="margin:6px 0">Behind frame keeps the foreground ribbon, border, title and footer above imported photos. In front lets a photo cover artwork inside the opening.</p>
+     <div class="bannerTip" id="frameLayerStatus" role="status" aria-live="polite">Choose a photo opening to check whether the frame is transparent.</div>
+   </div>
    <div class="cleanupOption"><label class="check" for="replaceOpening"><input type="checkbox" id="replaceOpening" /> Erase previous photo/opening in template</label><p class="help" style="margin:7px 0 0">Off for new clean backgrounds. Turn on only when your uploaded artwork already contains an old customer photo. This fills the old area with a sampled color.</p></div>
    <div class="cornerSettings"><div class="rangerow"><label for="cornerCut">Corner cut (preset)</label><span class="value" id="cornerValue">6%</span></div><input id="cornerCut" type="range" min="2" max="20" value="6" step="1" /><p class="help" style="margin-bottom:0">Adjust cut-corner size, then fine-tune individual points.</p></div>
    <div class="shapeActions">
@@ -536,7 +545,7 @@ button.danger:hover{background:#ffe9ec}
      <button id="deletePoint" class="btn" type="button">− Delete point</button>
    </div>
    <div class="inline"><button id="resetArea" class="btn small">Restore this frame's opening</button><button id="fullArea" class="btn small">Entire frame</button></div>
-   <div class="bannerTip" style="margin-top:11px"><b>Transparent photo opening.</b> The selected opening is cut out of the frame artwork. Imported photos sit behind the artwork; bows, borders, headings and footers stay in front. Use a transparent PNG for decorations that extend into the photo window.</div>
+   <div class="bannerTip" style="margin-top:11px"><b>Foreground frame mode.</b> Choose <b>Behind frame</b> above to keep ribbons, borders, headings and footers visible on top of imported photos. MegaFrame detects transparency in the selected photo opening and warns when an opaque image needs a cutout. Use transparent PNG artwork for decorations that cross the photo window.</div>
   </section>
   <div class="sep"></div>
   <section class="section">
