@@ -103,6 +103,7 @@
     let checking=false, restarting=false, available=null, dismissed=null, confirmRestart=false;
     function resetConfirmation(){confirmRestart=false;restart.dataset.confirm="false";restart.textContent="Update & Restart";}
     function promptUpdate(){
+      if(available!==null)bell.dataset.releaseSequence=String(available);
       resetConfirmation();
       status.textContent="Branchline Workspace Update Available. Save your work before restarting to load the new web version.";
       status.hidden=false;restart.hidden=!restartPath(root.location.pathname);dismiss.hidden=false;box.classList.add("bl-update-available");bell.classList.add("has-update");
