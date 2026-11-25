@@ -18,7 +18,7 @@ jobs:
       MEGAFRAME_PRODUCTION_RELEASE_APPROVED: "YES"
       MEGAFRAME_PRODUCTION_URL: ${{ secrets.MEGAFRAME_PRODUCTION_URL }}
       MEGAFRAME_PRODUCTION_ADMIN_KEY: ${{ secrets.MEGAFRAME_PRODUCTION_ADMIN_KEY }}
-      MEGAFRAME_PRIVATE_BUILD_DIR: ${{ runner.temp }}/megaframe-private
+      MEGAFRAME_PRIVATE_BUILD_DIR: /tmp/megaframe-private
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
