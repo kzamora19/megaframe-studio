@@ -393,7 +393,45 @@ function dbOpen(){if(dbPromise)return dbPromise;dbPromise=new Promise((resolve)=
 async function dbAll(){const db=await dbOpen();if(!db)return[];return new Promise(resolve=>{try{const r=db.transaction(DB_STORE,'readonly').objectStore(DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>resolve([])}catch{resolve([])}})}
 async function dbPut(t){const db=await dbOpen();if(!db)return false;return new Promise(resolve=>{try{const x=db.transaction(DB_STORE,'readwrite');x.objectStore(DB_STORE).put(t);x.oncomplete=()=>resolve(true);x.onerror=()=>resolve(false)}catch{resolve(false)}})}
 async function dbDelete(id){const db=await dbOpen();if(!db)return false;return new Promise(resolve=>{try{const x=db.transaction(DB_STORE,'readwrite');x.objectStore(DB_STORE).delete(id);x.oncomplete=()=>resolve(true);x.onerror=()=>resolve(false)}catch{resolve(false)}})}
-async function uploadTemplate(file){if(!isPhotoFile(file))return notify('Please select JPG, PNG or WebP image.');try{let data=await dataUrlOf(file);const frame=await decodedImage(data);if(frame.width<200||frame.height<200)return notify('Please use a frame at least 200 × 200 pixels.');const rect={x:Math.round(frame.width*.10),y:Math.round(frame.height*.20),w:Math.round(frame.width*.80),h:Math.round(frame.height*.60)};const name=file.name.replace(/\.[^.]+$/,'');const opening=blankShape();const t={id:'new',name,data,rect,shape:cloneShape(opening),frameOpening:cloneShape(opening),appearance:{borderColor:'#d7b34a',borderWidth:8,replaceOpening:false}};applyTemplate(t,data,frame);setMode('map');notify('Frame imported without a shape. Choose an opening from the dropdown, draw one, or reuse a saved shape.')}catch(err){notify('Could not import the frame: '+err.message)}}
+
+/** Detect a large, enclosed alpha window, excluding transparent frame edges. */
+function detectNativePhotoOpening(frame){
+ if(!frame||frame.width<200||frame.height<200)return null;
+ const sampleW=96,sampleH=clamp(Math.round(96*frame.height/frame.width),56,144);
+ const c=document.createElement('canvas');c.width=sampleW;c.height=sampleH;
+ const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(frame,0,0,sampleW,sampleH);
+ const pixels=ctx.getImageData(0,0,sampleW,sampleH).data,seen=new Uint8Array(sampleW*sampleH);
+ const minArea=sampleW*sampleH*.07;
+ let largest=null;
+ for(let start=0;start<seen.length;start++){
+  if(seen[start]||pixels[start*4+3]>32)continue;
+  const queue=[start];seen[start]=1;
+  let count=0,minX=sampleW,maxX=0,minY=sampleH,maxY=0,edge=false;
+  for(let i=0;i<queue.length;i++){
+   const at=queue[i],x=at%sampleW,y=Math.floor(at/sampleW);
+   count++;minX=Math.min(minX,x);minY=Math.min(minY,y);
+   maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);
+   if(x===0||x===sampleW-1||y===0||y===sampleH-1){edge=true;continue}
+   for(const next of [at-1,at+1,at-sampleW,at+sampleW]){
+    if(seen[next]||pixels[next*4+3]>32)continue;
+    seen[next]=1;queue.push(next);
+   }
+  }
+  if(edge||count<minArea||maxX-minX<sampleW*.2||maxY-minY<sampleH*.2)continue;
+  const midX=(minX+maxX)/2/sampleW,midY=(minY+maxY)/2/sampleH;
+  if(midX<.18||midX>.82||midY<.18||midY>.82)continue;
+  if(!largest||count>largest.count)largest={count,minX,maxX,minY,maxY};
+ }
+ if(!largest)return null;
+ const x=Math.round(largest.minX/sampleW*frame.width);
+ const y=Math.round(largest.minY/sampleH*frame.height);
+ const w=Math.round((largest.maxX-largest.minX+1)/sampleW*frame.width);
+ const h=Math.round((largest.maxY-largest.minY+1)/sampleH*frame.height);
+ if(w<20||h<20||x+w>frame.width||y+h>frame.height)return null;
+ return{x,y,w,h};
+}
+
+async function uploadTemplate(file){if(!isPhotoFile(file))return notify('Please select JPG, PNG or WebP image.');try{let data=await dataUrlOf(file);const frame=await decodedImage(data);if(frame.width<200||frame.height<200)return notify('Please use a frame at least 200 × 200 pixels.');const detected=detectNativePhotoOpening(frame);const rect=detected||{x:Math.round(frame.width*.10),y:Math.round(frame.height*.20),w:Math.round(frame.width*.80),h:Math.round(frame.height*.60)};const name=file.name.replace(/\.[^.]+$/,'');const opening=detected?{type:'rect',points:rectPoints(rect)}:blankShape();const t={id:'new',name,data,rect,shape:cloneShape(opening),frameOpening:cloneShape(opening),appearance:{borderColor:'#d7b34a',borderWidth:8,replaceOpening:false,photoLayerMode:'behind'}};applyTemplate(t,data,frame);setMode('map');notify(detected?'Transparent photo opening detected. Check its alignment, then save the template.':'Frame imported without a shape. Choose an opening from the dropdown, draw one, or reuse a saved shape.')}catch(err){notify('Could not import the frame: '+err.message)}}
 function boundRect(r){const W=app.frame?.width||2018,H=app.frame?.height||2048;let x=Math.max(0,Math.min(W-8,r.x)),y=Math.max(0,Math.min(H-8,r.y));let w=Math.max(8,Math.min(W-x,r.w)),h=Math.max(8,Math.min(H-y,r.h));return{x,y,w,h}}
 function render(){if(hasUnsavedChanges())scheduleDraftSave();updateUnsavedIndicator();updatePhotoQuality();if(renderPending)return;renderPending=true;requestAnimationFrame(()=>{renderPending=false;drawPreview();drawLiveExportPreview()})}
 function canvasSize(){const canvas=$('previewCanvas');const frame=app.frame;if(!frame)return null;if(canvas.width!==frame.width||canvas.height!==frame.height){canvas.width=frame.width;canvas.height=frame.height}return canvas}
