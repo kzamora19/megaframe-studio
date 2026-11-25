@@ -254,7 +254,7 @@ function renderWorkspaceIdentity(identity) {
         if (!active || expired || Date.now() >= expiry ||
             mount.querySelector("iframe") !== frame ||
             !message || !Number.isSafeInteger(message.id) ||
-            !["read", "write", "delete", "project-list", "project-read", "project-write", "project-delete"].includes(message.action)) return;
+            !["read", "write", "delete", "project-list", "project-read", "project-write", "project-delete", "template-list", "template-write", "template-delete"].includes(message.action)) return;
         try {
           const value = await vault[message.action](message.record);
           if (active && !expired && Date.now() < expiry)
