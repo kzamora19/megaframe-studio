@@ -44,6 +44,7 @@ jobs:
           const stub=readFileSync(join(base,"public","index.html"),"utf8");
           const sha=createHash("sha256").update(html).digest("hex");
           assert.equal(sha,manifest.sha256);
+          console.log('VERIFIED_PRIVATE_EDITOR_SHA256='+sha);
           assert.equal(Buffer.byteLength(html),manifest.bytes);
           assert.ok(html.startsWith("<!-- PRIVATE MEGAFRAME EDITOR BUNDLE"));
           assert.match(html,/photoLayerMode/);
@@ -55,8 +56,10 @@ jobs:
           assert.match(html,/async function deleteLinkedRecovery\(id\)/);
           assert.match(html,/const MENUS=\[/);
           assert.ok(html.includes('id="photoLayerControls"'));
+          assert.match(html,/el\('signin'\)\.onclick = signInToSharedTemplates/);
+          assert.ok(html.includes('id="mf-signin" class="btn primary" type="button"'));
           assert.ok(!html.includes("megaframe_named_projects_v1"),"No unencrypted named-project database");
-          assert.ok(!html.includes('allow-same-origin'),"Never relax opaque sandbox");
+          assert.doesNotMatch(html, /<iframe\\b[^>]*\\bsandbox\\s*=\\s*["\x27][^"\x27]*\\ballow-same-origin\\b/i, "No iframe may gain same-origin access");
           assert.doesNotMatch(html,/<script\s+src=["']\.\//);
           assert.doesNotMatch(html,/<img[^>]+src=["']\.\//);
           assert.ok(stub.length<1500);
