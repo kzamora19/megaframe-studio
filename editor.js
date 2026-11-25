@@ -13,8 +13,8 @@ function shapeBounds(pts){let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-I
 function bevelPoints(r,percent=6){const cut=Math.min(r.w,r.h)*(percent/100);return[{x:r.x+cut,y:r.y},{x:r.x+r.w-cut,y:r.y},{x:r.x+r.w,y:r.y+cut},{x:r.x+r.w,y:r.y+r.h-cut},{x:r.x+r.w-cut,y:r.y+r.h},{x:r.x+cut,y:r.y+r.h},{x:r.x,y:r.y+r.h-cut},{x:r.x,y:r.y+cut}]}
 function rgbToHex(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('')}
 function sampleOpeningFill(frame,pts){try{const box=shapeBounds(pts),c=document.createElement('canvas');c.width=frame.width;c.height=frame.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(frame,0,0);let R=0,G=0,B=0,N=0;for(let gy=1;gy<=7;gy++)for(let gx=1;gx<=7;gx++){const p={x:box.x+box.w*gx/8,y:box.y+box.h*gy/8};if(!insidePolygon(p,pts))continue;const d=x.getImageData(Math.max(0,Math.min(frame.width-1,Math.round(p.x))),Math.max(0,Math.min(frame.height-1,Math.round(p.y))),1,1).data;R+=d[0];G+=d[1];B+=d[2];N++}return N?rgbToHex(R/N,G/N,B/N):'#eef1f7'}catch{return'#eef1f7'}}
-function templateAppearance(template,frameOpening,frame){const provided=template.appearance||{};const color=provided.borderColor||(template.id==='sample'?'#1f55d7':'#d7b34a');const width=Number.isFinite(+provided.borderWidth)?Math.max(0,Math.min(30,+provided.borderWidth)):8;const fill=provided.openingFill||sampleOpeningFill(frame,frameOpening.points);const replaceOpening=typeof provided.replaceOpening==='boolean'?provided.replaceOpening:(template.id==='sample'||template.id==='gold');return{borderColor:color,borderWidth:width,openingFill:fill,replaceOpening}}
-function syncAppearanceUI(){if(!$('borderColor'))return;$('borderColor').value=app.appearance.borderColor||'#d7b34a';$('borderWidth').value=String(app.appearance.borderWidth??8);$('borderWidthValue').textContent=(app.appearance.borderWidth??8)+' px';$('replaceOpening').checked=!!app.appearance.replaceOpening}
+function templateAppearance(template,frameOpening,frame){const provided=template.appearance||{};const color=provided.borderColor||(template.id==='sample'?'#1f55d7':'#d7b34a');const width=Number.isFinite(+provided.borderWidth)?Math.max(0,Math.min(30,+provided.borderWidth)):8;const fill=provided.openingFill||sampleOpeningFill(frame,frameOpening.points);const replaceOpening=typeof provided.replaceOpening==='boolean'?provided.replaceOpening:(template.id==='sample'||template.id==='gold');return{borderColor:color,borderWidth:width,openingFill:fill,replaceOpening,photoLayerMode:provided.photoLayerMode==='front'?'front':'behind'}}
+function syncAppearanceUI(){if(!$('borderColor'))return;$('borderColor').value=app.appearance.borderColor||'#d7b34a';$('borderWidth').value=String(app.appearance.borderWidth??8);$('borderWidthValue').textContent=(app.appearance.borderWidth??8)+' px';$('replaceOpening').checked=!!app.appearance.replaceOpening;if($('photoLayerMode'))$('photoLayerMode').value=app.appearance.photoLayerMode==='front'?'front':'behind';updatePhotoLayerStatus()}
 function strokeOpeningBorder(ctx,pts){const w=+(app.appearance?.borderWidth||0);if(w<=0||!pts?.length)return;ctx.save();polygonPath(ctx,pts);ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=app.appearance.borderColor||'#d7b34a';ctx.lineWidth=w;ctx.stroke();ctx.restore()}
 function coverOriginalOpening(ctx,pts){if(!pts?.length)return;ctx.save();polygonPath(ctx,pts);ctx.fillStyle=app.appearance?.openingFill||'#eef1f7';ctx.fill();ctx.restore()}
 
@@ -25,6 +25,57 @@ function coverOriginalOpening(ctx,pts){if(!pts?.length)return;ctx.save();polygon
  * transparent opening remain ABOVE the customer photo.
  */
 let photoFrameOverlayCache=null;
+
+let photoOpeningInspectionCache=null;
+function inspectPhotoOpeningTransparency(){
+ const source=app.frame,points=app.shape?.points;
+ if(!source||!Array.isArray(points)||points.length<3)
+  return {kind:'missing',clearPixels:0,sampledPixels:0,ratio:0};
+ const key=JSON.stringify(points);
+ if(photoOpeningInspectionCache?.source===source&&photoOpeningInspectionCache.key===key)
+  return photoOpeningInspectionCache.result;
+ const samples=document.createElement('canvas');
+ samples.width=source.width;samples.height=source.height;
+ const c=samples.getContext('2d',{willReadFrequently:true});
+ c.drawImage(source,0,0);
+ const bounds=shapeBounds(points);
+ let clearPixels=0,sampledPixels=0;
+ try{
+  for(let yi=1;yi<=5;yi++)for(let xi=1;xi<=5;xi++){
+   const p={x:bounds.x+bounds.w*xi/6,y:bounds.y+bounds.h*yi/6};
+   if(!insidePolygon(p,points))continue;
+   const alpha=c.getImageData(
+    clamp(Math.round(p.x),0,samples.width-1),
+    clamp(Math.round(p.y),0,samples.height-1),1,1).data[3];
+   sampledPixels++;if(alpha<32)clearPixels++;
+  }
+ }catch{sampledPixels=0}
+ const ratio=sampledPixels?clearPixels/sampledPixels:0;
+ const kind=ratio>=.6?'native':ratio>0?'partial':'opaque';
+ const result={kind,clearPixels,sampledPixels,ratio};
+ photoOpeningInspectionCache={source,key,result};
+ return result;
+}
+function updatePhotoLayerStatus(){
+ const label=$('frameLayerStatus');
+ if(!label)return;
+ const mode=app.appearance?.photoLayerMode==='front'?'front':'behind';
+ const info=inspectPhotoOpeningTransparency();
+ let message;
+ if(info.kind==='missing')
+  message='Choose a photo-opening shape before saving or exporting a frame. No photo opening is defined yet.';
+ else if(info.kind==='native')
+  message=mode==='behind'
+   ?'Transparent opening detected. The original frame, ribbon, header and footer stay above the photo.'
+   :'Transparent opening detected. Front mode deliberately places the photo over decorations within its opening.';
+ else if(info.kind==='partial')
+  message='Warning: Only part of this photo opening is transparent. MegaFrame will cut out the selected area; artwork crossing it may be lost. For ribbons that overlap the photo, upload a fully transparent-opening PNG.';
+ else message='Warning: This artwork has no transparent photo opening. MegaFrame will create one using your selected shape; any decorations inside that cutout will be removed. Use a transparent PNG foreground layer to keep overlapping ribbons.';
+ label.textContent=message;
+ label.dataset.state=info.kind;
+ label.setAttribute('role','status');
+}
+
 function transparentPhotoFrameArtwork(){
  const source=app.frame;
  if(!source)return null;
@@ -40,19 +91,7 @@ function transparentPhotoFrameArtwork(){
  context.drawImage(source,0,0);
  // Do not erase intentional foreground artwork (e.g. a bow across the window)
  // when a supplied PNG already contains a transparent photo opening.
- const bounds=shapeBounds(points);
- let clearPixels=0,sampledPixels=0;
- try{
-  for(let yi=1;yi<=5;yi++)for(let xi=1;xi<=5;xi++){
-   const p={x:bounds.x+bounds.w*xi/6,y:bounds.y+bounds.h*yi/6};
-   if(!insidePolygon(p,points))continue;
-   const alpha=context.getImageData(
-    clamp(Math.round(p.x),0,canvas.width-1),
-    clamp(Math.round(p.y),0,canvas.height-1),1,1).data[3];
-   sampledPixels++;if(alpha<32)clearPixels++;
-  }
- }catch{sampledPixels=0}
- const alreadyTransparent=sampledPixels>=3&&clearPixels/sampledPixels>=.6;
+ const alreadyTransparent=inspectPhotoOpeningTransparency().kind==='native';
  if(!alreadyTransparent){
   if(app.appearance?.replaceOpening&&app.frameOpening?.points?.length>=3)
    coverOriginalOpening(context,app.frameOpening.points);
@@ -359,8 +398,8 @@ function boundRect(r){const W=app.frame?.width||2018,H=app.frame?.height||2048;l
 function render(){if(hasUnsavedChanges())scheduleDraftSave();updateUnsavedIndicator();updatePhotoQuality();if(renderPending)return;renderPending=true;requestAnimationFrame(()=>{renderPending=false;drawPreview();drawLiveExportPreview()})}
 function canvasSize(){const canvas=$('previewCanvas');const frame=app.frame;if(!frame)return null;if(canvas.width!==frame.width||canvas.height!==frame.height){canvas.width=frame.width;canvas.height=frame.height}return canvas}
 function drawPhoto(ctx,photo,points){const rect=shapeBounds(points);ctx.save();polygonPath(ctx,points);ctx.clip();ctx.fillStyle='#fff';ctx.fillRect(rect.x,rect.y,rect.w,rect.h);const im=enhancedPhotoImage(photo);if(!im){ctx.restore();return}const rot=(photo.rot||0)*Math.PI/180;const absC=Math.abs(Math.cos(rot)),absS=Math.abs(Math.sin(rot));const bw=im.width*absC+im.height*absS,bh=im.width*absS+im.height*absC;const base=(photo.fit==='contain'?Math.min(rect.w/bw,rect.h/bh):Math.max(rect.w/bw,rect.h/bh));const sc=base*(photo.zoom||1);const dw=im.width*sc,dh=im.height*sc;const cx=rect.x+rect.w/2+(photo.dx||0)*rect.w,cy=rect.y+rect.h/2+(photo.dy||0)*rect.h;ctx.translate(cx,cy);ctx.rotate(rot);ctx.filter=photoFilterCSS(photo);ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.filter='none';ctx.restore()}
-function renderComposite(ctx,scale,photosOrPage,previewOnly=false,raw=false){const frame=app.frame;if(!frame)return;const W=frame.width,H=frame.height;ctx.clearRect(0,0,W*scale,H*scale);ctx.save();ctx.scale(scale,scale);const validOpening=hasPhotoShape();if(!validOpening)ctx.drawImage(frame,0,0);let items=[];if(typeof photosOrPage==='number')items=getPagePhotos(photosOrPage);else if(Array.isArray(photosOrPage))items=photosOrPage;else if(photosOrPage)items=[photosOrPage];const missing=!hasPhotoShape();if(items.length&&(!missing||previewOnly)){const bounds=missing?app.rect:app.rect;const points=missing?rectPoints(bounds):app.shape.points;const cells=layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,bounds,app.collage.gap);if(missing){ctx.save();ctx.globalAlpha=.94}for(let i=0;i<Math.min(items.length,cells.length);i++)drawCollagePhoto(ctx,items[i],points,cells[i],raw);if(missing)ctx.restore()}if(!raw&&items.length&&(!missing||previewOnly)){const points=missing?rectPoints(app.rect):app.shape.points;const cells=layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,app.rect,app.collage.gap);for(let i=0;i<Math.min(items.length,cells.length);i++)drawFaceCovers(ctx,items[i],cells[i],points)}if(!raw){const overlayCells=items.length?layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,app.rect,app.collage.gap):[];overlayDrawLayers(ctx,items,overlayCells)}if(validOpening){ctx.drawImage(transparentPhotoFrameArtwork(),0,0);strokeOpeningBorder(ctx,app.shape.points)}if(missing&&previewOnly&&items.length){const r=app.rect;ctx.save();ctx.lineWidth=Math.max(4,W/340);ctx.strokeStyle='#f5c94d';ctx.setLineDash([Math.max(8,W/90),Math.max(6,W/150)]);ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.setLineDash([]);const size=Math.max(18,Math.round(W/53));const label='PREVIEW ONLY · SELECT A PHOTO SHAPE';ctx.font=`bold ${size}px system-ui,sans-serif`;const mw=ctx.measureText(label).width;ctx.fillStyle='#101e4dde';ctx.fillRect(r.x,r.y,Math.min(r.w,mw+32),size+22);ctx.fillStyle='#fff';ctx.fillText(label,r.x+14,r.y+size+9);ctx.restore()}ctx.restore()}
-function drawPreview(){if(!app.frame)return;const canvas=canvasSize();const ctx=canvas.getContext('2d');renderComposite(ctx,1,app.selected>=0?currentPage():[],true);if(!app.overlayEditing&&app.mode==='adjust'&&hasPhotoShape()&&app.photos.length&&app.collage.count>1){const cells=layoutCells(getPagePhotos(currentPage()).length,app.collage.layout,app.rect,app.collage.gap),active=app.selected%app.collage.count;ctx.save();ctx.lineWidth=Math.max(3,canvas.width/300);ctx.setLineDash([12,8]);ctx.strokeStyle='#11d1ff';ctx.beginPath();ctx.rect(cells[active].x,cells[active].y,cells[active].w,cells[active].h);ctx.stroke();ctx.setLineDash([]);ctx.restore()}if(!app.overlayEditing&&app.mode==='adjust'&&activeCover()&&app.photos.length&&hasPhotoShape()){const cells=layoutCells(getPagePhotos(currentPage()).length,app.collage.layout,app.rect,app.collage.gap),slot=app.selected%app.collage.count,cell=cells[slot];if(cell){const g=coverGeometry(activeCover(),cell);ctx.save();ctx.strokeStyle='#0bcfff';ctx.lineWidth=Math.max(3,canvas.width/420);ctx.setLineDash([10,8]);ctx.beginPath();ctx.arc(g.x,g.y,g.radius+5,0,2*Math.PI);ctx.stroke();ctx.restore()}}if(!app.overlayEditing&&app.mode==='map'&&(hasPhotoShape()||app.drawingPolygon)){const pts=app.shape.points;ctx.save();const radius=Math.max(5,canvas.width/170);if(pts.length>=3){ctx.beginPath();ctx.rect(0,0,canvas.width,canvas.height);addPolygonPath(ctx,pts);ctx.fillStyle='rgba(12,31,71,.20)';ctx.fill('evenodd');polygonPath(ctx,pts);ctx.lineWidth=Math.max(3,canvas.width/420);ctx.strokeStyle='#00dcff';ctx.setLineDash([18,10]);ctx.stroke();ctx.setLineDash([]);pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fillStyle=i===app.selectedPoint?'#ffd65b':'#fff';ctx.fill();ctx.lineWidth=Math.max(2,canvas.width/650);ctx.strokeStyle='#3157dc';ctx.stroke()});ctx.fillStyle='#fff';ctx.strokeStyle='#1267e7';ctx.lineWidth=Math.max(3,canvas.width/420);for(const h of scaleHandles()){const hs=Math.max(10,canvas.width/110);ctx.fillRect(h.x-hs/2,h.y-hs/2,hs,hs);ctx.strokeRect(h.x-hs/2,h.y-hs/2,hs,hs)}}if(app.drawingPolygon&&app.draftPoints.length){ctx.beginPath();const ps=app.draftPoints;ctx.moveTo(ps[0].x,ps[0].y);for(let i=1;i<ps.length;i++)ctx.lineTo(ps[i].x,ps[i].y);if(app.cursor)ctx.lineTo(app.cursor.x,app.cursor.y);ctx.setLineDash([13,10]);ctx.lineWidth=Math.max(4,canvas.width/340);ctx.strokeStyle='#ffd23e';ctx.stroke();ctx.setLineDash([]);for(const p of ps){ctx.beginPath();ctx.arc(p.x,p.y,radius*1.2,0,Math.PI*2);ctx.fillStyle='#ffdc40';ctx.fill()}}ctx.restore()}overlayDrawSelection(ctx)}
+function renderComposite(ctx,scale,photosOrPage,previewOnly=false,raw=false){const frame=app.frame;if(!frame)return;const W=frame.width,H=frame.height;ctx.clearRect(0,0,W*scale,H*scale);ctx.save();ctx.scale(scale,scale);const validOpening=hasPhotoShape();const behind=app.appearance?.photoLayerMode!=='front';if(!validOpening)ctx.drawImage(frame,0,0);else if(!behind)ctx.drawImage(transparentPhotoFrameArtwork(),0,0);let items=[];if(typeof photosOrPage==='number')items=getPagePhotos(photosOrPage);else if(Array.isArray(photosOrPage))items=photosOrPage;else if(photosOrPage)items=[photosOrPage];const missing=!hasPhotoShape();if(items.length&&(!missing||previewOnly)){const bounds=missing?app.rect:app.rect;const points=missing?rectPoints(bounds):app.shape.points;const cells=layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,bounds,app.collage.gap);if(missing){ctx.save();ctx.globalAlpha=.94}for(let i=0;i<Math.min(items.length,cells.length);i++)drawCollagePhoto(ctx,items[i],points,cells[i],raw);if(missing)ctx.restore()}if(validOpening&&behind){ctx.drawImage(transparentPhotoFrameArtwork(),0,0);strokeOpeningBorder(ctx,app.shape.points)}else if(validOpening){strokeOpeningBorder(ctx,app.shape.points)}if(!raw&&items.length&&(!missing||previewOnly)){const points=missing?rectPoints(app.rect):app.shape.points;const cells=layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,app.rect,app.collage.gap);for(let i=0;i<Math.min(items.length,cells.length);i++)drawFaceCovers(ctx,items[i],cells[i],points)}if(!raw){const overlayCells=items.length?layoutCells(Math.min(app.collage.count,items.length),app.collage.layout,app.rect,app.collage.gap):[];overlayDrawLayers(ctx,items,overlayCells)}if(missing&&previewOnly&&items.length){const r=app.rect;ctx.save();ctx.lineWidth=Math.max(4,W/340);ctx.strokeStyle='#f5c94d';ctx.setLineDash([Math.max(8,W/90),Math.max(6,W/150)]);ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.setLineDash([]);const size=Math.max(18,Math.round(W/53));const label='PREVIEW ONLY · SELECT A PHOTO SHAPE';ctx.font=`bold ${size}px system-ui,sans-serif`;const mw=ctx.measureText(label).width;ctx.fillStyle='#101e4dde';ctx.fillRect(r.x,r.y,Math.min(r.w,mw+32),size+22);ctx.fillStyle='#fff';ctx.fillText(label,r.x+14,r.y+size+9);ctx.restore()}ctx.restore()}
+function drawPreview(){if(!app.frame)return;updatePhotoLayerStatus();const canvas=canvasSize();const ctx=canvas.getContext('2d');renderComposite(ctx,1,app.selected>=0?currentPage():[],true);if(!app.overlayEditing&&app.mode==='adjust'&&hasPhotoShape()&&app.photos.length&&app.collage.count>1){const cells=layoutCells(getPagePhotos(currentPage()).length,app.collage.layout,app.rect,app.collage.gap),active=app.selected%app.collage.count;ctx.save();ctx.lineWidth=Math.max(3,canvas.width/300);ctx.setLineDash([12,8]);ctx.strokeStyle='#11d1ff';ctx.beginPath();ctx.rect(cells[active].x,cells[active].y,cells[active].w,cells[active].h);ctx.stroke();ctx.setLineDash([]);ctx.restore()}if(!app.overlayEditing&&app.mode==='adjust'&&activeCover()&&app.photos.length&&hasPhotoShape()){const cells=layoutCells(getPagePhotos(currentPage()).length,app.collage.layout,app.rect,app.collage.gap),slot=app.selected%app.collage.count,cell=cells[slot];if(cell){const g=coverGeometry(activeCover(),cell);ctx.save();ctx.strokeStyle='#0bcfff';ctx.lineWidth=Math.max(3,canvas.width/420);ctx.setLineDash([10,8]);ctx.beginPath();ctx.arc(g.x,g.y,g.radius+5,0,2*Math.PI);ctx.stroke();ctx.restore()}}if(!app.overlayEditing&&app.mode==='map'&&(hasPhotoShape()||app.drawingPolygon)){const pts=app.shape.points;ctx.save();const radius=Math.max(5,canvas.width/170);if(pts.length>=3){ctx.beginPath();ctx.rect(0,0,canvas.width,canvas.height);addPolygonPath(ctx,pts);ctx.fillStyle='rgba(12,31,71,.20)';ctx.fill('evenodd');polygonPath(ctx,pts);ctx.lineWidth=Math.max(3,canvas.width/420);ctx.strokeStyle='#00dcff';ctx.setLineDash([18,10]);ctx.stroke();ctx.setLineDash([]);pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fillStyle=i===app.selectedPoint?'#ffd65b':'#fff';ctx.fill();ctx.lineWidth=Math.max(2,canvas.width/650);ctx.strokeStyle='#3157dc';ctx.stroke()});ctx.fillStyle='#fff';ctx.strokeStyle='#1267e7';ctx.lineWidth=Math.max(3,canvas.width/420);for(const h of scaleHandles()){const hs=Math.max(10,canvas.width/110);ctx.fillRect(h.x-hs/2,h.y-hs/2,hs,hs);ctx.strokeRect(h.x-hs/2,h.y-hs/2,hs,hs)}}if(app.drawingPolygon&&app.draftPoints.length){ctx.beginPath();const ps=app.draftPoints;ctx.moveTo(ps[0].x,ps[0].y);for(let i=1;i<ps.length;i++)ctx.lineTo(ps[i].x,ps[i].y);if(app.cursor)ctx.lineTo(app.cursor.x,app.cursor.y);ctx.setLineDash([13,10]);ctx.lineWidth=Math.max(4,canvas.width/340);ctx.strokeStyle='#ffd23e';ctx.stroke();ctx.setLineDash([]);for(const p of ps){ctx.beginPath();ctx.arc(p.x,p.y,radius*1.2,0,Math.PI*2);ctx.fillStyle='#ffdc40';ctx.fill()}}ctx.restore()}overlayDrawSelection(ctx)}
 function getPoint(e){const b=$('previewCanvas').getBoundingClientRect();return{x:(e.clientX-b.left)*app.frame.width/b.width,y:(e.clientY-b.top)*app.frame.height/b.height}}
 function pointerHit(p){const scaleHit=Math.max(12,app.frame.width/95);for(const h of scaleHandles())if(Math.abs(p.x-h.x)<scaleHit&&Math.abs(p.y-h.y)<scaleHit)return{type:'scale',corner:h.corner};const hit=Math.max(12,app.frame.width/110);let nearest=-1,best=hit*hit;for(let i=0;i<app.shape.points.length;i++){const a=app.shape.points[i];const d=(p.x-a.x)**2+(p.y-a.y)**2;if(d<best){best=d;nearest=i}}if(nearest>=0)return {type:'vertex',index:nearest};if(insidePolygon(p,app.shape.points))return {type:'move'};return {type:'drawRect'}}
 function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
@@ -1128,6 +1167,7 @@ const t={id:prior||'template_'+Date.now()+'_'+Math.random().toString(36).slice(2
  $('borderWidth').onpointerdown=()=>saveHistory();$('borderWidth').oninput=e=>{app.appearance.borderWidth=+e.target.value;$('borderWidthValue').textContent=e.target.value+' px';render()};
  $('borderColor').oninput=e=>{if(!app.editingBorderColor){saveHistory();app.editingBorderColor=true}app.appearance.borderColor=e.target.value;render()};$('borderColor').onchange=()=>{app.editingBorderColor=false};
  $('replaceOpening').onchange=e=>{saveHistory();app.appearance.replaceOpening=e.target.checked;render();notify(e.target.checked?'Old photo-area clearing enabled.':'Clean background preserved—only the active photo shape is covered.')};
+ $('photoLayerMode').onchange=e=>{saveHistory();app.appearance.photoLayerMode=e.target.value==='front'?'front':'behind';syncAppearanceUI();render();notify(app.appearance.photoLayerMode==='front'?'Photo above frame decorations (front mode).':'Frame decorations above photo (behind mode).')};
  $('collageCount').onchange=e=>{saveHistory();app.collage.count=+e.target.value;selectPhoto(app.selected<0?-1:Math.floor(app.selected/app.collage.count)*app.collage.count);updateGallery();render()};
  $('collageLayout').onchange=e=>{saveHistory();app.collage.layout=e.target.value;render()};
  $('collageGap').onpointerdown=()=>saveHistory();$('collageGap').oninput=e=>{app.collage.gap=+e.target.value;$('collageGapValue').textContent=e.target.value+'%';render()};
