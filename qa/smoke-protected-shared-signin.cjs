@@ -30,9 +30,14 @@ const assert = require('node:assert/strict');
    iframe.width='1350';iframe.height='900';
    iframe.addEventListener('load',()=>{
     const channel=new MessageChannel();
+    const templates=new Map();
     channel.port1.onmessage=({data})=>{
      if(data && Number.isSafeInteger(data.id)) {
-      const value=data.action==='project-list'?[]:null;
+      let value=null;
+      if(data.action==='project-list')value=[];
+      if(data.action==='template-list')value=[...templates.values()];
+      if(data.action==='template-write'){templates.set(data.record.id,data.record);value=true;}
+      if(data.action==='template-delete'){templates.delete(data.record);value=true;}
       channel.port1.postMessage({id:data.id,ok:true,value});
      }
     };
@@ -57,7 +62,23 @@ const assert = require('node:assert/strict');
   assert.ok(calls.some(x=>x.path==='/auth/v1/token'&&x.method==='POST'),
    'Real click must call Supabase Auth even with allow-forms omitted.');
   assert.match(await frame.locator('#mf-identity').textContent(),/Administrator/);
+  const templateChecks=await frame.locator('#mf-form').evaluate(async el=>{
+    const tpl={
+      id:'template_test_20261125',name:'Protected Template Test',
+      data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9J6ofLwAAAABJRU5ErkJggg==',
+      shape:{type:'rect',points:[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}]},
+      rect:{x:0,y:0,w:1,h:1},appearance:{borderWidth:2},collage:{}
+    };
+    const saved=await dbPut(tpl);
+    const found=(await dbAll()).some(x=>x.id===tpl.id&&x.name===tpl.name);
+    const removed=await dbDelete(tpl.id);
+    const gone=!(await dbAll()).some(x=>x.id===tpl.id);
+    return {saved,found,removed,gone};
+  });
+  assert.deepEqual(templateChecks,{saved:true,found:true,removed:true,gone:true},
+   'Private template CRUD must work via MessagePort with iframe IndexedDB denied.');
+
   assert.equal(await page.locator('#protected-studio').getAttribute('sandbox'),'allow-scripts allow-downloads allow-modals');
-  console.log('PASS: Direct MegaFrame sign-in works in an opaque sandbox with allow-forms still disabled.');
+  console.log('PASS: Shared Templates authentication and encrypted-bridge frame template CRUD work with opaque sandbox restrictions.');
  } finally {await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1;});
