@@ -167,13 +167,13 @@
     let widgetBoot=null;
     function startWidgets(){
       if(!box.isConnected)return;
-      root.BranchlineWidgetLoader.load("/megaframe-studio/studio/widgets/").then(bootstrap=>{
+      root.BranchlineWidgetLoader.load("/megaframe-studio/studio/widgets/",running).then(bootstrap=>{
         if(!box.isConnected||!bootstrap)return;
         widgetBoot=bootstrap.create(root);root.BranchlineWidgetRuntime=widgetBoot;widgetBoot.watch();
       }).catch(()=>{});
     }
     if(root.BranchlineWidgetLoader)startWidgets();else{
-      const widgetLoader=doc.createElement("script");widgetLoader.src="/megaframe-studio/studio/widgets/widget-loader.js";widgetLoader.onload=startWidgets;doc.head.append(widgetLoader);
+      const widgetLoader=doc.createElement("script");widgetLoader.src="/megaframe-studio/studio/widgets/widget-loader.js"+"?v="+running;widgetLoader.onload=startWidgets;doc.head.append(widgetLoader);
     }
     refresh(false);
   }
