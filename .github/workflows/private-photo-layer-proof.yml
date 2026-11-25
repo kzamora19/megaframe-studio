@@ -29,6 +29,10 @@ jobs:
           node --test private-release/upload-production.test.mjs
       - name: Compile self-contained private editor ONLY in ephemeral runner directory
         run: node private-release/build-private-package.mjs "$RUNNER_TEMP/megaframe-private"
+      - name: Log complete content digest for reviewed private release pin
+        run: |
+          echo "Private editor SHA-256 (non-secret digest):"
+          sha256sum "$RUNNER_TEMP/megaframe-private/private/studio.html"
       - name: Validate privacy, source integrity, photo layering and R6 features
         env:
           PRIVATE_DIR: ${{ runner.temp }}/megaframe-private
