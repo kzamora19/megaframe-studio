@@ -87,6 +87,11 @@ const assert = require('node:assert/strict');
    name: 'transparent-frame.png', mimeType: 'image/png', buffer: await makeArtwork(true)
   });
   await page.waitForFunction(() => app.template?.name === 'transparent-frame');
+  assert.equal(await page.evaluate(() => app.shape.type), 'rect',
+   'A large enclosed native transparent opening should be identified automatically on upload.');
+  const detected = await page.evaluate(() => ({...app.rect}));
+  assert.ok(detected.x >= 30 && detected.x <= 60 && detected.y >= 65 && detected.y <= 100,
+   'Automatically inferred photo slot should align with the transparent region.');
   await page.locator('[data-panel="1"]').click();
   await page.locator('#shapePreset').selectOption('rect');
   await page.waitForTimeout(100);
@@ -120,7 +125,7 @@ const assert = require('node:assert/strict');
    'Redo must restore the last layer choice.');
 
   assert.deepEqual(errors, [], 'Unexpected browser exceptions: ' + errors.join('; '));
-  console.log('PASS: transparent photo slots, automatic alpha detection, stacking toggle, undo/redo, export and shape-required save.');
+  console.log('PASS: transparent photo slots, automatic alpha opening detection, stacking toggle, undo/redo, export and shape-required save.');
  } finally {
   await browser.close();
  }
