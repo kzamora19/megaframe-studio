@@ -103,6 +103,7 @@
     let checking=false, restarting=false, available=null, dismissed=null, confirmRestart=false;
     function resetConfirmation(){confirmRestart=false;restart.dataset.confirm="false";restart.textContent="Update & Restart";}
     function promptUpdate(){
+      if(available!==null)bell.dataset.releaseSequence=String(available);
       resetConfirmation();
       status.textContent="Branchline Workspace Update Available. Save your work before restarting to load the new web version.";
       status.hidden=false;restart.hidden=!restartPath(root.location.pathname);dismiss.hidden=false;box.classList.add("bl-update-available");bell.classList.add("has-update");
@@ -166,13 +167,13 @@
     let widgetBoot=null;
     function startWidgets(){
       if(!box.isConnected)return;
-      root.BranchlineWidgetLoader.load("/megaframe-studio/studio/widgets/").then(bootstrap=>{
+      root.BranchlineWidgetLoader.load("/megaframe-studio/studio/widgets/",running).then(bootstrap=>{
         if(!box.isConnected||!bootstrap)return;
         widgetBoot=bootstrap.create(root);root.BranchlineWidgetRuntime=widgetBoot;widgetBoot.watch();
       }).catch(()=>{});
     }
     if(root.BranchlineWidgetLoader)startWidgets();else{
-      const widgetLoader=doc.createElement("script");widgetLoader.src="/megaframe-studio/studio/widgets/widget-loader.js";widgetLoader.onload=startWidgets;doc.head.append(widgetLoader);
+      const widgetLoader=doc.createElement("script");widgetLoader.src="/megaframe-studio/studio/widgets/widget-loader.js"+"?v="+running;widgetLoader.onload=startWidgets;doc.head.append(widgetLoader);
     }
     refresh(false);
   }
