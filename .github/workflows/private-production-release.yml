@@ -1,0 +1,38 @@
+name: MegaFrame private editor — verified production upload (manual approval)
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type DEPLOY-MEGAFRAME-PRIVATE to stage a new signed editor object; this does NOT switch users yet"
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  private-release-upload:
+    if: ${{ inputs.confirm == 'DEPLOY-MEGAFRAME-PRIVATE' && vars.MEGAFRAME_PROTECTED_RELEASE_ENABLED == 'true' }}
+    runs-on: ubuntu-24.04
+    environment: megaframe-private-production
+    timeout-minutes: 20
+    env:
+      MEGAFRAME_PRODUCTION_RELEASE_APPROVED: "YES"
+      MEGAFRAME_PRODUCTION_URL: ${{ secrets.MEGAFRAME_PRODUCTION_URL }}
+      MEGAFRAME_PRODUCTION_ADMIN_KEY: ${{ secrets.MEGAFRAME_PRODUCTION_ADMIN_KEY }}
+      MEGAFRAME_PRIVATE_BUILD_DIR: /tmp/megaframe-private
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Refuse non-main or stale source release
+        run: |
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_REPOSITORY" = "kzamora19/megaframe-studio"
+          node --check private-release/build-private-package.mjs
+          node --check private-release/editor-draft-bridge.js
+          node --check private-release/upload-production.mjs
+      - name: Compile private editor without public artifact or external source upload
+        run: node private-release/build-private-package.mjs "$MEGAFRAME_PRIVATE_BUILD_DIR"
+      - name: Install pinned Supabase SDK on temporary runner
+        run: npm install --no-save --no-package-lock --ignore-scripts @supabase/supabase-js@2.89.0
+      - name: Verify private bucket, upload immutable object, download and compare SHA
+        run: node private-release/upload-production.mjs
