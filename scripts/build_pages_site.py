@@ -15,7 +15,7 @@ if destination.exists():
 destination.mkdir(parents=True)
 
 files = [
-    "index.html", "manifest.webmanifest", "service-worker.js", "pwa-client.js",
+    "index.html", "reset-password.html", "reset-password.js", "manifest.webmanifest", "service-worker.js", "pwa-client.js",
     "editor.js", "chat-sidebar.js", "chat-sidebar.css", "overlay-engine.js", "shared.js", "cloud-config.js", "google-drive-config.js", "google-drive.js",
     *[f"sample_image-{i}.js" for i in range(6)],
     *[f"gold_image-{i}.js" for i in range(4)],

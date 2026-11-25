@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'reset-password.html'
+      - 'reset-password.js'
+      - 'qa/smoke-reset-password.cjs'
       - 'studio/**'
       - 'tests/r6-web-updates.test.cjs'
       - '*.js'
@@ -35,6 +38,9 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'reset-password.html'
+      - 'reset-password.js'
+      - 'qa/smoke-reset-password.cjs'
       - 'studio/**'
       - 'tests/r6-web-updates.test.cjs'
       - '*.js'
@@ -83,6 +89,8 @@ jobs:
           node --check editor.js
           node --check overlay-engine.js
           node --check shared.js
+          node --check reset-password.js
+          node --check qa/smoke-reset-password.cjs
           node --check pwa-client.js
           node --test tests/r6-web-updates.test.cjs
           node --check service-worker.js
@@ -127,6 +135,7 @@ jobs:
           node qa/smoke-v25.cjs
           node qa/smoke-v26.cjs
           node qa/smoke-pages.cjs
+          node qa/smoke-reset-password.cjs
           node qa/smoke-previews.cjs
           node qa/smoke-public-library-error.cjs
           node qa/smoke-emoji-covers.cjs
