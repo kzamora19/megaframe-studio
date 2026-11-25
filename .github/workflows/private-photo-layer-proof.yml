@@ -1,5 +1,10 @@
 name: Private MegaFrame photo-layer package build proof (no upload)
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'private-release/**'
+      - '.github/workflows/private-photo-layer-proof.yml'
   push:
     branches: [release/protected-photo-layer-package-20261125]
     paths:
@@ -21,6 +26,7 @@ jobs:
           node --check private-release/build-private-package.mjs
           node --check private-release/editor-draft-bridge.js
           node --check private-release/upload-production.mjs
+          node --test private-release/upload-production.test.mjs
       - name: Compile self-contained private editor ONLY in ephemeral runner directory
         run: node private-release/build-private-package.mjs "$RUNNER_TEMP/megaframe-private"
       - name: Validate privacy, source integrity, photo layering and R6 features

@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
-import {createClient} from '@supabase/supabase-js';
 
 const expectedUrl='https://vmyoxoiygfcecgkbavgg.supabase.co';
 const bucket='megaframe-editor-release';
@@ -30,16 +29,42 @@ for(const feature of ['photoLayerMode','transparentPhotoFrameArtwork','detectNat
 }
 const path='releases/'+digest.slice(0,16)+'/studio.html';
 if(!/^releases\/[a-f0-9]{16}\/studio\.html$/.test(path))throw Error('Unrecognized immutable path');
-const client=createClient(expectedUrl,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-const {data:config,error:bucketError}=await client.storage.getBucket(bucket);
-if(bucketError||!config||config.public!==false)throw Error('Refused: release bucket must exist and be PRIVATE');
-const storage=client.storage.from(bucket);
-const {error:uploadError}=await storage.upload(path,raw,{contentType:'text/html',cacheControl:'0',upsert:false});
-if(uploadError && !/already exists|duplicate|conflict/i.test(String(uploadError.message||'')))
- throw Error('Immutable private bundle upload failed; no production pointer changed.');
-const {data:stored,error:readError}=await storage.download(path);
-if(readError||!stored)throw Error('Cannot independently verify private uploaded object.');
-const result=Buffer.from(await stored.arrayBuffer());
+// Supabase sb_secret_ keys are API keys, NOT JWTs. Using a server-only
+// Supabase client that sends "Authorization: Bearer sb_secret_..." produces
+// Storage AccessDenied / Invalid Compact JWS. Send ONLY the apikey header.
+// Preserve the fail-closed private bucket check and immutable object pinning.
+const storageEndpoint=expectedUrl+'/storage/v1';
+const baseHeaders={apikey:key};
+async function privateStorageRequest(route,{method='GET',body,contentType}={}){
+ const headers={...baseHeaders};
+ if(contentType)headers['content-type']=contentType;
+ if(method==='POST')headers['x-upsert']='false';
+ const response=await fetch(storageEndpoint+route,{
+  method,headers,body,cache:'no-store',redirect:'error',
+  signal:AbortSignal.timeout(method==='POST'?120000:30000)
+ });
+ return response;
+}
+const configResponse=await privateStorageRequest('/bucket/'+bucket);
+if(!configResponse.ok)
+ throw Error('Private Storage bucket verification HTTP '+configResponse.status+
+  ' (check MegaFrame project secret API key; never paste it into logs).');
+const config=await configResponse.json().catch(()=>null);
+if(!config||config.id!==bucket||config.public!==false)
+ throw Error('Refused: release bucket must exist and be PRIVATE');
+const objectRoute='/object/'+bucket+'/'+path;
+const uploadResponse=await privateStorageRequest(objectRoute,{
+ method:'POST',body:raw,contentType:'text/html'
+});
+// Conflict is allowed ONLY for an immutable previously uploaded object, and
+// then the SHA-256 download verification below must match exactly.
+if(!uploadResponse.ok && uploadResponse.status!==409)
+ throw Error('Immutable private bundle upload failed (HTTP '+uploadResponse.status+
+ ') - delivery pointer was NOT changed.');
+const downloadResponse=await privateStorageRequest('/object/authenticated/'+bucket+'/'+path);
+if(!downloadResponse.ok)
+ throw Error('Cannot verify private stored object (HTTP '+downloadResponse.status+').');
+const result=Buffer.from(await downloadResponse.arrayBuffer());
 assert.equal(sha256(result),digest,'Stored private bundle checksum differs');
 assert.equal(result.length,raw.length,'Stored private bundle length differs');
 const output=['### MegaFrame private editor upload verified','Object: '+path,'SHA-256: '+digest,'Bytes: '+raw.length,
