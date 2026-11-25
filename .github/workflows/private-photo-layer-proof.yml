@@ -1,5 +1,10 @@
 name: Private MegaFrame photo-layer package build proof (no upload)
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'private-release/**'
+      - '.github/workflows/private-photo-layer-proof.yml'
   push:
     branches: [release/protected-photo-layer-package-20261125]
     paths:
