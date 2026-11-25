@@ -36,7 +36,7 @@ const assert = require('node:assert/strict');
      }
      return route.abort();
    });
-   await page.goto(url+'#type=recovery&access_token=testtoken');
+   await page.goto(url+'?source=mail#type=recovery&access_token=testtoken');
    await page.locator('#update-section').waitFor({state:'visible'});
    assert.equal(verified,true);
    assert.equal(await page.evaluate(()=>location.hash),'');
