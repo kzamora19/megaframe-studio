@@ -1,0 +1,38 @@
+name: Protected MegaFrame Shared Templates login regression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'shared.js'
+      - 'index.html'
+      - 'qa/smoke-protected-shared-signin.cjs'
+      - '.github/workflows/protected-shared-signin.yml'
+permissions:
+  contents: read
+jobs:
+  verify-sandbox-login:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      MEGAFRAME_PRIVATE_BUILD_DIR: /tmp/megaframe-private-signin-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check scripts
+        run: |
+          node --check shared.js
+          node --check qa/smoke-protected-shared-signin.cjs
+      - name: Build isolated signed editor in ephemeral runner only
+        run: node private-release/build-private-package.mjs "$MEGAFRAME_PRIVATE_BUILD_DIR"
+      - name: Install headless browser
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install chromium --only-shell
+      - name: Verify sign-in with sandboxed forms disabled
+        run: node qa/smoke-protected-shared-signin.cjs
+      - name: Confirm private HTML never enters public pages or artifacts
+        run: |
+          test ! -f _site/private/studio.html
+          test ! -f private-release/studio.html

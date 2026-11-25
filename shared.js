@@ -788,23 +788,48 @@
     }
   }
   el('admin-toggle').onclick = () => { adminFormOpen = !adminFormOpen; paint(); };
-  el('form').onsubmit = event => {
-    event.preventDefault();
-    const email = el('email').value.trim(), password = el('password').value;
+  // Protected Branchline renders MegaFrame inside an opaque-origin iframe
+  // with sandbox="allow-scripts allow-downloads allow-modals" (intentionally
+  // WITHOUT allow-forms or allow-same-origin). A native form's submit event
+  // may be suppressed entirely by the browser's sandboxed forms flag.
+  // Use a direct user-initiated button action, not a form submission. Keep the
+  // sandbox and its strict form-action CSP unchanged.
+  function signInToSharedTemplates() {
+    if (busy) { message('Shared templates are finishing an operation. Try Sign in again.'); return; }
+    const email = el('email').value.trim();
+    const password = el('password').value;
+    if (!el('email').validity.valid || !email || !password) {
+      message('Enter your MegaFrame email and password, then select Sign in.');
+      return;
+    }
+    // Password is retained only in this closure until the Auth request ends;
+    // it is never stored, logged, transmitted to the PTG launcher, or cached.
     el('password').value = '';
-    run(async () => {
+    void run(async () => {
       try {
         setSession(await request('/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password } }));
       } catch (err) {
-        if (err.status === 400 || err.status === 401) throw Error('Sign-in failed. Check your email and password.');
+        if (err.status === 400 || err.status === 401)
+          throw Error('Sign-in failed. Check your MegaFrame email and newly updated password.');
         throw err;
       }
       adminFormOpen = false;
       await sync();
       message(session ? 'Signed in. Shared and private cloud libraries are available.' : 'This account is not approved. Public templates remain available.');
-      if (session && activeTab==='private') await loadPrivate();
+      if (session && activeTab === 'private') await loadPrivate();
     });
-  };
+  }
+  el('signin').onclick = signInToSharedTemplates;
+  for (const field of ['email','password']) {
+    el(field).addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || event.isComposing) return;
+      event.preventDefault();
+      signInToSharedTemplates();
+    });
+  }
+  // Public unprotected installations may still dispatch submit explicitly.
+  // Cancel it, but never depend on it to reach the authentication service.
+  el('form').onsubmit = event => { event.preventDefault(); signInToSharedTemplates(); };
   el('signout').onclick = async () => {
     const token = session?.access;
     signedOut();
