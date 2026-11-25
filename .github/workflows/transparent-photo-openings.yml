@@ -1,0 +1,34 @@
+name: MegaFrame transparent photo openings
+on:
+  pull_request:
+    paths:
+      - editor.js
+      - index.html
+      - shared.js
+      - qa/smoke-transparent-openings.cjs
+      - .github/workflows/transparent-photo-openings.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: JavaScript syntax checks
+        run: |
+          node --check editor.js
+          node --check shared.js
+          node --check qa/smoke-transparent-openings.cjs
+      - name: Install Chromium for tests
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install chromium --only-shell
+      - name: Verify transparent openings and exports
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/megaframe-test-http.log 2>&1 &
+          sleep 3
+          node qa/smoke-transparent-openings.cjs
