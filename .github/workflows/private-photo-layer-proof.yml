@@ -20,6 +20,7 @@ jobs:
         run: |
           node --check private-release/build-private-package.mjs
           node --check private-release/editor-draft-bridge.js
+          node --check private-release/upload-production.mjs
       - name: Compile self-contained private editor ONLY in ephemeral runner directory
         run: node private-release/build-private-package.mjs "$RUNNER_TEMP/megaframe-private"
       - name: Validate privacy, source integrity, photo layering and R6 features
