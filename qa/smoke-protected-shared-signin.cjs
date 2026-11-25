@@ -23,6 +23,34 @@ const assert = require('node:assert/strict');
  });
  try {
   await page.goto(base);
+  await page.addScriptTag({path:'studio/draft-vault.js'});
+  const encryptionChecks=await page.evaluate(async()=>{
+    const key='A'.repeat(43),firstScope='B'.repeat(43),otherScope='C'.repeat(43);
+    const payload={id:'template_encrypted_test',name:'Encrypted Frame',
+      data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9J6ofLwAAAABJRU5ErkJggg==',
+      shape:{points:[{x:0,y:0},{x:1,y:0},{x:1,y:1}]}
+    };
+    const a=window.MEGAFRAME_LOCAL_DRAFT_VAULT.session(firstScope,key);
+    const b=window.MEGAFRAME_LOCAL_DRAFT_VAULT.session(otherScope,key);
+    await a['template-write'](payload);
+    const restored=(await a['template-list']()).find(x=>x.id===payload.id)?.name===payload.name;
+    const isolated=(await b['template-list']()).length===0;
+    const db=await new Promise((resolve,reject)=>{
+      const req=indexedDB.open('megaframe-protected-draft-v1',1);
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+    });
+    const raw=await new Promise((resolve,reject)=>{
+      const tx=db.transaction('drafts','readonly');
+      const req=tx.objectStore('drafts').get(firstScope+':template:'+payload.id);
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+    });
+    db.close();
+    await a['template-delete'](payload.id);
+    return {restored,isolated,encrypted:raw?.format==='AES-GCM-v1'&&raw?.encrypted instanceof ArrayBuffer,
+      deleted:(await a['template-list']()).length===0};
+  });
+  assert.deepEqual(encryptionChecks,{restored:true,isolated:true,encrypted:true,deleted:true},
+   'Template data must be stored encrypted and isolated per PTG account.');
   await page.evaluate(source=>{
    const iframe=document.createElement('iframe');
    iframe.id='protected-studio';
