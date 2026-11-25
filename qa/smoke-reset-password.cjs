@@ -22,6 +22,29 @@ const assert = require('node:assert/strict');
    await page.goto(url+'?error_code=otp_expired');
    assert.match(await page.locator('#reset-status').textContent(),/expired or already used/);
    assert.equal(await page.evaluate(()=>location.search),'');
-   console.log('PASS: MegaFrame recovery route requests the exact allowed redirect and handles expired links.');
+   let verified = false, changed = false;
+   await page.unrouteAll();
+   await page.route('https://vmyoxoiygfcecgkbavgg.supabase.co/**', async route => {
+     const request = route.request();
+     if (request.method()==='GET') {
+       verified = true;
+       return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({id:'test-user'})});
+     }
+     if(request.method()==='PUT') {
+       changed = true;
+       return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({id:'test-user'})});
+     }
+     return route.abort();
+   });
+   await page.goto(url+'#type=recovery&access_token=testtoken');
+   await page.locator('#update-section').waitFor({state:'visible'});
+   assert.equal(verified,true);
+   assert.equal(await page.evaluate(()=>location.hash),'');
+   await page.locator('#new-password').fill('example-password-1234');
+   await page.locator('#confirm-password').fill('example-password-1234');
+   await page.locator('#update-button').click();
+   await page.locator('#done-section').waitFor({state:'visible'});
+   assert.equal(changed,true);
+      console.log('PASS: MegaFrame recovery route requests the exact allowed redirect and handles expired links.');
  } finally {await browser.close();}
 })().catch(err=>{console.error(err);process.exitCode=1;});
