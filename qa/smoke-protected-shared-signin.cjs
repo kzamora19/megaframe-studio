@@ -43,9 +43,11 @@ const assert = require('node:assert/strict');
    document.body.append(iframe);
   },html);
   const frame=page.frameLocator('#protected-studio');
-  await frame.locator('#mf-admin-toggle').waitFor({state:'visible',timeout:20000});
-  // Open via actual settings/library UI controls inside the unprivileged sandbox.
+  // Open the closed native Shared Templates dialog programmatically; the
+  // standalone private build has an initial New Project modal as well.
+  await frame.locator('#mf-open').waitFor({state:'attached',timeout:20000});
   await frame.locator('#mf-open').evaluate(el=>el.click());
+  await frame.locator('#mf-admin-toggle').waitFor({state:'visible',timeout:20000});
   await frame.locator('#mf-admin-toggle').click();
   await frame.locator('#mf-email').fill('admin@example.com');
   await frame.locator('#mf-password').fill('test-placeholder-not-real');
