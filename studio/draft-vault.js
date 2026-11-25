@@ -16,6 +16,8 @@
   const validProjectId=id=>typeof id==="string"&&
     (/^project_[A-Za-z0-9_-]{2,100}$/.test(id)||
      /^recovery_(?:[0-9]{10,16}|unknown)$/.test(id));
+  const validTemplateId=id=>typeof id==="string"&&
+    /^template_[A-Za-z0-9_-]{4,135}$/.test(id);
   const decodeKey=encoded=>{
     if(!valid(encoded))throw Error("Invalid account-specific recovery key.");
     const binary=atob(encoded.replace(/-/g,"+").replace(/_/g,"/")+"=");
@@ -76,6 +78,10 @@
       if(!validProjectId(id))throw Error("Unsupported named project ID.");
       return scope+":project:"+id;
     };
+    const templateKey=id=>{
+      if(!validTemplateId(id))throw Error("Unsupported local template ID.");
+      return scope+":template:"+id;
+    };
     // Explicit, opt-in encrypted cloud transfer. The PTG service receives
     // ONLY this ciphertext envelope, never raw customer photos or draft keys.
     const b64=buffer=>{
@@ -128,6 +134,27 @@
         return writeRecord(scope,record);
       },
       async delete(){return operation("readwrite","delete",scope);},
+      async ["template-list"](){
+        const keys=await operation("readonly","list",scope);
+        if(!Array.isArray(keys))throw Error("Template library unavailable.");
+        const namespaced=keys.filter(key=>typeof key==="string"&&key.startsWith(scope+":template:"));
+        const records=await Promise.all(namespaced.map(key=>readRecord(key)));
+        return records.filter(r=>r?.format==="MegaFrameTemplateLocalV1"&&validTemplateId(r.id)&&
+          r.template?.id===r.id&&typeof r.template.name==="string"&&
+          typeof r.template.data==="string")
+          .map(r=>r.template);
+      },
+      async ["template-write"](record){
+        if(!record||!validTemplateId(record.id)||typeof record.name!=="string"||
+           !record.name.trim()||typeof record.data!=="string"||!record.data.startsWith("data:image/")||
+           !record.shape||!Array.isArray(record.shape.points)||
+           record.shape.points.length>4096)
+          throw Error("Unsupported local template.");
+        return writeRecord(templateKey(record.id),{
+          format:"MegaFrameTemplateLocalV1",id:record.id,template:record
+        });
+      },
+      async ["template-delete"](id){return operation("readwrite","delete",templateKey(id));},
       async ["project-list"](){
         const keys=await operation("readonly","list",scope);
         if(!Array.isArray(keys))throw Error("Project list unavailable.");

@@ -23,6 +23,34 @@ const assert = require('node:assert/strict');
  });
  try {
   await page.goto(base);
+  await page.addScriptTag({path:'studio/draft-vault.js'});
+  const encryptionChecks=await page.evaluate(async()=>{
+    const key='A'.repeat(43),firstScope='B'.repeat(43),otherScope='C'.repeat(43);
+    const payload={id:'template_encrypted_test',name:'Encrypted Frame',
+      data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9J6ofLwAAAABJRU5ErkJggg==',
+      shape:{points:[{x:0,y:0},{x:1,y:0},{x:1,y:1}]}
+    };
+    const a=window.MEGAFRAME_LOCAL_DRAFT_VAULT.session(firstScope,key);
+    const b=window.MEGAFRAME_LOCAL_DRAFT_VAULT.session(otherScope,key);
+    await a['template-write'](payload);
+    const restored=(await a['template-list']()).find(x=>x.id===payload.id)?.name===payload.name;
+    const isolated=(await b['template-list']()).length===0;
+    const db=await new Promise((resolve,reject)=>{
+      const req=indexedDB.open('megaframe-protected-draft-v1',1);
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+    });
+    const raw=await new Promise((resolve,reject)=>{
+      const tx=db.transaction('drafts','readonly');
+      const req=tx.objectStore('drafts').get(firstScope+':template:'+payload.id);
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+    });
+    db.close();
+    await a['template-delete'](payload.id);
+    return {restored,isolated,encrypted:raw?.format==='AES-GCM-v1'&&raw?.encrypted instanceof ArrayBuffer,
+      deleted:(await a['template-list']()).length===0};
+  });
+  assert.deepEqual(encryptionChecks,{restored:true,isolated:true,encrypted:true,deleted:true},
+   'Template data must be stored encrypted and isolated per PTG account.');
   await page.evaluate(source=>{
    const iframe=document.createElement('iframe');
    iframe.id='protected-studio';
@@ -30,9 +58,14 @@ const assert = require('node:assert/strict');
    iframe.width='1350';iframe.height='900';
    iframe.addEventListener('load',()=>{
     const channel=new MessageChannel();
+    const templates=new Map();
     channel.port1.onmessage=({data})=>{
      if(data && Number.isSafeInteger(data.id)) {
-      const value=data.action==='project-list'?[]:null;
+      let value=null;
+      if(data.action==='project-list')value=[];
+      if(data.action==='template-list')value=[...templates.values()];
+      if(data.action==='template-write'){templates.set(data.record.id,data.record);value=true;}
+      if(data.action==='template-delete'){templates.delete(data.record);value=true;}
       channel.port1.postMessage({id:data.id,ok:true,value});
      }
     };
@@ -57,7 +90,23 @@ const assert = require('node:assert/strict');
   assert.ok(calls.some(x=>x.path==='/auth/v1/token'&&x.method==='POST'),
    'Real click must call Supabase Auth even with allow-forms omitted.');
   assert.match(await frame.locator('#mf-identity').textContent(),/Administrator/);
+  const templateChecks=await frame.locator('#mf-form').evaluate(async el=>{
+    const tpl={
+      id:'template_test_20261125',name:'Protected Template Test',
+      data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9J6ofLwAAAABJRU5ErkJggg==',
+      shape:{type:'rect',points:[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}]},
+      rect:{x:0,y:0,w:1,h:1},appearance:{borderWidth:2},collage:{}
+    };
+    const saved=await dbPut(tpl);
+    const found=(await dbAll()).some(x=>x.id===tpl.id&&x.name===tpl.name);
+    const removed=await dbDelete(tpl.id);
+    const gone=!(await dbAll()).some(x=>x.id===tpl.id);
+    return {saved,found,removed,gone};
+  });
+  assert.deepEqual(templateChecks,{saved:true,found:true,removed:true,gone:true},
+   'Private template CRUD must work via MessagePort with iframe IndexedDB denied.');
+
   assert.equal(await page.locator('#protected-studio').getAttribute('sandbox'),'allow-scripts allow-downloads allow-modals');
-  console.log('PASS: Direct MegaFrame sign-in works in an opaque sandbox with allow-forms still disabled.');
+  console.log('PASS: Shared Templates authentication and encrypted-bridge frame template CRUD work with opaque sandbox restrictions.');
  } finally {await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1;});

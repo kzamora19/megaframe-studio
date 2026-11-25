@@ -390,9 +390,33 @@ async function switchTemplate(id){const template=(id==='sample'||id==='gold')?sa
 function populateTemplates(){const sel=$('templateSelect');const selected=app.template?.id||'new';sel.innerHTML='';const opts=allFrameTemplates();if(app.template?.id==='new')opts.push(app.template);for(const t of opts){const o=document.createElement('option');o.value=t.id;o.textContent=t.id==='new'?'✳ Unsaved: '+t.name:t.name;sel.append(o)}sel.value=selected}
 const DB_NAME='megaframe_studio_local', DB_STORE='templates';let dbPromise;
 function dbOpen(){if(dbPromise)return dbPromise;dbPromise=new Promise((resolve)=>{if(!window.indexedDB)return resolve(null);try{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(DB_STORE))r.result.createObjectStore(DB_STORE,{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>resolve(null)}catch{resolve(null)}});return dbPromise}
-async function dbAll(){const db=await dbOpen();if(!db)return[];return new Promise(resolve=>{try{const r=db.transaction(DB_STORE,'readonly').objectStore(DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>resolve([])}catch{resolve([])}})}
-async function dbPut(t){const db=await dbOpen();if(!db)return false;return new Promise(resolve=>{try{const x=db.transaction(DB_STORE,'readwrite');x.objectStore(DB_STORE).put(t);x.oncomplete=()=>resolve(true);x.onerror=()=>resolve(false)}catch{resolve(false)}})}
-async function dbDelete(id){const db=await dbOpen();if(!db)return false;return new Promise(resolve=>{try{const x=db.transaction(DB_STORE,'readwrite');x.objectStore(DB_STORE).delete(id);x.oncomplete=()=>resolve(true);x.onerror=()=>resolve(false)}catch{resolve(false)}})}
+async function dbAll(){
+ // The PTG-protected iframe has an intentionally opaque origin and no
+ // IndexedDB access. Reuse the account-scoped encrypted project vault via
+ // its limited MessagePort rather than granting allow-same-origin.
+ if(window.__MEGAFRAME_PRIVATE_DRAFT__){
+  try{return await window.__MEGAFRAME_PRIVATE_DRAFT__.request('template-list')}
+  catch(err){console.warn('Protected template list unavailable');return[]}
+ }
+ const db=await dbOpen();if(!db)return[];
+ return new Promise(resolve=>{try{const r=db.transaction(DB_STORE,'readonly').objectStore(DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>resolve([])}catch{resolve([])}})
+}
+async function dbPut(t){
+ if(window.__MEGAFRAME_PRIVATE_DRAFT__){
+  try{return await window.__MEGAFRAME_PRIVATE_DRAFT__.request('template-write',t)===true}
+  catch{return false}
+ }
+ const db=await dbOpen();if(!db)return false;
+ return new Promise(resolve=>{try{const x=db.transaction(DB_STORE,'readwrite');x.objectStore(DB_STORE).put(t);x.oncomplete=()=>resolve(true);x.onerror=()=>resolve(false)}catch{resolve(false)}})
+}
+async function dbDelete(id){
+ if(window.__MEGAFRAME_PRIVATE_DRAFT__){
+  try{return await window.__MEGAFRAME_PRIVATE_DRAFT__.request('template-delete',id)===true}
+  catch{return false}
+ }
+ const db=await dbOpen();if(!db)return false;
+ return new Promise(resolve=>{try{const x=db.transaction(DB_STORE,'readwrite');x.objectStore(DB_STORE).delete(id);x.oncomplete=()=>resolve(true);x.onerror=()=>resolve(false)}catch{resolve(false)}})
+}
 
 /** Detect a large, enclosed alpha window, excluding transparent frame edges. */
 function detectNativePhotoOpening(frame){
